@@ -60,7 +60,7 @@
 | 7 | Procedure/Function/Trigger | SP thêm SV kèm kiểm tra lớp tồn tại; SP chuyển lớp/ngành cho SV; Function đếm sĩ số lớp; Trigger chặn xóa Ngành khi còn SV thuộc ngành | Script SP/Function/Trigger | Chương 2 |
 | 8 | Chỉ mục (Index) | Non-clustered Index trên HoTen (tìm kiếm SV) và MaLop; giải thích lựa chọn loại chỉ mục theo Chương 3 | Script Index + giải thích | Chương 3 |
 | 9 | Transaction & Concurrency | Giao dịch "Thêm SV mới + gán lớp" đảm bảo Atomicity; phân tích tình huống 2 nhân viên cùng sửa hồ sơ 1 SV → đề xuất Chốt phù hợp (Shared/Exclusive) | Script Transaction + báo cáo phân tích | Chương 4, 5 |
-| 10 | Giao diện & Báo cáo | Màn hình quản lý Khoa/Ngành/Lớp; màn hình hồ sơ SV (thêm/sửa/tra cứu/lọc); viết phần báo cáo + slide module 1; tham gia kiểm thử tích hợp | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
+| 10 | Giao diện & Báo cáo | Màn hình quản lý Khoa/Ngành/Lớp; màn hình hồ sơ SV (thêm/sửa/tra cứu/lọc); viết phần báo cáo + slide Danh mục hệ thống & Hồ sơ sinh viên; tham gia kiểm thử tích hợp | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
 
 **Điểm nhấn riêng:** vì sở hữu bảng nền, Thành viên 1 minh họa cụ thể khái niệm **Độc lập dữ liệu vật lý/logic** (Chương 1) bằng ví dụ: đổi cấu trúc chỉ mục hoặc thêm cột cho SINHVIEN mà không làm hỏng logic của 4 module còn lại.
 
@@ -81,7 +81,7 @@
 | 7 | Procedure/Function/Trigger | SP mở lớp học phần (tự kiểm tra GV/phòng không trùng lịch); Function kiểm tra phòng trống theo (phòng, thứ, tiết); **Trigger chặn lưu lịch học nếu trùng phòng hoặc trùng giảng viên cùng khung giờ** — ràng buộc này không thể khai báo bằng CHECK vì phải so sánh giữa các dòng khác nhau | Script SP/Function/Trigger | Chương 2 |
 | 8 | Chỉ mục (Index) | Composite Non-clustered Index trên (MaPhong, Thu, TietBatDau) và (MaGV, Thu, TietBatDau) để tăng tốc kiểm tra trùng lịch | Script Index + giải thích | Chương 3 |
 | 9 | Transaction & Concurrency | Giao dịch "Mở lớp học phần + xếp lịch" (rollback nếu phát hiện trùng); demo tình huống 2 cán bộ cùng xếp 2 lớp vào 1 phòng cùng giờ → giải quyết bằng Chốt Độc quyền (X) trên khung giờ/phòng khi đang kiểm tra-ghi | Script Transaction + báo cáo phân tích + minh chứng test | Chương 4, 5 |
-| 10 | Giao diện & Báo cáo | Màn hình quản lý môn học/tiên quyết/GV; màn hình mở lớp học phần + xếp lịch dạng thời khóa biểu trực quan; báo cáo + slide module 2 | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
+| 10 | Giao diện & Báo cáo | Màn hình quản lý môn học/tiên quyết/GV; màn hình mở lớp học phần + xếp lịch dạng thời khóa biểu trực quan; báo cáo + slide Học phần, Giảng viên & Mở lớp học phần | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
 
 **Điểm nhấn riêng:** module có nhiều bảng liên kết nhất và nhiều truy vấn "kiểm tra trùng" nhất → Thành viên 2 phụ trách sâu **Chương 3 (Chỉ mục B+-Tree, tổ chức file)** vì tốc độ tra cứu lịch/phòng ảnh hưởng trực tiếp đến trải nghiệm cả hệ thống.
 
@@ -102,7 +102,7 @@
 | 7 | Procedure/Function/Trigger (lõi) | SP `DangKyHocPhan` gộp đủ 5 bước kiểm tra trước khi ghi nhận; SP `HuyDangKy` kiểm tra còn hạn hủy; Function kiểm tra hoàn thành tiên quyết; **Trigger tự động +1/–1 SiSoHienTai của LOPHOCPHAN** mỗi khi có đăng ký/hủy | Script SP/Function/Trigger | Chương 2 |
 | 8 | Chỉ mục (Index) | Non-clustered Index riêng trên MaSV và trên MaLHP phục vụ 2 chiều tra cứu; đo tốc độ truy vấn trước/sau khi có index (SET STATISTICS TIME/IO) | Script Index + báo cáo đo hiệu năng | Chương 3 |
 | 9 | Transaction & Concurrency (điểm nhấn chính của cả nhóm) | Đóng gói giao dịch đăng ký trong 1 Transaction để việc "kiểm tra sĩ số" và "ghi nhận đăng ký" là nguyên tử, tránh 2 SV cùng đăng ký vào chỗ trống cuối cùng (Lost Update); áp dụng Chốt Độc quyền (X) hoặc mức cô lập phù hợp; **viết kịch bản test 2 phiên (session) đăng ký đồng thời và ghi lại minh chứng (ảnh/video)** | Script Transaction + báo cáo phân tích concurrency + video/ảnh demo | Chương 4, 5 (sâu nhất) |
-| 10 | Giao diện & Báo cáo | Màn hình đăng ký học phần cho SV (chọn lớp, giỏ đăng ký, xác nhận); màn hình xem/hủy đăng ký với thông báo lỗi rõ theo từng ràng buộc; báo cáo + slide module 3 (phần trọng tâm khi bảo vệ) | ≥ 4 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
+| 10 | Giao diện & Báo cáo | Màn hình đăng ký học phần cho SV (chọn lớp, giỏ đăng ký, xác nhận); màn hình xem/hủy đăng ký với thông báo lỗi rõ theo từng ràng buộc; báo cáo + slide Đăng ký học phần (phần trọng tâm khi bảo vệ) | ≥ 4 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
 
 **Điểm nhấn riêng:** đây là module ít bảng nhất (1 bảng) nhưng nặng nhất về nghiệp vụ, ràng buộc và giao dịch — phần bù trừ khối lượng được thể hiện rõ ở Mục IV.
 
@@ -123,7 +123,7 @@
 | 7 | Procedure/Function/Trigger (nâng cao) | Function tính DiemTongKet theo trọng số; Function quy đổi DiemTongKet → DiemChu → DiemHe4 (qua THANGDIEMCHU); SP tính GPA học kỳ/tích lũy; **Trigger tự động tính lại DiemTongKet & DiemChu ngay khi GV cập nhật bất kỳ điểm thành phần nào** | Script SP/Function/Trigger | Chương 2 (điểm nhấn) |
 | 8 | Chỉ mục (Index) | Non-clustered Index trên MaSV (tra bảng điểm cá nhân) và MaLHP (tra điểm theo lớp cho GV) | Script Index + giải thích | Chương 3 |
 | 9 | Transaction & Concurrency | Giao dịch nhập điểm hàng loạt (rollback toàn bộ nếu 1 dòng lỗi, tránh dở dang); phân tích tình huống GV và Trưởng bộ môn cùng sửa điểm 1 SV → dùng Chốt X hoặc kiểm tra mốc thời gian cập nhật cuối | Script Transaction + báo cáo phân tích | Chương 4, 5 |
-| 10 | Giao diện & Báo cáo | Màn hình GV nhập điểm theo lớp học phần (bảng nhập nhanh); màn hình SV xem bảng điểm/GPA; màn hình cảnh báo học vụ; báo cáo + slide module 4 | ≥ 4 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
+| 10 | Giao diện & Báo cáo | Màn hình GV nhập điểm theo lớp học phần (bảng nhập nhanh); màn hình SV xem bảng điểm/GPA; màn hình cảnh báo học vụ; báo cáo + slide Điểm số & Kết quả học tập | ≥ 4 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
 
 **Điểm nhấn riêng:** module có logic tính toán và trigger tự động nhiều nhất → Thành viên 4 phụ trách sâu phần **SQL nâng cao (Function/Trigger)** của Chương 2.
 
@@ -144,7 +144,7 @@
 | 7 | Procedure/Function/Trigger + Bảo mật | SP tự động tính học phí ngay sau khi SV đăng ký thành công; SP tạo tài khoản tự động khi thêm SV/GV mới; Trigger ghi log mỗi lần đổi mật khẩu; **thiết lập GRANT/REVOKE cụ thể cho 3 vai trò** (VD: SV chỉ SELECT được bảng điểm của chính mình qua View, không được UPDATE) | Script SP/Function/Trigger/GRANT | Chương 2 (bảo mật) |
 | 8 | Chỉ mục (Index) | Non-clustered Index trên MaSV (bảng HOCPHI); Unique Index trên TenDangNhap (bảng TAIKHOAN, dùng khi đăng nhập) | Script Index + giải thích | Chương 3 |
 | 9 | Transaction, Concurrency & Phục hồi (điểm nhấn Chương 6) | Giao dịch thu học phí; phân tích khả năng đụng độ khi 2 tiến trình cùng cập nhật trạng thái đóng học phí; **xây dựng kế hoạch sao lưu** (Full backup định kỳ + Transaction Log backup), demo `BACKUP DATABASE`/`RESTORE DATABASE`, giả lập sự cố mất dữ liệu và phục hồi thành công, giải thích cơ chế WAL/Checkpoint của SQL Server áp dụng trong hệ thống | Script Transaction + kế hoạch backup + video demo restore | Chương 4, 5, 6 |
-| 10 | Giao diện & Vận hành | Màn hình quản lý học phí; màn hình quản lý tài khoản/phân quyền (đăng nhập, đổi mật khẩu); Dashboard thống kê tổng hợp; báo cáo + slide module 5; **điều phối lịch kiểm thử tích hợp chéo** giữa các thành viên (không làm một mình) | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
+| 10 | Giao diện & Vận hành | Màn hình quản lý học phí; màn hình quản lý tài khoản/phân quyền (đăng nhập, đổi mật khẩu); Dashboard thống kê tổng hợp; báo cáo + slide Học phí, Tài khoản & Vận hành; **điều phối lịch kiểm thử tích hợp chéo** giữa các thành viên (không làm một mình) | ≥ 5 màn hình chức năng + báo cáo + slide | Tiêu chí đánh giá #5 |
 
 **Điểm nhấn riêng:** duy nhất trong nhóm đảm nhiệm trọn vẹn **Chương 6 (Phục hồi dữ liệu)** — lý do khối lượng module này gồm cả trách nhiệm "vận hành hệ thống" để bù cho số bảng nghiệp vụ ít hơn các module khác.
 
