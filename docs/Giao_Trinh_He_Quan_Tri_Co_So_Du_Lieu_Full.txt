@@ -1,0 +1,660 @@
+================================================================================
+                    TỔNG HỢP TOÀN BỘ KIẾN THỨC MÔN HỌC
+                         HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU
+          (DATABASE MANAGEMENT SYSTEMS - COMPLETE KNOWLEDGE BASE)
+================================================================================
+
+MỤC LỤC TỔNG QUAN:
+--------------------------------------------------------------------------------
+CHƯƠNG 1: TỔNG QUAN VỀ CƠ SỞ DỮ LIỆU VÀ HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU
+CHƯƠNG 2: MÔ HÌNH QUAN HỆ VÀ NGÔN NGỮ TẬP LỆNH SQL (DDL, DML, VIEW, SECURITY, ADVANCED SQL)
+CHƯƠNG 3: LƯU TRỮ VÀ CẤU TRÚC TẬP TIN (STORAGE, RAID, FILE ORGANIZATION, INDEXING, HASHING)
+CHƯƠNG 4: QUẢN LÝ GIAO DỊCH (TRANSACTION MANAGEMENT & SERIALIZABILITY)
+CHƯƠNG 5: ĐIỀU KHIỂN CẠNH TRANH (CONCURRENCY CONTROL - LOCKING, TIMESTAMP, VALIDATION, DEADLOCK)
+CHƯƠNG 6: HỆ THỐNG PHỤC HỒI DỮ LIỆU (RECOVERY SYSTEM - LOG, CHECKPOINT, SHADOW PAGING)
+PHỤ LỤC: BÀI TẬP LỚN, ĐỀ TÀI VÀ YÊU CẦU ĐÁNH GIÁ HỆ THỐNG
+
+================================================================================
+CHƯƠNG 1: TỔNG QUAN VỀ CƠ SỞ DỮ LIỆU VÀ HỆ QUẢN TRỊ CƠ SỞ DỮ LIỆU
+================================================================================
+
+1.1. CÁC KHÁI NIỆM CƠ BẢN
+--------------------------------------------------------------------------------
+- Cơ sở dữ liệu (CSDL / DB - DataBase):
+  Là một tập hợp các dữ liệu có liên quan logic với nhau, được tổ chức theo một cấu trúc nhất định, được thiết kế nhằm làm giảm thiểu sự dư thừa dữ liệu, đảm bảo tính tin cậy và hiệu quả khi truy xuất. CSDL đại diện cho các đối tượng và mối quan hệ thực tế của một ứng dụng.
+
+- Hệ quản trị cơ sở dữ liệu (HQTCSDL / DBMS - DataBase Management System):
+  Là một hệ thống phần mềm tổng thể cho phép người dùng tạo lập, duy trì, quản lý, truy vấn và điều khiển mọi hoạt động truy xuất đến CSDL một cách an toàn, hiệu quả và bảo mật. Ví dụ: Microsoft SQL Server, Oracle, DB2, PostgreSQL, MySQL.
+
+- Hệ cơ sở dữ liệu (HCSDL / DBS - DataBase System):
+  Bao gồm toàn bộ phần cứng, phần mềm HQTCSDL, CSDL lưu trữ, các phần mềm ứng dụng và người sử dụng tương tác với hệ thống.
+
+1.2. NHƯỢC ĐIỂM CỦA HỆ THỐNG XỬ LÝ FILE TRUYỀN THỐNG (FILE-BASED SYSTEM)
+--------------------------------------------------------------------------------
+Trước khi có HQTCSDL, dữ liệu được lưu trữ trong các file độc lập do các chương trình ứng dụng riêng lẻ quản lý. Hệ thống này bộc lộ các hạn chế nghiêm trọng:
+1. Dư thừa dữ liệu và tính không nhất quán (Data Redundancy and Inconsistency):
+   Cùng một thông tin được lưu lặp đi lặp lại ở nhiều file do các lập trình viên khác nhau tạo ra. Điều này tốn dung lượng và dễ dẫn đến sai lệch dữ liệu giữa các tập tin khi cập nhật không đồng bộ.
+2. Khó khăn trong truy xuất dữ liệu (Difficulty in Accessing Data):
+   Không có ngôn ngữ truy vấn chung. Mỗi yêu cầu báo cáo mới đòi hỏi phải viết một chương trình ứng dụng mới.
+3. Sự cô lập dữ liệu (Data Isolation):
+   Dữ liệu bị phân tán trong nhiều file có định dạng khác nhau, rất khó viết chương trình tổng hợp hoặc kiểm soát các ràng buộc nhất quán (Consistency Constraints).
+4. Vấn đề về tính nguyên tử (Atomicity Problems):
+   Các thao tác xử lý không đảm bảo nguyên tắc "hoặc hoàn thành tất cả hoặc không làm gì". Nếu gặp sự cố giữa chừng, dữ liệu sẽ ở trạng thái dở dang và mất nhất quán.
+5. Bất thường trong truy xuất cạnh tranh (Concurrent Access Anomalies):
+   Khi nhiều người dùng đồng thời cập nhật dữ liệu mà không có cơ chế giám sát tập trung, các bản ghi sẽ bị ghi đè lẫn nhau (Lost Update).
+6. Vấn đề an toàn và bảo mật (Security Problems):
+   Khó phân quyền truy cập chi tiết đến từng bảng, từng cột hoặc từng dòng dữ liệu cho các đối tượng người dùng khác nhau.
+
+1.3. CÁC MỨC TRỪU TƯỢNG DỮ LIỆU (DATA ABSTRACTION LEVELS)
+--------------------------------------------------------------------------------
+HQTCSDL ẩn đi các chi tiết phức tạp về lưu trữ vật lý bằng cách cung cấp 3 mức trừu tượng:
+1. Mức vật lý (Physical Level):
+   Mức thấp nhất, mô tả chi tiết cách thức dữ liệu thực sự được lưu trữ trên đĩa (cấu trúc khối đĩa, con trỏ, chỉ mục, mẩu tin độ dài cố định hay biến đổi).
+2. Mức logic / luận lý (Logical Level):
+   Mức giữa, mô tả toàn bộ CSDL chứa những dữ liệu gì và các mối quan hệ giữa các dữ liệu đó. Người lập trình và DBA làm việc chủ yếu ở mức này (sơ đồ quan hệ, thuộc tính, kiểu dữ liệu, ràng buộc).
+3. Mức khung nhìn / view (View Level):
+   Mức cao nhất, chỉ mô tả một phần CSDL phù hợp với nhu cầu của từng nhóm người dùng cụ thể, che giấu các phần CSDL không liên quan hoặc nhạy cảm.
+
+* Tính độc lập dữ liệu (Data Independence):
+- Độc lập dữ liệu vật lý (Physical Data Independence): Khả năng thay đổi sơ đồ mức vật lý (như đổi cấu trúc chỉ mục, chuyển đĩa cứng) mà không phải thay đổi sơ đồ mức logic hay các chương trình ứng dụng.
+- Độc lập dữ liệu logic (Logical Data Independence): Khả năng thay đổi sơ đồ mức logic (nhêm thuộc tính, tách bảng) mà không làm thay đổi các khung nhìn (view) hoặc chương trình ứng dụng hiện có.
+
+1.4. KIẾN TRÚC VÀ CÁC THÀNH PHẦN CỦA HỆ QUẢN TRỊ CSDL
+--------------------------------------------------------------------------------
+HQTCSDL được chia thành hai nhóm thành phần chính:
+A. Các thành phần xử lý vấn tin (Query Processing Components):
+   - DML Compiler: Dịch các lệnh DML từ ngôn ngữ truy vấn thành các chỉ thị mức thấp mà Engine định giá hiểu được, đồng thời tối ưu hóa câu vấn tin.
+   - Embedded DML Precompiler: Chuyển các câu lệnh DML nhúng trong ngôn ngữ chủ thành lời gọi thủ tục chuẩn.
+   - DDL Interpreter: Dịch các câu lệnh DDL thành tập hợp các bảng lưu trong Tự điển dữ liệu (Data Dictionary / Metadata).
+   - Query Evaluation Engine: Thực thi các chỉ thị mức thấp do DML Compiler sinh ra.
+
+B. Các thành phần quản trị lưu trữ (Storage Manager Components):
+   - Authorization and Integrity Manager: Kiểm tra quyền truy cập của người dùng và các ràng buộc toàn vẹn.
+   - Transaction Manager: Đảm bảo CSDL duy trì trạng thái nhất quán khi có sự cố và quản lý các giao dịch chạy đồng thời.
+   - File Manager: Cấp phát không gian đĩa và quản lý cấu trúc dữ liệu lưu trên đĩa.
+   - Buffer Manager: Quản lý việc nạp dữ liệu từ đĩa vào bộ nhớ chính (RAM) và quyết định khối dữ liệu nào lưu lại RAM.
+
+C. Cấu trúc dữ liệu vật lý:
+   - Data Files: Lưu trữ chính CSDL.
+   - Data Dictionary (Tự điển dữ liệu / System Catalog): Lưu trữ Metadata (mô tả cấu trúc bảng, kiểu dữ liệu, ràng buộc, người dùng, chỉ mục).
+   - Indices: Cấu trúc chỉ mục giúp tăng tốc truy vấn.
+   - Stats Data: Dữ liệu thống kê phục vụ tối ưu hóa truy vấn.
+
+1.5. PHÂN LOẠI NGƯỜI DÙNG VÀ NHÀ QUẢN TRỊ CSDL (DBA)
+--------------------------------------------------------------------------------
+- Người dùng ngây thơ (Naive users): Tương tác qua ứng dụng có giao diện thiết kế sẵn.
+- Người dùng thành thạo (Sophisticated users): Viết câu vấn tin SQL trực tiếp (các nhà phân tích).
+- Người dùng chuyên biệt (Specialized users): Viết các ứng dụng CSDL chuyên sâu (CAD, Hệ chuyên gia, GIS).
+- Lập trình viên ứng dụng (Application programmers): Viết mã chương trình giao tiếp CSDL.
+- Nhà quản trị CSDL (DBA - DataBase Administrator): Có quyền cao nhất.
+  + 5 Chức năng / Nhiệm vụ chính của DBA:
+    1. Định nghĩa sơ đồ CSDL (Schema definition).
+    2. Định nghĩa cấu trúc lưu trữ và phương pháp truy xuất.
+    3. Sửa đổi sơ đồ và tổ chức vật lý khi cần thiết.
+    4. Cấp phát quyền truy cập cho người dùng (Authorization).
+    5. Giám sát thực thi và đáp ứng yêu cầu thay đổi của hệ thống.
+
+1.6. MÔI TRƯỜNG TÍNH TOÁN SONG SONG VÀ MỞ RỘNG (PARALLEL SYSTEMS)
+--------------------------------------------------------------------------------
+- Các kiến trúc phần cứng song song: Bộ nhớ chia sẻ (Shared Memory), Đĩa chia sẻ (Shared Disk), Không chia sẻ gì (Shared Nothing).
+- Các dạng kết nối mạng song song: Bus, Mesh (Lưới), Hypercube (Siêu lập phương 3 chiều/n chiều).
+- Khái niệm Tăng tốc độ (Speedup - TS/TL): Đạt hiệu quả khi tăng tài nguyên giúp giảm thời gian xử lý.
+- Khái niệm Tăng quy mô (Scaleup): Khả năng duy trì thời gian xử lý không đổi khi cả khối lượng dữ liệu và tài nguyên cùng tăng tương ứng.
+
+
+================================================================================
+CHƯƠNG 2: MÔ HÌNH QUAN HỆ VÀ NGÔN NGỮ TẬP LỆNH SQL
+================================================================================
+
+2.1. MÔ HÌNH DỮ LIỆU QUAN HỆ (RELATIONAL DATA MODEL)
+--------------------------------------------------------------------------------
+Do E.F. Codd đề xuất năm 1970.
+- Bảng (Table / Relation): Cấu trúc lưu trữ dữ liệu chính.
+- Dòng (Row / Tuple / Bản ghi / Bộ): Đại diện cho một đối tượng cụ thể.
+- Cột (Column / Attribute / Trường / Thuộc tính): Đại diện cho một thuộc tính của đối tượng.
+- Miền giá trị (Domain): Tập hợp các giá trị hợp lệ mà thuộc tính có thể nhận.
+- Khóa chính (Primary Key): Tập một hoặc nhiều cột xác định duy nhất một dòng trong bảng. Không được mang giá trị NULL.
+- Khóa ngoài (Foreign Key): Cột hoặc tập cột trong một bảng tham chiếu đến khóa chính của bảng khác, thể hiện mối quan hệ giữa các bảng.
+- Giá trị NULL: Biểu thị giá trị không xác định, chưa biết hoặc không tồn tại.
+
+2.2. HỆ CSDL MICROSOFT SQL SERVER & CÁC TẬP TIN LƯU TRỮ
+--------------------------------------------------------------------------------
+Một cơ sở dữ liệu trong SQL Server bao gồm 3 loại tập tin vật lý:
+1. Primary Data File (*.mdf): Tập tin dữ liệu chính, chứa thông tin hệ thống và một phần/toàn bộ dữ liệu người dùng.
+2. Secondary Data File (*.ndf): Tập tin dữ liệu phụ, tùy chọn, dùng khi CSDL lớn muốn phân tán trên nhiều đĩa.
+3. Log File (*.ldf): Tập tin lưu vết giao tác (Transaction Log), ghi lại toàn bộ thao tác thêm/sửa/xóa để phục hồi dữ liệu khi sự cố.
+
+Các dịch vụ đi kèm trong SQL Server:
+- DTS (Data Transformation Services): Chuyển đổi và di chuyển dữ liệu giữa các nguồn khác nhau.
+- Analysis Services: Phân tích dữ liệu đa chiều (OLAP / Cubes) và Khai phá dữ liệu (Data Mining).
+- SQL Profiler: Theo dõi, ghi vết các sự kiện xảy ra trên SQL Server.
+
+2.3. CÁC KIỂU DỮ LIỆU CHUẨN TRONG SQL
+--------------------------------------------------------------------------------
+- Chuỗi ký tự:
+  + CHAR(n): Chuỗi độ dài cố định n (tối đa 8000 bytes).
+  + VARCHAR(n): Chuỗi độ dài biến đổi (tối đa 8000 bytes).
+  + NCHAR(n), NVARCHAR(n): Tương tự CHAR/VARCHAR nhưng hỗ trợ Unicode (Tiếng Việt có dấu).
+  + TEXT, NTEXT: Chuỗi văn bản rất lớn (tối đa 2GB / 1 tỷ ký tự).
+- Số nguyên & Số thực:
+  + INT / INTEGER: Số nguyên (-2^31 đến 2^31 - 1).
+  + SMALLINT: Số nguyên (-2^15 đến 2^15 - 1).
+  + TINYINT: Số nguyên không âm (0 đến 255).
+  + BIGINT: Số nguyên lớn (-2^63 đến 2^63 - 1).
+  + NUMERIC(p, s) / DECIMAL(p, s): Số có độ chính xác cố định (p: tổng số chữ số, s: số chữ số thập phân).
+  + FLOAT, REAL: Số thực dấu phẩy động.
+  + MONEY, SMALLMONEY: Kiểu tiền tệ.
+- Ngày giờ & Khác:
+  + DATETIME: Ngày giờ (chính xác đến 3.33ms).
+  + SMALLDATETIME: Ngày giờ (chính xác đến phút).
+  + BIT: Nhận giá trị 0, 1 hoặc NULL.
+  + BINARY(n), VARBINARY(n), IMAGE: Dữ liệu nhị phân (hình ảnh, file).
+
+2.4. NGÔN NGỮ ĐỊNH NGHĨA DỮ LIỆU (DDL - DATA DEFINITION LANGUAGE)
+--------------------------------------------------------------------------------
+1. Lệnh CREATE TABLE (Tạo bảng & Ràng buộc):
+   Cú pháp:
+   CREATE TABLE tên_bảng (
+       tên_cột_1 kiểu_dữ_liệu [NULL | NOT NULL] [DEFAULT giá_trị_mặc_định] [CONSTRAINT tên_rb_check CHECK (điều_kiện)],
+       tên_cột_2 kiểu_dữ_liệu ...,
+       CONSTRAINT tên_pk PRIMARY KEY (danh_sách_cột),
+       CONSTRAINT tên_fk FOREIGN KEY (cột_khoá_ngoài) REFERENCES bảng_tham_chiếu(cột_khoá_chính)
+           [ON DELETE {CASCADE | NO ACTION | SET NULL | SET DEFAULT}]
+           [ON UPDATE {CASCADE | NO ACTION | SET NULL | SET DEFAULT}]
+   )
+
+   Các hành vi ON DELETE / ON UPDATE:
+   - CASCADE: Tự động xóa/cập nhật dòng ở bảng con khi bảng cha bị xóa/cập nhật.
+   - NO ACTION (Mặc định): Báo lỗi và ngăn chặn xóa/cập nhật ở bảng cha nếu đang có bảng con tham chiếu.
+   - SET NULL: Đặt giá trị khóa ngoài ở bảng con thành NULL.
+   - SET DEFAULT: Đặt giá trị khóa ngoài ở bảng con về giá trị mặc định.
+
+2. Lệnh ALTER TABLE (Sửa đổi cấu trúc bảng):
+   - Thêm cột mới: ALTER TABLE tên_bảng ADD tên_cột kiểu_dữ_liệu [ràng_buộc];
+   - Sửa kiểu dữ liệu cột: ALTER TABLE tên_bảng ALTER COLUMN tên_cột kiểu_dữ_liệu_mới [NULL|NOT NULL];
+   - Xóa cột: ALTER TABLE tên_bảng DROP COLUMN tên_cột;
+   - Thêm ràng buộc: ALTER TABLE tên_bảng ADD CONSTRAINT tên_rb ...;
+   - Xóa ràng buộc: ALTER TABLE tên_bảng DROP CONSTRAINT tên_rb;
+
+3. Lệnh DROP TABLE (Xóa bảng):
+   DROP TABLE tên_bảng; (Lưu ý: Không thể xóa bảng đang được tham chiếu bởi FOREIGN KEY của bảng khác; phải xóa ràng buộc FK hoặc xóa bảng con trước).
+
+2.5. NGÔN NGỮ THAO TÁC DỮ LIỆU (DML - DATA MANIPULATION LANGUAGE)
+--------------------------------------------------------------------------------
+1. Lệnh SELECT (Truy vấn dữ liệu):
+   Cú pháp đầy đủ:
+   SELECT [ALL | DISTINCT] [TOP n [PERCENT]] danh_sách_chọn
+   [INTO tên_bảng_mới]
+   FROM danh_sách_bảng_hoặc_view
+   [WHERE điều_kiện_lọc_dòng]
+   [GROUP BY danh_sách_cột_gom_nhóm]
+   [HAVING điều_kiện_lọc_nhóm]
+   [ORDER BY cột_sắp_xếp [ASC | DESC]]
+   [COMPUTE danh_sách_hàm_gộp [BY danh_sách_cột]]
+
+   Chi tiết các thành phần:
+   - DISTINCT: Loại bỏ các dòng dữ liệu trùng lặp trong kết quả.
+   - TOP n / TOP n PERCENT: Lấy ra n dòng đầu tiên hoặc n% số dòng đầu tiên.
+   - Biểu thức CASE trong SELECT:
+     CASE giá_trị WHEN dk1 THEN kq1 WHEN dk2 THEN kq2 ELSE kq_mặc_định END
+     CASE WHEN điều_kiện_logic THEN kq1 ELSE kq2 END
+   - Mệnh đề WHERE các toán tử:
+     + So sánh: =, <>, <, >, <=, >=, !>, !<
+     + Logic: AND, OR, NOT
+     + Khoảng: BETWEEN giá_trị_1 AND giá_trị_2
+     + Tập hợp: IN (danh_sách_giá_trị_hoặc_subquery)
+     + Mẫu chuỗi (LIKE): '%' (chuỗi bất kỳ), '_' (một ký tự bất kỳ), '[a-z]' (trong khoảng), '[^a-z]' (ngoài khoảng).
+     + Kiểm tra NULL: IS NULL, IS NOT NULL.
+   - Sắp xếp (ORDER BY): Mặc định là ASC (tăng dần), DESC là giảm dần. Có thể chỉ định tên cột hoặc số thứ tự cột.
+   - Phép hợp / Phép tập hợp:
+     + UNION: Gộp kết quả 2 truy vấn và loại bỏ dòng trùng.
+     + UNION ALL: Gộp kết quả và giữ nguyên toàn bộ các dòng trùng.
+     + INTERSECT: Lấy phần giao giữa 2 kết quả.
+     + EXCEPT: Lấy phần hiệu (có trong truy vấn 1 nhưng không có trong truy vấn 2).
+   - Phép nối (JOIN):
+     + Nối trong / Nối bằng: SELECT * FROM Bảng1, Bảng2 WHERE Bảng1.Khóa = Bảng2.Khóa
+       Hoặc dùng chuẩn: FROM Bảng1 [INNER] JOIN Bảng2 ON Bảng1.Khóa = Bảng2.Khóa
+     + Nối ngoài (Outer Join): LEFT JOIN, RIGHT JOIN, FULL OUTER JOIN.
+   - Gom nhóm (GROUP BY) & Hàm gộp (Aggregate Functions):
+     + Các hàm gộp: SUM(), AVG(), MIN(), MAX(), COUNT(*), COUNT(tên_cột).
+     + Quy tắc: Tất cả các hàm gộp (trừ COUNT(*)) đều BỎ QUA giá trị NULL. Nếu tập đầu vào rỗng, COUNT() trả về 0, các hàm khác trả về NULL.
+     + Mệnh đề HAVING: Lọc kết quả sau khi đã gom nhóm (điều kiện chứa hàm gộp).
+   - Mệnh đề COMPUTE / COMPUTE BY: Tạo các dòng tổng phụ (subtotal) xuất hiện bên dưới mỗi nhóm hoặc cuối bảng kết quả.
+   - Truy vấn con (Subquery):
+     + Sử dụng toán tử so sánh đơn (=, <, >) nếu subquery trả về đúng 1 giá trị.
+     + Sử dụng IN, NOT IN, ANY, ALL, SOME nếu subquery trả về một cột nhiều dòng.
+     + Sử dụng EXISTS, NOT EXISTS để kiểm tra tập kết quả subquery rỗng hay không.
+     + Sử dụng UNIQUE, NOT UNIQUE kiểm tra sự tồn tại của bộ trùng.
+
+2. Lệnh INSERT (Thêm dữ liệu):
+   - Thêm 1 dòng trực tiếp:
+     INSERT INTO tên_bảng [(danh_sách_cột)] VALUES (danh_sách_giá_trị);
+   - Thêm từ kết quả câu lệnh SELECT:
+     INSERT INTO tên_bảng [(danh_sách_cột)] SELECT ... FROM ...;
+
+3. Lệnh UPDATE (Cập nhật dữ liệu):
+   Cú pháp:
+   UPDATE tên_bảng
+   SET cột1 = giá_trị_1, cột2 = giá_trị_2
+   [FROM danh_sách_bảng_nối]
+   [WHERE điều_kiện];
+
+4. Lệnh DELETE (Xóa dữ liệu):
+   Cú pháp:
+   DELETE FROM tên_bảng
+   [FROM danh_sách_bảng_nối]
+   [WHERE điều_kiện];
+
+   Lưu ý: TRUNCATE TABLE tên_bảng xóa toàn bộ dữ liệu nhanh hơn DELETE, không ghi log chi tiết từng dòng, reset lại cột IDENTITY.
+
+2.6. KHUNG NHÌN (VIEW), BẢO MẬT VÀ LẬP TRÌNH SQL NÂNG CAO
+--------------------------------------------------------------------------------
+1. Khung nhìn (VIEW):
+   Là một bảng ảo chứa kết quả của một câu truy vấn SELECT được định nghĩa trước. View không lưu trữ dữ liệu thực sự (trừ Indexed View).
+   - Tạo view: CREATE VIEW tên_view [(danh_sách_cột)] AS câu_lệnh_select;
+   - Xóa view: DROP VIEW tên_view;
+   - Lợi ích: Tăng cường bảo mật, đơn giản hóa các truy vấn phức tạp, đảm bảo tính độc lập dữ liệu logic.
+
+2. Bảo mật trong SQL (GRANT, REVOKE):
+   - Cấp quyền:
+     GRANT các_quyền [(danh_sách_cột)] ON đối_tượng TO danh_sách_người_dùng [WITH GRANT OPTION];
+     (Các quyền: SELECT, INSERT, UPDATE, DELETE, REFERENCES, EXECUTE).
+     WITH GRANT OPTION: Cho phép người nhận cấp tiếp quyền đó cho người khác.
+   - Thu hồi quyền:
+     REVOKE các_quyền ON đối_tượng FROM danh_sách_người_dùng;
+
+3. Thủ tục lưu trữ (Stored Procedure):
+   Là một tập hợp các câu lệnh T-SQL được biên dịch sẵn và lưu trữ trong CSDL.
+   - Tạo thủ tục:
+     CREATE PROCEDURE tên_thủ_tục @tham_số_1 kiểu_dl [= mặc_định] [OUTPUT], ...
+     AS
+     BEGIN
+         các_câu_lệnh_sql;
+     END
+   - Gọi thủ tục: EXEC tên_thủ_tục tham_số;
+
+4. Hàm do người dùng định nghĩa (User-Defined Function - UDF):
+   - Hàm trả về giá trị vô hướng (Scalar Function): RETURNS kiểu_dữ_liệu
+   - Hàm trả về một bảng (Table-Valued Function): RETURNS TABLE
+
+5. Trigger & Con trỏ (Cursor):
+   - Trigger là một dạng thủ tục lưu trữ đặc biệt tự động kích hoạt khi có sự kiện INSERT, UPDATE, DELETE tác động lên bảng.
+   - Trigger sử dụng 2 bảng tạm hệ thống: `inserted` (chứa dữ liệu mới thêm/sửa) và `deleted` (chứa dữ liệu cũ bị xóa/sửa).
+
+
+================================================================================
+CHƯƠNG 3: LƯU TRỮ VÀ CẤU TRÚC TẬP TIN
+================================================================================
+
+3.1. CÁC PHƯƠNG TIỆN LƯU TRỮ VẬT LÝ
+--------------------------------------------------------------------------------
+Các phương tiện lưu trữ được phân cấp theo tốc độ, chi phí và độ bền vững:
+1. Cache: Nhanh nhất, đắt nhất, dung lượng rất nhỏ, do phần cứng/hệ điều hành quản lý.
+2. Bộ nhớ chính (Main Memory / RAM): Lưu trữ dữ liệu sẵn sàng xử lý, tốc độ ns, mất dữ liệu khi mất nguồn (Volatile).
+3. Bộ nhớ Flash (EEPROM): Không mất dữ liệu khi mất nguồn (Non-volatile), đọc nhanh (~100ns), ghi chậm hơn (4-10μs) và phải xóa theo khối trước khi ghi đè.
+4. Đĩa từ (Magnetic Disk / Hard Disk): Phương tiện lưu trữ chính trực tuyến (Online), lâu dài, truy xuất ngẫu nhiên theo khối. Tốc độms.
+5. Đĩa quang (Optical Storage - CD-ROM, WORM, DVD): Lưu trữ bằng laser, WORM (Write Once Read Many).
+6. Băng từ (Tape Storage): Dung lượng cực lớn, chi phí rất rẻ, truy xuất tuần tự (chậm, mất vài phút), dùng chủ yếu cho sao lưu dự phòng (Backup/Archival).
+
+3.2. CẤU TRÚC ĐĨA CỨNG VÀ TỐI ƯU HÓA TRUY XUẤT KHỐI ĐĨA
+--------------------------------------------------------------------------------
+- Cấu trúc vật lý đĩa cứng: Bao gồm các đĩa tròn (Platters) quay quanh một trục, các mặt đĩa được chia thành các rãnh đồng tâm (Tracks), mỗi rãnh chia thành các Sector (thường 512 bytes). Tập hợp các rãnh ở cùng bán kính trên tất cả các mặt đĩa tạo thành một Trụ (Cylinder).
+- Khối đĩa (Disk Block): Đơn vị truyền nhận dữ liệu giữa đĩa và RAM (từ 512 bytes đến vài KB).
+- Hiện tượng Phân mảnh (Fragmentation): Khi dữ liệu của file nằm rải rác trên các khối đĩa không kề nhau, làm tăng thời gian di chuyển đầu đọc. Cần chạy chống phân mảnh (Defragmentation).
+- Nonvolatile RAM (Battery-backed RAM): Dùng RAM có pin dự phòng làm bộ đệm ghi. Khi HQTCSDL yêu cầu ghi, dữ liệu ghi vào NVRAM và báo thành công ngay, bộ điều khiển sẽ ghi xuống đĩa cứng sau.
+- Đĩa Log (Log Disk / Log-structured File System): Tận dụng ghi tuần tự lên một đĩa riêng chuyên ghi log để đạt tốc độ ghi cực nhanh, định kỳ cô đặc (compacting) dữ liệu.
+
+3.3. HỆ THỐNG ĐĨA RAID (REDUNDANT ARRAYS OF INEXPENSIVE DISKS)
+--------------------------------------------------------------------------------
+RAID kết hợp nhiều đĩa cứng vật lý thành một hệ thống đĩa logic nhằm nâng cao độ tin cậy và hiệu năng.
+- Cải tiến độ tin cậy (Redundancy): Lưu trữ dữ liệu dư thừa.
+  + Mirroring / Shadowing: Sao chép 100% dữ liệu sang đĩa thứ hai.
+  + MTTF (Mean Time To Failure): Thời gian trung bình không xảy ra sự cố.
+  + MTTR (Mean Time To Repair): Thời gian trung bình để thay thế đĩa hỏng và khôi phục dữ liệu.
+- Cải tiến hiệu năng (Parallelism & Striping):
+  + Phân nhỏ mức bit (Bit-level striping): Phân phối các bit của byte qua các đĩa.
+  + Phân nhỏ mức khối (Block-level striping): Khối thứ i được lưu ở đĩa (i mod n) + 1.
+
+Các mức RAID chuẩn:
+- RAID 0: Phân nhỏ dữ liệu mức khối, không có dư thừa (Striping không Parity). Tốc độ đọc/ghi cực nhanh, nhưng 1 đĩa hỏng là mất toàn bộ dữ liệu.
+- RAID 1: Đĩa gương (Mirroring). 100% dư thừa, độ an toàn cao, chi phí đắt gấp đôi.
+- RAID 2: Phân nhỏ mức bit với mã sửa lỗi Hamming (ít dùng).
+- RAID 3: Phân nhỏ mức bit với 1 đĩa Parity riêng.
+- RAID 4: Phân nhỏ mức khối với 1 đĩa Parity riêng (Block-interleaved parity).
+  * Nhược điểm của RAID 4: Đĩa Parity trở thành điểm nghẽn (bottleneck). Khi ghi 1 khối đơn đòi hỏi 4 thao tác I/O (2 đọc khối cũ & parity cũ, 2 ghi khối mới & parity mới).
+- RAID 5: Parity phân bố chen khối (Block-interleaved Distributed Parity). Khối Parity được rải đều trên tất cả N+1 đĩa (khối thứ n có parity nằm ở đĩa (n mod (N+1)) + 1). Giải quyết triệt để điểm nghẽn của RAID 4. Được dùng phổ biến nhất.
+- RAID 6: Dùng 2 khối Parity độc lập (P và Q), chịu được sự cố hỏng đồng thời 2 đĩa cứng.
+
+3.4. QUẢN LÝ BỘ ĐỆM (BUFFER MANAGEMENT)
+--------------------------------------------------------------------------------
+Bộ quản lý bộ đệm (Buffer Manager) điều phối việc chuyển các khối đĩa vào/ra RAM.
+- Khối chốt (Pinned block): Khối dữ liệu đang được giao dịch xử lý, không được phép ghi đè hay xóa khỏi RAM.
+- Xuất bắt buộc (Forced output): Ghi bắt buộc khối dữ liệu từ RAM xuống đĩa cứng để phục vụ khôi phục sự cố.
+- Chiến lược thay thế khối bộ đệm:
+  + LRU (Least Recently Used): Thay thế khối ít được truy xuất nhất gần đây (Hệ điều hành thường dùng).
+  + MRU (Most Recently Used): Thay thế khối vừa mới truy xuất gần đây nhất. Trong CSDL (như thuật toán duyệt tuần tự), MRU lại là chiến lược tối ưu hơn LRU.
+  + Bảo vệ Tự điển dữ liệu và Chỉ mục: Các khối chứa Data Dictionary hoặc Index luôn được ưu tiên giữ cố định trong RAM vì tần suất truy cập cực cao.
+
+3.5. TỔ CHỨC FILE VÀ CÁC MẨU TIN (FILE ORGANIZATION)
+--------------------------------------------------------------------------------
+File CSDL là một tập hợp các mẩu tin (Records) được ánh xạ lên các khối đĩa.
+1. Mẩu tin độ dài cố định (Fixed-Length Records):
+   - Mọi mẩu tin có kích thước bằng nhau.
+   - Quản lý xóa mẩu tin: Dùng Danh sách tự do (Free List / Linked List). Header của file chứa con trỏ trỏ đến mẩu tin bị xóa đầu tiên, mẩu tin đó trỏ đến mẩu tin bị xóa thứ hai,... Khi thêm mẩu tin mới, chèn vào vị trí đầu danh sách tự do.
+
+2. Mẩu tin độ dài thay đổi (Variable-Length Records):
+   - Xuất hiện do các kiểu dữ liệu VARCHAR, TEXT hoặc các mẩu tin chứa tập thuộc tính lặp.
+   - Cấu trúc Slotted-Page: Đầu mỗi trang (Block) chứa một Header gồm: số lượng mẩu tin, con trỏ trỏ đến cuối trang trống, và mảng chứa vị trí/kích thước từng mẩu tin. Dữ liệu mẩu tin được chèn ngược từ cuối trang lên.
+
+3. Các phương pháp tổ chức File:
+   - Tổ chức file Đống (Heap File Organization): Mẩu tin chèn vào bất kỳ nơi nào có chỗ trống, không có thứ tự.
+   - Tổ chức file Tuần tự (Sequential File Organization): Các mẩu tin được sắp xếp thứ tự theo giá trị của một Khóa tìm kiếm (Search key).
+   - Tổ chức file Băm (Hashed File Organization): Sử dụng hàm băm tính vị trí lưu mẩu tin.
+   - Tổ chức file Cụm (Clustered File / Multi-table Clustering): Lưu trữ các bộ của nhiều bảng khác nhau có quan hệ nối (JOIN) gần kề nhau trên cùng một khối đĩa để tăng tốc truy vấn.
+
+3.6. CẤU TRÚC CHỈ MỤC (INDEXING)
+--------------------------------------------------------------------------------
+Chỉ mục là cấu trúc dữ liệu giúp định vị nhanh các mẩu tin chứa giá trị khóa tìm kiếm mà không cần quét toàn bộ file.
+- Khoá tìm kiếm (Search Key): Tập thuộc tính dùng để tra cứu.
+- Đầu vào chỉ mục (Index Entry): Cặp giá trị <Giá trị khóa, Con trỏ trỏ đến mẩu tin/khối>.
+
+Phân loại chỉ mục:
+- Chỉ mục sơ cấp (Primary / Clustering Index): Chỉ mục trên file đã được sắp xếp tuần tự, với khóa tìm kiếm trùng với khóa sắp xếp của file.
+- Chỉ mục thứ cấp (Secondary / Non-clustering Index): Chỉ mục trên thuộc tính không phải là khóa sắp xếp của file. Bắt buộc phải là Chỉ mục đặc.
+- Chỉ mục đặc (Dense Index): Mọi giá trị khóa tìm kiếm xuất hiện trong file đều có 1 đầu vào chỉ mục tương ứng.
+- Chỉ mục thưa (Sparse Index): Chỉ một số giá trị khóa tìm kiếm (thường là giá trị đầu tiên của mỗi khối đĩa) xuất hiện trong chỉ mục. Chỉ áp dụng cho file đã được sắp thứ tự.
+- Chỉ mục nhiều mức (Multilevel Index): Khi bản thân file chỉ mục quá lớn không nạp hết vào RAM, tạo thêm Chỉ mục ngoài (Outer Index) trỏ đến các khối của Chỉ mục trong (Inner Index).
+
+Cấu trúc Chỉ mục B+-Cây (B+-Tree Index File):
+- Cấu trúc cây cân bằng hoàn hảo (mọi đường đi từ gốc đến lá có độ dài bằng nhau).
+- Cấu trúc nút:
+  + Nút lá (Leaf Node): Chứa các cặp <K_i, P_i> trong đó K_i là giá trị khóa, P_i là con trỏ trỏ đến mẩu tin/bucket. Con trỏ P_n ở cuối nút lá trỏ đến nút lá kề sau (tạo thành danh sách liên kết vòng giúp truy vấn khoảng rất nhanh).
+  + Nút không lá (Internal Node): Chứa các con trỏ cây P_1, P_2... P_m và các khóa K_1... K_{m-1}. Con trỏ P_i trỏ đến cây con chứa các giá trị khóa nhỏ hơn K_i và lớn hơn hoặc bằng K_{i-1}.
+- Số lượng con trỏ trong nút có sức chứa tối đa N:
+  + Nút gốc: Có từ 2 đến N con trỏ.
+  + Nút không lá: Có từ ceil(N/2) đến N con trỏ.
+  + Nút lá: Chứa từ ceil((N-1)/2) đến N-1 giá trị khóa.
+- Thao tác Xen (Insert): Nếu nút lá bị đầy (vượt quá N-1 khóa), tiến hành Tách nút (Split) làm đôi và đưa khóa giữa lên nút cha.
+- Thao tác Xóa (Delete): Nếu số phần tử giảm xuống dưới ngưỡng tối thiểu, tiến hành Mượn phần tử của nút kề bên hoặc Gộp nút (Merge).
+
+Cấu trúc Chỉ mục B-Cây (B-Tree Index File):
+- Khác với B+-Cây: B-Cây lưu con trỏ dữ liệu ngay tại các nút không lá (mỗi khóa chỉ xuất hiện đúng 1 lần trong cây). Tiết kiệm không gian nhưng truy vấn khoảng chậm hơn B+-Cây và việc xóa nút phức tạp hơn.
+
+3.7. KỸ THUẬT BĂM (HASHING)
+--------------------------------------------------------------------------------
+1. Băm tĩnh (Static Hashing):
+   - Hàm băm h(K) ánh xạ giá trị khóa K vào địa chỉ Bucket B (h: K -> B).
+   - Bucket: Đơn vị lưu trữ (thường là 1 khối đĩa).
+   - Sự tràn Bucket (Bucket Overflow): Xảy ra khi Bucket hết chỗ chứa. Nguyên nhân do thiếu bucket hoặc do Hàm băm không phân bố đều (Skew).
+   - Xử lý tràn: Dùng Chuỗi tràn (Overflow Chaining / Closed Hashing) gắn thêm các bucket phụ dạng danh sách liên kết.
+
+2. Băm động / Băm có thể mở rộng (Extendible Hashing):
+   - Thay đổi dung lượng bảng băm một cách linh hoạt theo sự phát triển của dữ liệu mà không cần băm lại toàn bộ file.
+   - Độ sâu toàn cục (Global Depth - i): Bảng địa chỉ bucket có kích thước 2^i. Dùng i bit đầu tiên của giá trị h(K) để tra bảng.
+   - Độ sâu cục bộ (Local Depth - i_j): Gắn với từng Bucket j.
+   - Khi chèn mẩu tin vào Bucket j đầy:
+     + Nếu i_j < i: Chỉ cần tách Bucket j thành 2 bucket mới, tăng i_j lên i_j + 1, điều chỉnh lại các con trỏ trong bảng địa chỉ (không tăng kích thước bảng).
+     + Nếu i_j = i: Tách Bucket j, nhân đôi kích thước bảng địa chỉ bucket (tăng i lên i + 1), tăng i_j lên i_j + 1.
+
+
+================================================================================
+CHƯƠNG 4: QUẢN LÝ GIAO DỊCH (TRANSACTION MANAGEMENT)
+================================================================================
+
+4.1. KHÁI NIỆM GIAO DỊCH VÀ CÁC TÍNH CHẤT ACID
+--------------------------------------------------------------------------------
+Giao dịch (Transaction) là một đơn vị logic xử lý chương trình bao gồm một chuỗi các thao tác đọc/ghi CSDL. Giao dịch được phân cách bởi BEGIN TRANSACTION và COMMIT / ROLLBACK.
+
+Một giao dịch phải đảm bảo trọn vẹn 4 tính chất ACID:
+1. Atomicity (Tính nguyên tử):
+   Quy tắc "Tất cả hoặc Không": Toàn bộ các thao tác trong giao dịch phải được thực hiện thành công hoàn toàn hoặc không một thao tác nào được ghi nhận vào CSDL. Nếu xảy ra lỗi giữa chừng, CSDL phải được khôi phục về trạng thái ban đầu (Rollback).
+2. Consistency (Tính nhất quán):
+   Sự thực hiện giao dịch phải bảo tồn tính đúng đắn của CSDL. Nếu CSDL nhất quán trước khi giao dịch chạy thì sau khi giao dịch kết thúc (dù thành công hay thất bại), CSDL vẫn phải ở trạng thái nhất quán.
+3. Isolation (Tính cô lập):
+   Các giao dịch thực hiện đồng thời không được can thiệp lẫn nhau. Kết quả của một giao dịch đang chạy phải ẩn đối với các giao dịch khác cho đến khi nó COMMIT.
+4. Durability (Tính lâu bền):
+   Sau khi giao dịch đã bàn giao (COMMIT) thành công, mọi cập nhật dữ liệu của nó sẽ tồn tại vĩnh viễn trong CSDL, bất chấp các sự cố hỏng hóc hệ thống hay mất điện sau đó.
+
+4.2. CÁC TRẠNG THÁI CỦA GIAO DỊCH (TRANSACTION STATES)
+--------------------------------------------------------------------------------
+1. Active (Hoạt động): Trạng thái ban đầu khi giao dịch bắt đầu thực thi các lệnh.
+2. Partially Committed (Bàn giao một phần): Trạng thái sau khi lệnh cuối cùng của giao dịch đã thực hiện xong, nhưng dữ liệu đệm chưa được ghi hoàn toàn xuống đĩa.
+3. Committed (Đã bàn giao): Giao dịch hoàn tất thành công hoàn toàn, dữ liệu đã bền vững trên đĩa.
+4. Failed (Thất bại): Phát hiện không thể tiếp tục thực hiện (do lỗi logic hoặc sự cố phần cứng).
+5. Aborted (Đã hủy bỏ): Giao dịch đã được cuộn lại (Rollback), CSDL khôi phục về trạng thái trước khi giao dịch bắt đầu. Hệ thống có thể khởi động lại giao dịch hoặc hủy bỏ hẳn.
+
+4.3. LỊCH TRÌNH THỰC HIỆN VÀ TÍNH KHẢ TUẦN TỰ (SERIALIZABILITY)
+--------------------------------------------------------------------------------
+- Lịch trình (Schedule): Dãy sắp thứ tự thời gian thực hiện các thao tác (Read, Write, Commit, Abort) của một tập hợp các giao dịch đồng thời.
+- Lịch trình tuần tự (Serial Schedule): Các giao dịch thực hiện lần lượt từng giao dịch một (giao dịch này xong hoàn toàn mới đến giao dịch khác). Đảm bảo tính nhất quán nhưng hiệu năng rất thấp.
+- Lịch trình đan xen (Concurrent Schedule): Các chỉ thị của nhiều giao dịch thực hiện xen kẽ nhau nhằm tối ưu hóa CPU và I/O.
+
+1. Khả tuần tự xung đột (Conflict Serializability):
+   - Hai chỉ thị I_i và I_j của hai giao dịch khác nhau T_i và T_j xung đột nhau nếu chúng tác động trên cùng một hạng mục dữ liệu Q và có ÍT NHẤT MỘT chỉ thị là WRITE(Q).
+     + Read(Q) - Read(Q): Không xung đột.
+     + Read(Q) - Write(Q): XUNG ĐỘT.
+     + Write(Q) - Read(Q): XUNG ĐỘT.
+     + Write(Q) - Write(Q): XUNG ĐỘT.
+   - Tương đương xung đột (Conflict Equivalent): Lịch trình S có thể biến đổi thành S' bằng cách đổi chỗ các chỉ thị KHÔNG xung đột kề nhau.
+   - Định nghĩa: Lịch trình S là Khả tuần tự xung đột nếu nó tương đương xung đột với một lịch trình tuần tự.
+
+* Thuật toán kiểm tra Tính khả tuần tự xung đột bằng Đồ thị tiền đề (Precedence Graph):
+  - Xây dựng đồ thị có hướng G = (V, E):
+    + Các đỉnh V: Tập các giao dịch tham gia trong lịch trình.
+    + Các cung E: Vẽ cung T_i -> T_j nếu T_i thực hiện thao tác trước T_j trên cùng hạng mục Q và hai thao tác đó xung đột.
+  - Định lý: Lịch trình S là KHẢ TUẦN TỰ XUNG ĐỘT khi và chỉ khi Đồ thị tiền đề G KHÔNG CHỨA CHU TRÌNH (Acyclic).
+  - Thứ tự tuần tự tương đương được xác định bằng thuật toán Sắp xếp đếm / Sắp xếp tốpô (Topological Sort) trên đồ thị.
+
+2. Khả tuần tự View (View Serializability):
+   Lịch trình S và S' tương đương View nếu thỏa mãn 3 điều kiện:
+   1. Với mỗi hạng mục Q, nếu T_i đọc giá trị khởi tạo của Q trong S thì T_i cũng phải đọc giá trị khởi tạo của Q trong S'.
+   2. Với mỗi hạng mục Q, nếu T_i đọc giá trị Q do T_j ghi trong S thì T_i cũng phải đọc giá trị Q do T_j ghi trong S'.
+   3. Với mỗi hạng mục Q, giao dịch ghi giá trị cuối cùng lên Q trong S phải là giao dịch ghi giá trị cuối cùng lên Q trong S'.
+   - Mọi lịch trình Khả tuần tự xung đột đều là Khả tuần tự View.
+   - Các lịch trình Khả tuần tự View mà KHÔNG Khả tuần tự xung đột đều chứa các thao tác Ghi mù (Blind Write - thao tác Write(Q) mà không cần Read(Q) trước đó).
+
+4.4. LỊCH TRÌNH KHẢ PHỤC HỒI VÀ KHÔNG DÂY CHUYỀN
+--------------------------------------------------------------------------------
+- Lịch trình khả phục hồi (Recoverable Schedule): Lịch trình trong đó nếu giao dịch T_j đọc hạng mục dữ liệu được ghi bởi T_i, thì thao tác COMMIT của T_i phải xuất hiện TRƯỚC thao tác COMMIT của T_j.
+- Lịch trình không dây chuyền (Cascadeless Schedule / Avoids Cascading Aborts): Lịch trình trong đó nếu T_j đọc dữ liệu do T_i ghi, T_j bắt buộc phải chờ đến khi T_i COMMIT mới được phép đọc. Tránh được hiện tượng Hủy bỏ dây chuyền (Cascading Rollback) khi T_i bị Abort.
+
+
+================================================================================
+CHƯƠNG 5: ĐIỀU KHIỂN CẠNH TRANH (CONCURRENCY CONTROL)
+================================================================================
+
+5.1. GIAO THỨC DỰA TRÊN CHỐT (LOCK-BASED PROTOCOLS)
+--------------------------------------------------------------------------------
+Để đảm bảo tính khả tuần tự khi nhiều giao dịch chạy đồng thời, hệ thống bắt buộc các giao dịch phải xin chốt (Lock) trên hạng mục dữ liệu trước khi truy cập.
+
+1. Các phương thức chốt cơ bản:
+   - Shared Lock (Chốt chia sẻ - S): Giao dịch giữ chốt S trên Q chỉ có quyền ĐỌC Q (`lock-S(Q)`).
+   - Exclusive Lock (Chốt độc quyền - X): Giao dịch giữ chốt X trên Q có cả quyền ĐỌC và GHI Q (`lock-X(Q)`).
+   - Ma trận tương thích chốt (Compatibility Matrix):
+       + S và S: TƯƠNG THÍCH (True) - Nhiều giao dịch có thể cùng giữ chốt S trên Q.
+       + S và X: KHÔNG TƯƠNG THÍCH (False).
+       + X và X: KHÔNG TƯƠNG THÍCH (False).
+
+2. Giao thức Chốt Hai Kỳ (Two-Phase Locking Protocol - 2PL):
+   Yêu cầu mỗi giao dịch thực hiện xin chốt và trả chốt qua 2 giai đoạn riêng biệt:
+   - Giai đoạn 1: Kỳ tăng (Growing Phase): Giao dịch chỉ được phép SIN CHỐT mới hoặc NÂNG CẤP CHỐT (Upgrade: S -> X), KHÔNG ĐƯỢC TRẢ CHỐT.
+   - Giai đoạn 2: Kỳ giảm (Shrinking Phase): Giao dịch chỉ được phép TRẢ CHỐT (Unlock) hoặc HẠ CẤP CHỐT (Downgrade: X -> S), KHÔNG ĐƯỢC SIN THÊM CHỐT.
+   - ĐỊNH LÝ: Giao thức 2PL đảm bảo mọi lịch trình tuân thủ đều KHẢ TUẦN TỰ XUNG ĐỘT.
+   - Các biến thể của 2PL:
+     + Strict 2PL (2PL Nghiêm ngặt): Yêu cầu tất cả các Chốt Độc Quyền (X) phải được giữ đến tận khi giao dịch COMMIT / ABORT. Giải quyết triệt để hủy bỏ dây chuyền.
+     + Rigorous 2PL (2PL Nghiêm ngặt toàn bộ): Yêu cầu TẤT CẢ các chốt (cả S và X) phải được giữ đến khi giao dịch COMMIT / ABORT.
+
+3. Giao thức Cây (Tree Protocol):
+   Đáp ứng cho cấu trúc dữ liệu hình cây (như B+-Tree).
+   - Chỉ sử dụng chốt Exclusive (X).
+   - Chốt đầu tiên có thể đặt trên nút bất kỳ. Chốt tiếp theo chỉ được xin nếu cha của nút đó đang bị giao dịch chốt. Chốt có thể trả bất kỳ lúc nào nhưng không được chốt lại.
+   - Ưu điểm: Không bị Deadlock, trả chốt sớm. Nhược điểm: Có thể chốt các nút không thực sự cần thiết.
+
+4. Chốt Đa Hạt (Multiple Granularity Locking):
+   Cho phép chốt dữ liệu ở các mức độ hạt khác nhau: CSDL -> File -> Trang/Khối -> Mẩu tin.
+   - Sử dụng các chế độ Chốt Định hướng (Intention Locks):
+     + IS (Intention-Shared): Định hướng chia sẻ ở mức thấp hơn.
+     + IX (Intention-Exclusive): Định hướng độc quyền ở mức thấp hơn.
+     + SIX (Shared and Intention-Exclusive): Giữ chốt S trên nút hiện tại và định hướng X ở mức thấp hơn.
+   - Quy tắc: Xin chốt từ gốc đến lá; Trả chốt từ lá lên gốc.
+
+5.2. GIAO THỨC DỰA TRÊN TEM THỜI GIAN (TIMESTAMP-BASED PROTOCOLS)
+--------------------------------------------------------------------------------
+Mỗi giao dịch T_i được gán một tem thời gian tĩnh duy nhất TS(T_i) khi bắt đầu.
+Với mỗi hạng mục Q, duy trì 2 tem thời gian:
+- W-timestamp(Q): Tem thời gian lớn nhất của giao dịch ghi Q thành công.
+- R-timestamp(Q): Tem thời gian lớn nhất của giao dịch đọc Q thành công.
+
+Quy tắc Thứ tự Tem Thời Gian (Timestamp-Ordering Protocol):
+1. Khi T_i phát ra lệnh READ(Q):
+   - Nếu TS(T_i) < W-timestamp(Q): T_i muốn đọc giá trị đã bị ghi đè bởi một giao dịch trẻ hơn -> REJECT và ROLLBACK T_i.
+   - Ngược lại: Thực hiện READ(Q) và cập nhật R-timestamp(Q) = max(R-timestamp(Q), TS(T_i)).
+2. Khi T_i phát ra lệnh WRITE(Q):
+   - Nếu TS(T_i) < R-timestamp(Q): Giá trị Q mà T_i muốn ghi lại bị một giao dịch trẻ hơn đọc mất rồi -> REJECT và ROLLBACK T_i.
+   - Nếu TS(T_i) < W-timestamp(Q): T_i muốn ghi một giá trị đã lỗi thời -> REJECT và ROLLBACK T_i (Trừ trường hợp áp dụng Quy tắc Ghi Thomas - Thomas' Write Rule thì bỏ qua phép ghi này mà không cần Rollback T_i).
+   - Ngược lại: Thực hiện WRITE(Q) và cập nhật W-timestamp(Q) = TS(T_i).
+
+5.3. GIAO THỨC DỰA TRÊN TÍNH HỢP LỆ (VALIDATION-BASED PROTOCOL)
+--------------------------------------------------------------------------------
+Còn gọi là Giao thức Lạc quan (Optimistic Protocol). Chia vòng đời giao dịch thành 3 kỳ:
+1. Read Phase (Kỳ đọc): Đọc dữ liệu và tính toán trên các biến cục bộ. Các phép ghi chỉ thực hiện trên bản sao tạm.
+2. Validation Phase (Kỳ kiểm tra hợp lệ): Kiểm tra xem việc cập nhật có vi phạm tính nhất quán/khả tuần tự với các giao dịch khác không.
+3. Write Phase (Kỳ ghi): Nếu kiểm tra hợp lệ thành công, ghi kết quả từ bộ đệm tạm vào CSDL thực sự; nếu thất bại, cuộn lại giao dịch.
+
+5.4. SƠ ĐỒ ĐA PHIÊN BẢN (MULTIVERSION SCHEMES)
+--------------------------------------------------------------------------------
+Lưu giữ nhiều phiên bản cũ của hạng mục Q (Q_1, Q_2,... Q_k). Phép READ luôn thành công bằng cách đọc phiên bản thích hợp mà không bao giờ phải chờ chốt.
+- Multiversion Timestamp Ordering: Khi T_i đọc Q, trả về phiên bản Q_k có W-timestamp(Q_k) lớn nhất nhưng <= TS(T_i).
+- Multiversion Two-Phase Locking: Phân biệt giao dịch Chỉ đọc (Read-only) và giao dịch Cập nhật (Update).
+
+5.5. QUẢN TRỊ BẾ TẮC (DEADLOCK MANAGEMENT)
+--------------------------------------------------------------------------------
+Deadlock xảy ra khi hai hay nhiều giao dịch chờ chốt lẫn nhau tạo thành chu trình nghẽn hoàn toàn.
+
+1. Phòng ngừa Deadlock (Deadlock Prevention):
+   Sử dụng Tem thời gian TS(T_i) để quyết định khi xung đột chốt:
+   - Thuật toán Wait-Die (Không can thiệp): Nếu T_i già hơn T_j (TS(T_i) < TS(T_j)), T_i ĐƯỢC PHÉP CHỜ T_j. Nếu T_i trẻ hơn T_j, T_i BỊ CHẾT (Die/Rollback).
+   - Thuật toán Wound-Wait (Can thiệp): Nếu T_i già hơn T_j, T_i Làm tổn thương/Ép T_j cuộn lại (Wound T_j). Nếu T_i trẻ hơn T_j, T_i ĐƯỢC PHÉP CHỜ.
+
+2. Phát hiện và Khôi phục Deadlock (Detection & Recovery):
+   - Duy trì Đồ thị Chờ (Wait-For Graph): Các đỉnh là giao dịch, cung T_i -> T_j xuất hiện khi T_i chờ T_j trả chốt.
+   - Định kỳ chạy thuật toán tìm chu trình trên Wait-For Graph.
+   - Phục hồi:
+     + Chọn giao dịch Nạn nhân (Victim Selection): Chọn giao dịch có chi phí cuộn lại thấp nhất.
+     + Cuộn lại (Rollback): Cuộn lại toàn bộ (Total) hoặc một phần (Partial).
+     + Tránh Chết đói (Starvation): Đảm bảo một giao dịch không bị chọn làm nạn nhân quá nhiều lần (bằng cách tính số lần bị rollback vào độ ưu tiên).
+
+
+================================================================================
+CHƯƠNG 6: HỆ THỐNG PHỤC HỒI DỮ LIỆU
+================================================================================
+
+6.1. CÁC LOẠI SỰ CỐ VÀ TRUY CẬP DỮ LIỆU
+--------------------------------------------------------------------------------
+Các loại sự cố:
+- Sự cố giao dịch (Transaction Failure): Lỗi logic lập trình hoặc Lỗi hệ thống (Deadlock).
+- Sự cố hệ thống (System Crash): Mất điện, lỗi hệ điều hành, làm mất nội dung bộ nhớ RAM. Dữ liệu đĩa cứng không hỏng.
+- Sự cố đĩa (Disk Failure): Đầu đọc đĩa bị hỏng, đĩa cứng hỏng vật lý làm mất dữ liệu trên đĩa.
+
+Các thao tác truyền dữ liệu đĩa - RAM:
+- `Input(B)`: Nạp khối vật lý B từ đĩa vào khối đệm B trong RAM.
+- `Output(B)`: Ghi khối đệm B từ RAM xuống đĩa cứng.
+- `Read(X)`: Gán giá trị hạng mục X trong khối đệm cho biến cục bộ x_i.
+- `Write(X)`: Gán giá trị biến x_i cho hạng mục X trong khối đệm RAM.
+
+6.2. PHỤC HỒI DỰA TRÊN NHẬT KÝ / SỔ GHI LỘ TRÌNH (LOG-BASED RECOVERY)
+--------------------------------------------------------------------------------
+Nhật ký (Log) là danh sách ghi chép chuỗi các hoạt động cập nhật CSDL, được lưu trên thiết bị Lưu trữ Bền (Stable Storage).
+
+1. Các loại Mẩu tin Nhật ký (Log Records):
+   - `<Ti start>`: Giao dịch T_i bắt đầu.
+   - `<Ti, X, V1, V2>`: T_i cập nhật hạng mục X; V1 là Giá trị cũ (Old value), V2 là Giá trị mới (New value).
+   - `<Ti commit>`: T_i đã bàn giao thành công.
+   - `<Ti abort>`: T_i bị hủy bỏ.
+
+2. Quy tắc Ghi nhật ký trước (Write-Ahead Logging - WAL):
+   Mẩu tin nhật ký mô tả sự thay đổi `<Ti, X, V1, V2>` BẮT BUỘC phải được ghi xuống đĩa cứng (Stable Storage) TRƯỚC KHI khối đệm CSDL chứa X được ghi xuống đĩa cứng.
+
+3. Kỹ thuật Cập nhật có trì hoãn (Deferred Database Modification):
+   Mọi thao tác Ghi (WRITE) CSDL thực sự đều bị hoãn lại cho đến khi giao dịch COMMIT thành công hoàn toàn.
+   - Mẩu tin Log chỉ cần chứa giá trị mới: `<Ti, X, V2>`.
+   - Khi phục hồi: KHÔNG CẦN UNDO, chỉ cần REDO các giao dịch đã có `<Ti commit>` trong Log.
+
+4. Kỹ thuật Cập nhật tức thời (Immediate Database Modification):
+   Các thao tác Ghi CSDL được phép cập nhật xuống đĩa ngay cả khi giao dịch đang chạy.
+   - Mẩu tin Log chứa cả giá trị cũ và mới: `<Ti, X, V1, V2>`.
+   - Khi phục hồi sau sự cố:
+     + Thực hiện UNDO(T_i): Đặt lại giá trị cũ V1 cho tất cả các X do T_i cập nhật. Xử lý các log record theo THỨ TỰ NGƯỢC (Backward) từ cuối log lên.
+     + Thực hiện REDO(T_i): Đặt giá trị mới V2 cho tất cả các X do T_i cập nhật. Xử lý các log record theo THỨ TỰ XUÔI (Forward) từ đầu log xuống.
+     + Tính Đồng hiệu lực (Idempotent) của REDO/UNDO: Việc thực hiện REDO hay UNDO nhiều lần liên tiếp cho ra cùng một kết quả duy nhất.
+
+6.3. CƠ CHẾ ĐIỂM KIỂM SOÁT (CHECKPOINT)
+--------------------------------------------------------------------------------
+Nếu nhật ký quá lớn, việc quét toàn bộ nhật ký từ đầu khi sự cố xảy ra sẽ mất rất nhiều thời gian. Cơ chế Checkpoint giúp thu hẹp phạm vi quét log.
+
+Các bước hệ thống thực hiện Điểm kiểm soát (Checkpoint):
+1. Tạm dừng các giao dịch, đẩy toàn bộ log record trong RAM ra lưu trữ bền.
+2. Đẩy toàn bộ các khối đệm CSDL bị sửa đổi (Dirty blocks) trong RAM xuống đĩa cứng.
+3. Ghi mẩu tin nhật ký `<checkpoint L>` xuống lưu trữ bền, trong đó L là danh sách tất cả các giao dịch đang hoạt động (Active) tại thời điểm checkpoint.
+4. Cho phép các giao dịch tiếp tục chạy.
+
+Thuật toán Phục hồi với Checkpoint:
+Khi hệ thống khởi động lại sau sự cố:
+1. Xây dựng 2 danh sách: Undo-list và Redo-list.
+2. Tìm mẩu tin `<checkpoint L>` gần nhất trong Log. Đặt Undo-list = L.
+3. Quét log tiến về trước từ vị trí Checkpoint:
+   - Nếu gặp `<Ti start>`, thêm T_i vào Undo-list.
+   - Nếu gặp `<Ti commit>`, chuyển T_i từ Undo-list sang Redo-list.
+4. Thực hiện UNDO tất cả các giao dịch trong Undo-list (quét ngược log).
+5. Thực hiện REDO tất cả các giao dịch trong Redo-list (quét xuôi log).
+
+6.4. KỸ THUẬT PHÂN TRANG BÓNG (SHADOW PAGING)
+--------------------------------------------------------------------------------
+Là kỹ thuật phục hồi không dựa trên Log (áp dụng cho CSDL phân trang).
+- Duy trì 2 bảng trang:
+  + Current Page Table (Bảng trang hiện hành): Trỏ đến các trang dữ liệu trên đĩa đang được giao dịch cập nhật.
+  + Shadow Page Table (Bảng trang bóng): Trỏ đến các trang dữ liệu gốc ban đầu trên đĩa (được nhân bản khi bắt đầu giao dịch và giữ cố định).
+- Khi giao dịch thực hiện WRITE: Tạo trang mới trên đĩa, cập nhật Current Page Table trỏ đến trang mới. Bảng Shadow vẫn trỏ đến trang cũ.
+- Khi COMMIT: Đẩy các trang mới ra đĩa, cập nhật con trỏ `db_pointer` trỏ đến Current Page Table (biến nó thành Shadow mới).
+- Khi ABORT / Sự cố: Chỉ cần hủy các trang mới tạo và giữ nguyên con trỏ `db_pointer` trỏ về Shadow Page Table ban đầu.
+- Đánh giá: Phục hồi cực nhanh (không cần Undo/Redo log), nhưng gây phân mảnh đĩa cứng và tốn chi phí dọn rác (Garbage Collection).
+
+
+================================================================================
+PHỤ LỤC: BÀI TẬP LỚN, ĐỀ TÀI VÀ YÊU CẦU ĐÁNH GIÁ HỆ THỐNG
+================================================================================
+
+1. YÊU CẦU TỔ CHỨC BÀI TẬP LỚN
+- Hình thức: Làm việc theo nhóm (khoảng 5 sinh viên/nhóm).
+- Yêu cầu nhiệm vụ:
+  + Phân công công việc rõ ràng cho từng thành viên.
+  + Mỗi thành viên phải chứng minh được phần việc mình làm là đúng và đáp ứng hệ thống thực tế.
+  + Bản tổng kết và bảng đánh giá mức độ hoàn thành nhiệm vụ từng thành viên.
+- Sản phẩm nộp bắt buộc:
+  1. Báo cáo đề tài (File Word, PDF).
+  2. Slide thuyết trình (File PPTX).
+  3. Chương trình phần mềm hoàn chỉnh (Source code, File chạy .exe).
+
+2. DANH SÁCH ĐỀ TÀI BÀI TẬP LỚN GỢI Ý
+1. Quản lý bệnh nhân (Bệnh viện / Phòng khám).
+2. Quản lý cấp chứng chỉ ngoại ngữ.
+3. Quản lý khách sạn.
+4. Quản lý ký túc xá sinh viên.
+5. Quản lý thông tin Chứng khoán - Ngân hàng.
+6. Quản lý sinh viên đăng ký học phần tín chỉ.
+7. Quản lý vật tư và thiết bị.
+8. Quản lý trang trại nông nghiệp.
+9. Quản lý hồ sơ sinh viên.
+10. Quản lý siêu thị / Chuỗi cửa hàng.
+11. Quản lý bán hàng và tồn kho.
+12. Quản lý điểm sinh viên.
+13. Quản lý sách trong thư viện.
+14. Quản lý độc giả và mượn trả sách.
+
+3. TIÊU CHÍ ĐÁNH GIÁ VÀ BẢO VỆ ĐỀ TÀI
+1. Phân tích bài toán thực tế, xây dựng Mô hình Thực thể - Liên kết (ERD) và Mô hình Quan hệ phù hợp.
+2. Chuẩn hóa dữ liệu (Đạt chuẩn 3NF, BCNF).
+3. Cài đặt CSDL hoàn chỉnh trên HQTCSDL (như SQL Server) với đầy đủ Ràng buộc toàn vẹn (PK, FK, Check, Default).
+4. Viết các thủ tục lưu trữ (Stored Procedures), Hàm (Functions), Trigger nâng cao để xử lý nghiệp vụ tự động và kiểm soát tính đúng đắn dữ liệu.
+5. Xây dựng giao diện ứng dụng kết nối CSDL trực quan, mượt mà và chạy thử thành công.
+================================================================================
