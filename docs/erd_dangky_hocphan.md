@@ -222,10 +222,10 @@ erDiagram
 
     %% Module 4 DOWNSTREAM CONNECTION
     DANGKYHOCPHAN ||--o| KETQUAHOCTAP : "sinh_ra_ket_qua"
-    THANGDIEMCHU ..o{ KETQUAHOCTAP : "quy_doi"
+    THANGDIEMCHU ||..o{ KETQUAHOCTAP : "quy_doi"
 
     %% Module 5 SYSTEM CONNECTIONS
-    SINHVIEN ||--o{ HOCPHI : "phai_nong"
+    SINHVIEN ||--o{ HOCPHI : "phai_nop"
     HOCKY ||--o{ HOCPHI : "thuoc_ky"
     SINHVIEN ||--o| TAIKHOAN : "so_huu"
     GIANGVIEN ||--o| TAIKHOAN : "so_huu"
