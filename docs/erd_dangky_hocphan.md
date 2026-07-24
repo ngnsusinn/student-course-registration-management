@@ -72,8 +72,8 @@ erDiagram
     }
 
     CHUONGTRINHDAOTAO {
-        string MaNganh PK, FK
-        string MaMonHoc PK, FK
+        string MaNganh PK
+        string MaMonHoc PK
         int HocKyDuKien
         boolean BatBuoc
     }
@@ -91,8 +91,8 @@ erDiagram
     }
 
     MONHOC_TIENQUYET {
-        string MaMonHoc PK, FK
-        string MaMonTienQuyet PK, FK
+        string MaMonHoc PK
+        string MaMonTienQuyet PK
     }
 
     HOCKY {
@@ -141,8 +141,8 @@ erDiagram
     %% MODULE 3: ĐĂNG KÝ HỌC PHẦN (CENTER)
     %% ==========================================
     DANGKYHOCPHAN {
-        string MaSV PK, FK
-        string MaLHP PK, FK
+        string MaSV PK
+        string MaLHP PK
         datetime NgayDangKy
         string TrangThaiDangKy
         string GhiChu
@@ -152,8 +152,8 @@ erDiagram
     %% MODULE 4: ĐIỂM SỐ & KẾT QUẢ HỌC TẬP
     %% ==========================================
     KETQUAHOCTAP {
-        string MaSV PK, FK
-        string MaLHP PK, FK
+        string MaSV PK
+        string MaLHP PK
         float DiemChuyenCan
         float DiemGiuaKy
         float DiemCuoiKy
@@ -222,10 +222,10 @@ erDiagram
 
     %% Module 4 DOWNSTREAM CONNECTION
     DANGKYHOCPHAN ||--o| KETQUAHOCTAP : "sinh_ra_ket_qua"
-    THANGDIEMCHU ..o{ KETQUAHOCTAP : "quy_doi"
+    THANGDIEMCHU ||--o{ KETQUAHOCTAP : "quy_doi"
 
     %% Module 5 SYSTEM CONNECTIONS
-    SINHVIEN ||--o{ HOCPHI : "phai_nong"
+    SINHVIEN ||--o{ HOCPHI : "phai_nop"
     HOCKY ||--o{ HOCPHI : "thuoc_ky"
     SINHVIEN ||--o| TAIKHOAN : "so_huu"
     GIANGVIEN ||--o| TAIKHOAN : "so_huu"
