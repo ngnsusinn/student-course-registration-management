@@ -18,7 +18,8 @@ II. TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY)
 
 Tên Bảng (Table)   Tên Cột (Column / Attribute)    Kiểu dữ liệu (Data Type)    Ràng buộc / Khóa 
 
-KHOA                    MaKhoa                      VARCHAR(10)                PRIMARY KEY 
+KHOA                    
+                        MaKhoa                      VARCHAR(10)                PRIMARY KEY 
 
                         TenKhoa                     NVARCHAR(100)              UNIQUE, NOT NULL 
   
@@ -26,7 +27,8 @@ KHOA                    MaKhoa                      VARCHAR(10)                P
 
                         EmailKhoa                   VARCHAR(100)               UNIQUE, NOT NULL 
 
-NGANH                   MaNganh                     VARCHAR(10)                PRIMARY KEY 
+NGANH                   
+                        MaNganh                     VARCHAR(10)                PRIMARY KEY 
 
                         TenNganh                    NVARCHAR(100)              UNIQUE, NOT NULL 
 
@@ -34,7 +36,8 @@ NGANH                   MaNganh                     VARCHAR(10)                P
 
                         MaKhoa                      VARCHAR(10)                MaKhoa REFERENCES KHOA(MaKhoa) 
 
-LOP                     MaLop                       VARCHAR(15)                PRIMARY KEY 
+LOP                     
+                        MaLop                       VARCHAR(15)                PRIMARY KEY 
 
                         TenLop                      NVARCHAR(100)              NOT NULL 
 
@@ -42,7 +45,8 @@ LOP                     MaLop                       VARCHAR(15)                P
 
                         MaNganh                     VARCHAR(10)                MaNganh REFERENCES NGANH(MaNganh) 
 
-SINH_VIEN               MaSV                        VARCHAR(12)                PRIMARY KEY 
+SINH_VIEN               
+                        MaSV                        VARCHAR(12)                PRIMARY KEY 
 
                         HoTen                       NVARCHAR(100)              NOT NULL 
 
@@ -60,7 +64,8 @@ SINH_VIEN               MaSV                        VARCHAR(12)                P
 
                        QueQuan                      NVARCHAR(100) 
 
-CHUONGTRINHDAOTAO      MaCTDT                       VARCHAR(10)                PRIMARY KEY               
+CHUONGTRINHDAOTAO      
+                       MaCTDT                       VARCHAR(10)                PRIMARY KEY               
                        
                        TenCTDT                      NVARCHAR(100)              NOT NULL                  
                        
