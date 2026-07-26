@@ -58,7 +58,17 @@ SINH_VIEN               MaSV                        VARCHAR(12)                P
 
                        QueQuan                      NVARCHAR(100) 
 
- III. ĐẶC TẢ RÀNG BUỘC TOÀN VẸN (INTEGRITY CONSTRAINTS) 
+CHUONGTRINHDAOTAO      MaCTDT                       VARCHAR(10)                PRIMARY KEY               
+                       
+                       TenCTDT                      NVARCHAR(100)              NOT NULL                  
+                       
+                       NamApDung                    INT                        NOT NULL                  
+                       
+                       TongSoTinChi                 INT                        NOT NULL                  
+                       
+                       MaNganh                      VARCHAR(10)                MaNganh REFERENCES NGANH(MaNganh) 
+      
+III. ĐẶC TẢ RÀNG BUỘC TOÀN VẸN (INTEGRITY CONSTRAINTS) 
 
 1. Ràng buộc toàn vẹn thực thể (Entity Integrity) 
 
@@ -70,7 +80,13 @@ Khóa chính của cả 4 bảng (MaKhoa, MaNganh, MaLop, MaSV) đều được 
 
 Hành vi ON DELETE RESTRICT (Ngăn chặn): Nếu người quản trị thực hiện lệnh DELETE FROM KHOA WHERE MaKhoa = 'CNTT', hệ thống sẽ kiểm tra. Nếu trong bảng NGANH vẫn còn bản ghi tham chiếu đến mã khoa này, giao dịch sẽ bị Hủy (Rollback) để chống mất mát dữ liệu dây chuyền. 
 
-Quy tắc này áp dụng tương tự cho các quan hệ KHOA → NGANH, NGANH → LOP và LOP → SINH_VIEN.  
+Quy tắc này áp dụng cho các quan hệ:
+
+KHOA → NGANH
+NGANH → CHUONGTRINHDAOTAO
+NGANH → LOP
+CHUONGTRINHDAOTAO → LOP
+LOP → SINH_VIEN
 
 3. Ràng buộc miền giá trị (Domain Constraints / Check Constraints) 
 
@@ -84,6 +100,10 @@ Bảng LOP: CHECK (NienKhoa BETWEEN 2000 AND 2030)
 
 Bảng NGANH: CHECK (ThoiGianDaoTao > 0) 
 
- 
+Bảng CHUONGTRINHDAOTAO:
+
+CHECK (NamApDung >= 2000)
+
+CHECK (TongSoTinChi > 0)
 
  
