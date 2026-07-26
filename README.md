@@ -10,6 +10,8 @@ LOP (MaLop [PK], TenLop, NienKhoa, MaNganh [FK])
 
 SINH_VIEN (MaSV [PK], HoTen, NgaySinh, GioiTinh, Email, SoDienThoai, QueQuan, TrangThaiHoc, MaLop [FK]) 
 
+CHUONGTRINHDAOTAO ( MaCTDT [PK], TenCTDT, NamApDung, TongSoTinChi, MaNganh [FK])
+
 II. TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY) 
 
 Đặc tả chi tiết về kiểu dữ liệu (SQL Server / MySQL): 
