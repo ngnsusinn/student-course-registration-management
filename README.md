@@ -7,13 +7,13 @@
 * **SINH_VIEN** (MaSV **[PK]**, HoTen, NgaySinh, GioiTinh, Email, SoDienThoai, QueQuan, TrangThaiHoc, MaLop **[FK]**)
 * **CHUONGTRINHDAOTAO** (MaCTDT **[PK]**, TenCTDT, NamApDung, TongSoTinChi, MaNganh **[FK]**)
 
----
 
-### II. TỪ ĐIỂN DỮ LIỆU (DATA DICTIONARY)
+
+### II. TỪ ĐIỂN DỮ LIỆU 
 Đặc tả chi tiết về kiểu dữ liệu (Đề xuất áp dụng cho hệ quản trị SQL Server / MySQL):
 
 **1. Bảng KHOA**
-| Tên Cột (Attribute) | Kiểu dữ liệu (Data Type) | Ràng buộc / Khóa (Constraints) |
+| Tên Cột | Kiểu dữ liệu | Ràng buộc / Khóa |
 | :--- | :--- | :--- |
 | MaKhoa | VARCHAR(10) | **PRIMARY KEY** |
 | TenKhoa | NVARCHAR(100) | UNIQUE, NOT NULL |
@@ -21,7 +21,7 @@
 | EmailKhoa | VARCHAR(100) | UNIQUE, NOT NULL |
 
 **2. Bảng NGANH**
-| Tên Cột (Attribute) | Kiểu dữ liệu (Data Type) | Ràng buộc / Khóa (Constraints) |
+| Tên Cột | Kiểu dữ liệu | Ràng buộc / Khóa |
 | :--- | :--- | :--- |
 | MaNganh | VARCHAR(10) | **PRIMARY KEY** |
 | TenNganh | NVARCHAR(100) | UNIQUE, NOT NULL |
@@ -29,7 +29,7 @@
 | MaKhoa | VARCHAR(10) | **FOREIGN KEY** REFERENCES KHOA(MaKhoa) |
 
 **3. Bảng LOP**
-| Tên Cột (Attribute) | Kiểu dữ liệu (Data Type) | Ràng buộc / Khóa (Constraints) |
+| Tên Cột | Kiểu dữ liệu | Ràng buộc / Khóa |
 | :--- | :--- | :--- |
 | MaLop | VARCHAR(15) | **PRIMARY KEY** |
 | TenLop | NVARCHAR(100) | NOT NULL |
@@ -37,7 +37,7 @@
 | MaNganh | VARCHAR(10) | **FOREIGN KEY** REFERENCES NGANH(MaNganh) |
 
 **4. Bảng CHUONGTRINHDAOTAO**
-| Tên Cột (Attribute) | Kiểu dữ liệu (Data Type) | Ràng buộc / Khóa (Constraints) |
+| Tên Cột | Kiểu dữ liệu | Ràng buộc / Khóa |
 | :--- | :--- | :--- |
 | MaCTDT | VARCHAR(10) | **PRIMARY KEY** |
 | TenCTDT | NVARCHAR(100) | NOT NULL |
@@ -46,7 +46,7 @@
 | MaNganh | VARCHAR(10) | **FOREIGN KEY** REFERENCES NGANH(MaNganh) |
 
 **5. Bảng SINH_VIEN**
-| Tên Cột (Attribute) | Kiểu dữ liệu (Data Type) | Ràng buộc / Khóa (Constraints) |
+| Tên Cột | Kiểu dữ liệu | Ràng buộc / Khóa |
 | :--- | :--- | :--- |
 | MaSV | VARCHAR(12) | **PRIMARY KEY** |
 | HoTen | NVARCHAR(100) | NOT NULL |
@@ -58,14 +58,14 @@
 | QueQuan | NVARCHAR(100) | |
 | MaLop | VARCHAR(15) | **FOREIGN KEY** REFERENCES LOP(MaLop) |
 
----
 
-### III. ĐẶC TẢ RÀNG BUỘC TOÀN VẸN (INTEGRITY CONSTRAINTS)
 
-#### 1. Ràng buộc toàn vẹn thực thể (Entity Integrity)
+### III. ĐẶC TẢ RÀNG BUỘC TOÀN VẸN 
+
+#### 1. Ràng buộc toàn vẹn thực thể
 Khóa chính của cả 5 bảng (`MaKhoa`, `MaNganh`, `MaLop`, `MaSV`, `MaCTDT`) đều được thiết lập ràng buộc `PRIMARY KEY`. Hệ quản trị CSDL sẽ tự động đảm bảo khóa chính không được để trống (`NOT NULL`) và không được trùng lặp.
 
-#### 2. Ràng buộc toàn vẹn tham chiếu (Referential Integrity)
+#### 2. Ràng buộc toàn vẹn tham chiếu 
 Áp dụng ràng buộc `FOREIGN KEY` với cơ chế hành vi khi xóa/sửa dữ liệu như sau:
 * **Hành vi `ON DELETE RESTRICT` (Ngăn chặn):** Nếu người quản trị thực hiện lệnh `DELETE FROM KHOA WHERE MaKhoa = 'CNTT'`, hệ thống sẽ kiểm tra. Nếu trong bảng `NGANH` vẫn còn bản ghi tham chiếu đến mã khoa này, giao dịch sẽ bị Hủy (Rollback) để chống mất mát dữ liệu dây chuyền.
 * **Quy tắc này áp dụng cho các quan hệ:**
@@ -74,7 +74,7 @@ Khóa chính của cả 5 bảng (`MaKhoa`, `MaNganh`, `MaLop`, `MaSV`, `MaCTDT`
   * NGANH $\rightarrow$ LOP
   * LOP $\rightarrow$ SINH_VIEN
 
-#### 3. Ràng buộc miền giá trị (Domain Constraints / Check Constraints)
+#### 3. Ràng buộc miền giá trị 
 * **UNIQUE:** Các cột `TenKhoa`, `TenNganh`, `Email` (trong bảng sinh viên) phải mang giá trị duy nhất.
 * **CHECK:**
   * Bảng **SINH_VIEN**: `CHECK (GioiTinh IN (0, 1))` và `CHECK (TrangThaiHoc IN (1, 2, 3))`.
