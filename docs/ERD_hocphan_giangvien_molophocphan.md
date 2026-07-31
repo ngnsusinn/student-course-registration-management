@@ -197,3 +197,120 @@ erDiagram
     GiangVien ||--o{ LopHocPhan : "phân công"
     HocKy ||--o{ LopHocPhan : "thuộc"
 ```
+
+
+
+/*==========================================================
+    DATABASE
+==========================================================*/
+if db_id('DangKyHocPhan') is not null
+begin
+    alter database DangKyHocPhan set single_user with rollback immediate;
+    drop database DangKyHocPhan;
+end
+
+create database DangKyHocPhan;
+use DangKyHocPhan;
+
+create table Khoa(
+    MaKhoa varchar(10) not null,
+    TenKhoa nvarchar(100) not null,
+    constraint PK_Khoa primary key(MaKhoa),
+    constraint UQ_Khoa unique(TenKhoa)
+);
+
+create table Nganh(
+    MaNganh varchar(10) not null,
+    TenNganh nvarchar(100) not null,
+    MaKhoa varchar(10) not null,
+    constraint PK_Nganh primary key(MaNganh),
+    constraint FK_Nganh_Khoa foreign key(MaKhoa) references Khoa(MaKhoa)
+);
+
+create table ChuongTrinhDaoTao(
+    MaCTDT varchar(10) not null,
+    MaNganh varchar(10) not null,
+    NamApDung int not null,
+    MoTa nvarchar(255),
+    constraint PK_CTDT primary key(MaCTDT),
+    constraint FK_CTDT_Nganh foreign key(MaNganh) references Nganh(MaNganh),
+    constraint CK_CTDT_Nam check(NamApDung>=2000)
+);
+
+create table HocPhan(
+    MaHP varchar(10) not null,
+    TenHP nvarchar(150) not null,
+    SoTinChi tinyint not null,
+    SoTietLyThuyet tinyint not null,
+    SoTietThucHanh tinyint not null,
+    MaCTDT varchar(10) not null,
+    constraint PK_HocPhan primary key(MaHP),
+    constraint FK_HP_CTDT foreign key(MaCTDT) references ChuongTrinhDaoTao(MaCTDT),
+    constraint CK_HP_TinChi check(SoTinChi>0),
+    constraint CK_HP_LT check(SoTietLyThuyet>=0),
+    constraint CK_HP_TH check(SoTietThucHanh>=0),
+    constraint CK_HP_TongTiet check(SoTietLyThuyet+SoTietThucHanh>0),
+    constraint UQ_HP unique(TenHP,MaCTDT)
+);
+
+create table HocPhan_TienQuyet(
+    MaHP varchar(10) not null,
+    MaHocPhanTienQuyet varchar(10) not null,
+    constraint PK_HP_TQ primary key(MaHP,MaHocPhanTienQuyet),
+    constraint FK_HP_TQ_HP foreign key(MaHP) references HocPhan(MaHP),
+    constraint FK_HP_TQ_HP2 foreign key(MaHocPhanTienQuyet) references HocPhan(MaHP),
+    constraint CK_HP_TQ check(MaHP<>MaHocPhanTienQuyet)
+);
+
+create table GiangVien(
+    MaGV varchar(10) not null,
+    HoTen nvarchar(100) not null,
+    NgaySinh date,
+    GioiTinh bit,
+    Email varchar(100) not null,
+    SoDienThoai varchar(15),
+    MaKhoa varchar(10) not null,
+    ChucVu nvarchar(50),
+    TrangThai nvarchar(30) default N'Đang công tác',
+    constraint PK_GiangVien primary key(MaGV),
+    constraint UQ_GV_Email unique(Email),
+    constraint FK_GV_Khoa foreign key(MaKhoa) references Khoa(MaKhoa)
+);
+
+create table HocKy(
+    MaHocKy varchar(10) not null,
+    TenHocKy nvarchar(30) not null,
+    NamHoc varchar(9) not null,
+    NgayBatDau date not null,
+    NgayKetThuc date not null,
+    constraint PK_HocKy primary key(MaHocKy),
+    constraint UQ_HocKy unique(TenHocKy,NamHoc),
+    constraint CK_HocKy_Ngay check(NgayBatDau<NgayKetThuc)
+);
+
+create table LopHocPhan(
+    MaLHP varchar(10) not null,
+    MaHP varchar(10) not null,
+    MaGV varchar(10) not null,
+    MaHocKy varchar(10) not null,
+    PhongHoc nvarchar(30) not null,
+    LichHoc nvarchar(100) not null,
+    SiSoToiDa tinyint not null,
+    TrangThai nvarchar(30) default N'Mở đăng ký',
+    constraint PK_LopHocPhan primary key(MaLHP),
+    constraint FK_LHP_HP foreign key(MaHP) references HocPhan(MaHP),
+    constraint FK_LHP_GV foreign key(MaGV) references GiangVien(MaGV),
+    constraint FK_LHP_HK foreign key(MaHocKy) references HocKy(MaHocKy),
+    constraint CK_LHP_SiSo check(SiSoToiDa>0)
+);
+
+alter table LopHocPhan
+add constraint UQ_Phong_Lich unique(PhongHoc,LichHoc,MaHocKy);
+
+alter table LopHocPhan
+add constraint UQ_GV_Lich unique(MaGV,LichHoc,MaHocKy);
+
+create index IDX_HP_CTDT on HocPhan(MaCTDT);
+create index IDX_LHP_HP on LopHocPhan(MaHP);
+create index IDX_LHP_GV on LopHocPhan(MaGV);
+create index IDX_LHP_HK on LopHocPhan(MaHocKy);
