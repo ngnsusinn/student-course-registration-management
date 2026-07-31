@@ -153,7 +153,6 @@ Thực thể LOPHOCPHAN lưu thông tin các lớp học phần được mở tr
 
 
 
-
 ```mermaid
 erDiagram
     MONHOC_TIENQUYET {
@@ -212,7 +211,6 @@ erDiagram
         string TrangThaiDot
     }
 
-    %% Các mối quan hệ (Relationships)
     MONHOC ||--o{ MONHOC_TIENQUYET : "co_mon_tien_quyet"
     MONHOC ||--o{ MONHOC_TIENQUYET : "la_mon_tien_quyet"
     MONHOC ||--o{ LOPHOCPHAN : "thuoc_mon"
@@ -220,8 +218,6 @@ erDiagram
     GIANGVIEN ||--o{ LOPHOCPHAN : "giang_day"
     LOPHOCPHAN ||--o{ LICHHOC : "co_lich_hoc"
     PHONGHOC ||--o{ LICHHOC : "xep_tai"
-
-
 
 
 /*==========================================================
