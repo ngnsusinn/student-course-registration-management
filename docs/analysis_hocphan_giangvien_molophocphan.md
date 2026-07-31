@@ -99,42 +99,20 @@ Quy tắc nghiệp vụ
 
 ## 5. Luồng xử lý nghiệp vụ
 
-                Phòng Đào tạo
-                       │
-                       ▼
-            Quản lý học phần
-                       │
-                       ▼
-           Quản lý giảng viên
-                       │
-                       ▼
-               Chọn học kỳ
-                       │
-                       ▼
-         Phân công giảng viên
-                       │
-                       ▼
-               Xếp lịch học
-                       │
-                       ▼
-          Kiểm tra ràng buộc
-     (Giảng viên, phòng học,
-       học phần, sĩ số,...)
-                       │
-         ┌─────────────┴─────────────┐
-         │                           │
-         ▼                         	 ▼
-     Không hợp lệ              	  Hợp lệ
-         │                           │
-         ▼                           ▼
-   Thông báo lỗi               	Lưu dữ liệu
-                                    │
-                                    ▼
-             				Mở lớp học phần
-                                  	 │
-                                     ▼
-                        Sinh viên đăng ký học phần
-
+```mermaid
+graph TD
+    A[Phòng Đào tạo] --> B[Quản lý học phần]
+    B --> C[Quản lý giảng viên]
+    C --> D[Chọn học kỳ]
+    D --> E[Phân công giảng viên]
+    E --> F[Xếp lịch học]
+    F --> G{Kiểm tra ràng buộc<br>Giảng viên, phòng học, học phần, sĩ số,...}
+    
+    G -- Không hợp lệ --> H[Thông báo lỗi]
+    G -- Hợp lệ --> I[Lưu dữ liệu & Mở lớp học phần]
+    I --> J[Sinh viên đăng ký học phần]
+```
+    
 ## 6. Phân tích dữ liệu
 Module sử dụng các thực thể chính:
 •	HOCPHAN: lưu thông tin học phần. 
