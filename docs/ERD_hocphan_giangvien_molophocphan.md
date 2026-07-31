@@ -90,24 +90,43 @@ Thực thể LOPHOCPHAN lưu thông tin các lớp học phần được mở tr
 
 ### 3.1 Ràng buộc toàn vẹn
 ####  3.1.1 Ràng buộc thực thể
+
 •	Mỗi bảng phải có khóa chính (Primary Key) duy nhất. 
+
 •	Khóa chính không được để trống (NOT NULL). 
+
 #### 3.1.2 Ràng buộc tham chiếu
+
 •	MaCTDT trong bảng HOCPHAN phải tồn tại trong bảng CHUONGTRINHDAOTAO. 
+
 •	MaHP, MaGV và MaHocKy trong bảng LOPHOCPHAN phải tồn tại trong các bảng tương ứng. 
+
 •	MaHP và MaHocPhanTienQuyet trong bảng HOCPHAN_TIENQUYET phải tham chiếu đến bảng HOCPHAN. 
+
 3.1.3 Ràng buộc miền giá trị
+
 •	Số tín chỉ phải lớn hơn 0. 
+
 •	Số tiết lý thuyết và thực hành không được âm. 
+
 •	Sĩ số tối đa phải lớn hơn 0. 
+
 •	Ngày bắt đầu học kỳ phải nhỏ hơn ngày kết thúc. 
+
 #### 3.1.4 Ràng buộc nghiệp vụ
-•	Không được mở lớp học phần khi học phần chưa tồn tại. 
+
+•	Không được mở lớp học phần khi học phần chưa tồn tại.
+
 •	Không được phân công một giảng viên giảng dạy hai lớp học phần trùng thời gian. 
+
 •	Không được sử dụng cùng một phòng học cho hai lớp học phần tại cùng một thời điểm. 
+
 •	Không được xóa học phần hoặc giảng viên khi vẫn còn được tham chiếu trong bảng LOPHOCPHAN. 
+
 •	Khi số lượng sinh viên đăng ký đạt sĩ số tối đa, hệ thống sẽ ngừng tiếp nhận đăng ký mới cho lớp học phần
+
 •	Học phần có thể có hoặc không có học phần tiên quyết. Nếu có thì học phần tiên quyết phải tồn tại trong hệ thống.
+
 •	
 CHUONGTRINHDAOTAO
         │1
@@ -210,16 +229,21 @@ erDiagram
 /*==========================================================
     DATABASE
 ==========================================================*/
+
 if db_id('DangKyHocPhan') is not null
+
 begin
+
     alter database DangKyHocPhan set single_user with rollback immediate;
     drop database DangKyHocPhan;
+    
 end
 
 create database DangKyHocPhan;
 use DangKyHocPhan;
 
 create table Khoa(
+
     MaKhoa varchar(10) not null,
     TenKhoa nvarchar(100) not null,
     constraint PK_Khoa primary key(MaKhoa),
@@ -227,6 +251,7 @@ create table Khoa(
 );
 
 create table Nganh(
+
     MaNganh varchar(10) not null,
     TenNganh nvarchar(100) not null,
     MaKhoa varchar(10) not null,
@@ -235,6 +260,7 @@ create table Nganh(
 );
 
 create table ChuongTrinhDaoTao(
+
     MaCTDT varchar(10) not null,
     MaNganh varchar(10) not null,
     NamApDung int not null,
@@ -245,6 +271,7 @@ create table ChuongTrinhDaoTao(
 );
 
 create table HocPhan(
+
     MaHP varchar(10) not null,
     TenHP nvarchar(150) not null,
     SoTinChi tinyint not null,
@@ -261,6 +288,7 @@ create table HocPhan(
 );
 
 create table HocPhan_TienQuyet(
+
     MaHP varchar(10) not null,
     MaHocPhanTienQuyet varchar(10) not null,
     constraint PK_HP_TQ primary key(MaHP,MaHocPhanTienQuyet),
@@ -270,6 +298,7 @@ create table HocPhan_TienQuyet(
 );
 
 create table GiangVien(
+
     MaGV varchar(10) not null,
     HoTen nvarchar(100) not null,
     NgaySinh date,
@@ -285,6 +314,7 @@ create table GiangVien(
 );
 
 create table HocKy(
+
     MaHocKy varchar(10) not null,
     TenHocKy nvarchar(30) not null,
     NamHoc varchar(9) not null,
@@ -296,6 +326,7 @@ create table HocKy(
 );
 
 create table LopHocPhan(
+
     MaLHP varchar(10) not null,
     MaHP varchar(10) not null,
     MaGV varchar(10) not null,
@@ -312,12 +343,18 @@ create table LopHocPhan(
 );
 
 alter table LopHocPhan
+
 add constraint UQ_Phong_Lich unique(PhongHoc,LichHoc,MaHocKy);
 
 alter table LopHocPhan
+
 add constraint UQ_GV_Lich unique(MaGV,LichHoc,MaHocKy);
 
 create index IDX_HP_CTDT on HocPhan(MaCTDT);
+
 create index IDX_LHP_HP on LopHocPhan(MaHP);
+
 create index IDX_LHP_GV on LopHocPhan(MaGV);
+
 create index IDX_LHP_HK on LopHocPhan(MaHocKy);
+
