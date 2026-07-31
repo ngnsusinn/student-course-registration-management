@@ -154,6 +154,75 @@ Thực thể LOPHOCPHAN lưu thông tin các lớp học phần được mở tr
 
 
 
+```mermaid
+erDiagram
+    MONHOC_TIENQUYET {
+        string MaMonHoc PK "FK"
+        string MaMonTienQuyet PK "FK"
+    }
+
+    PHONGHOC {
+        string MaPhong PK
+        string TenPhong
+        int SucChua
+    }
+
+    LOPHOCPHAN {
+        string MaLHP PK
+        string TenLHP
+        int SiSoToiDa
+        int SiSoHienTai
+        string TrangThaiLop
+        string MaMonHoc FK
+        string MaHocKy FK
+        string MaGV FK
+    }
+
+    MONHOC {
+        string MaMonHoc PK
+        string TenMonHoc
+        int SoTinChi
+        int SoTietLyThuyet
+        int SoTietThucHanh
+        string MaKhoa FK
+    }
+
+    GIANGVIEN {
+        string MaGV PK
+        string HoTen
+        string Email
+        string MaKhoa FK
+    }
+
+    LICHHOC {
+        string MaLichHoc PK
+        string MaLHP FK
+        string MaPhong FK
+        int Thu
+        int TietBatDau
+        int SoTiet
+    }
+
+    HOCKY {
+        string MaHocKy PK
+        string TenHocKy
+        string NamHoc
+        date TuNgay
+        date DenNgay
+        string TrangThaiDot
+    }
+
+    %% Các mối quan hệ (Relationships)
+    MONHOC ||--o{ MONHOC_TIENQUYET : "co_mon_tien_quyet"
+    MONHOC ||--o{ MONHOC_TIENQUYET : "la_mon_tien_quyet"
+    MONHOC ||--o{ LOPHOCPHAN : "thuoc_mon"
+    HOCKY ||--o{ LOPHOCPHAN : "thuoc_hoc_ky"
+    GIANGVIEN ||--o{ LOPHOCPHAN : "giang_day"
+    LOPHOCPHAN ||--o{ LICHHOC : "co_lich_hoc"
+    PHONGHOC ||--o{ LICHHOC : "xep_tai"
+
+
+
 
 /*==========================================================
 
