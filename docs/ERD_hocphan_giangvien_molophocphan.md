@@ -40,11 +40,10 @@ Thực thể GIANGVIEN lưu trữ thông tin giảng viên phục vụ cho việ
 | MaKhoa | varchar(10) | FK | Mã khoa |
 
 ### 2.4 Thực thể HOCKY
-Ý nghĩa
 
-Thực thể HOCKY lưu thông tin các học kỳ được sử dụng để tổ chức mở lớp học phần trong từng năm học.
+**Ý nghĩa:** Thực thể HOCKY lưu thông tin các học kỳ được sử dụng để tổ chức mở lớp học phần trong từng năm học.
 
-|| Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa |
+| Thuộc tính | Kiểu dữ liệu | Ràng buộc | Ý nghĩa |
 | :--- | :--- | :--- | :--- |
 | MaHocKy | varchar(10) | PK, NOT NULL | Mã học kỳ |
 | TenHocKy | nvarchar(30) | NOT NULL | Tên học kỳ |
