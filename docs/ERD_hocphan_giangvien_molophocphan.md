@@ -154,78 +154,69 @@ Thực thể LOPHOCPHAN lưu thông tin các lớp học phần được mở tr
 
 ```mermaid
 erDiagram
-    Khoa {
-        varchar MaKhoa PK
-        nvarchar TenKhoa
+    MONHOC_TIENQUYET {
+        string MaMonHoc PK "FK"
+        string MaMonTienQuyet PK "FK"
     }
 
-    Nganh {
-        varchar MaNganh PK
-        nvarchar TenNganh
-        varchar MaKhoa FK
+    PHONGHOC {
+        string MaPhong PK
+        string TenPhong
+        int SucChua
     }
 
-    ChuongTrinhDaoTao {
-        varchar MaCTDT PK
-        varchar MaNganh FK
-        int NamApDung
-        nvarchar MoTa
+    LOPHOCPHAN {
+        string MaLHP PK
+        string TenLHP
+        int SiSoToiDa
+        int SiSoHienTai
+        string TrangThaiLop
+        string MaMonHoc FK
+        string MaHocKy FK
+        string MaGV FK
     }
 
-    HocPhan {
-        varchar MaHP PK
-        nvarchar TenHP
-        tinyint SoTinChi
-        tinyint SoTietLyThuyet
-        tinyint SoTietThucHanh
-        varchar MaCTDT FK
+    MONHOC {
+        string MaMonHoc PK
+        string TenMonHoc
+        int SoTinChi
+        int SoTietLyThuyet
+        int SoTietThucHanh
+        string MaKhoa FK
     }
 
-    HocPhan_TienQuyet {
-        varchar MaHP PK, FK
-        varchar MaHocPhanTienQuyet PK, FK
+    GIANGVIEN {
+        string MaGV PK
+        string HoTen
+        string Email
+        string MaKhoa FK
     }
 
-    GiangVien {
-        varchar MaGV PK
-        nvarchar HoTen
-        date NgaySinh
-        bit GioiTinh
-        varchar Email
-        varchar SoDienThoai
-        varchar MaKhoa FK
-        nvarchar ChucVu
-        nvarchar TrangThai
+    LICHHOC {
+        string MaLichHoc PK
+        string MaLHP FK
+        string MaPhong FK
+        int Thu
+        int TietBatDau
+        int SoTiet
     }
 
-    HocKy {
-        varchar MaHocKy PK
-        nvarchar TenHocKy
-        varchar NamHoc
-        date NgayBatDau
-        date NgayKetThuc
+    HOCKY {
+        string MaHocKy PK
+        string TenHocKy
+        string NamHoc
+        date TuNgay
+        date DenNgay
+        string TrangThaiDot
     }
 
-    LopHocPhan {
-        varchar MaLHP PK
-        varchar MaHP FK
-        varchar MaGV FK
-        varchar MaHocKy FK
-        nvarchar PhongHoc
-        nvarchar LichHoc
-        tinyint SiSoToiDa
-        nvarchar TrangThai
-    }
-
-    %% Quan hệ giữa các bảng (Relationships)
-    Khoa ||--o{ Nganh : "có"
-    Khoa ||--o{ GiangVien : "thuộc"
-    Nganh ||--o{ ChuongTrinhDaoTao : "có"
-    ChuongTrinhDaoTao ||--o{ HocPhan : "chứa"
-    HocPhan ||--o{ HocPhan_TienQuyet : "yêu cầu"
-    HocPhan ||--o{ LopHocPhan : "mở"
-    GiangVien ||--o{ LopHocPhan : "phân công"
-    HocKy ||--o{ LopHocPhan : "thuộc"
+    MONHOC ||--o{ MONHOC_TIENQUYET : "co_mon_tien_quyet"
+    MONHOC ||--o{ MONHOC_TIENQUYET : "la_mon_tien_quyet"
+    MONHOC ||--o{ LOPHOCPHAN : "thuoc_mon"
+    HOCKY ||--o{ LOPHOCPHAN : "thuoc_hoc_ky"
+    GIANGVIEN ||--o{ LOPHOCPHAN : "giang_day"
+    LOPHOCPHAN ||--o{ LICHHOC : "co_lich_hoc"
+    PHONGHOC ||--o{ LICHHOC : "xep_tai"
 ```
 
 
