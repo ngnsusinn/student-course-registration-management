@@ -1,48 +1,44 @@
 erDiagram
-    %% Định nghĩa các mối quan hệ (Relationships)
-    KHOA ||--o{ NGANH : "quản lý"
-    NGANH ||--o{ CHUONGTRINHDAOTAO : "ban hành"
-    NGANH ||--o{ LOP_SINHHOAT : "bao gồm"
-    LOP_SINHHOAT ||--o{ SINHVIEN : "tập hợp"
+    KHOA ||--|{ NGANH : "quan_ly"
+    NGANH ||--|{ CHUONGTRINHDAOTAO : "ban_hanh"
+    NGANH ||--|{ LOP_SINHHOAT : "mo_lop"
+    LOP_SINHHOAT ||--|{ SINHVIEN : "bao_gom"
 
-    %% Định nghĩa các thực thể và thuộc tính
     KHOA {
-        VARCHAR MaKhoa PK 
-        NVARCHAR TenKhoa
-        VARCHAR DienThoaiKhoa
-        VARCHAR EmailKhoa
+        VARCHAR_10 MaKhoa PK
+        NVARCHAR_100 TenKhoa
+        VARCHAR_15 DienThoai
+        VARCHAR_100 EmailKhoa
     }
 
     NGANH {
-        VARCHAR MaNganh PK 
-        NVARCHAR TenNganh
+        VARCHAR_10 MaNganh PK
+        NVARCHAR_100 TenNganh
         DECIMAL ThoiGianDaoTao
-        VARCHAR MaKhoa FK 
+        VARCHAR_10 MaKhoa FK
     }
 
     CHUONGTRINHDAOTAO {
-        VARCHAR MaCTDT PK 
-        NVARCHAR TenCTDT
+        VARCHAR_10 MaCTDT PK
+        NVARCHAR_100 TenCTDT
         INT NamApDung
         INT TongSoTinChi
-        VARCHAR MaNganh FK 
+        VARCHAR_10 MaNganh FK
     }
 
     LOP_SINHHOAT {
-        VARCHAR MaLop PK 
-        NVARCHAR TenLop
+        VARCHAR_15 MaLop PK
+        NVARCHAR_100 TenLop
         INT NienKhoa
-        VARCHAR MaNganh FK 
+        VARCHAR_10 MaNganh FK
     }
 
     SINHVIEN {
-        VARCHAR MaSV PK 
-        NVARCHAR HoTen
+        VARCHAR_12 MaSV PK
+        NVARCHAR_100 HoTen
         DATE NgaySinh
         TINYINT GioiTinh
+        VARCHAR_100 Email
+        VARCHAR_15 SoDienThoai
         TINYINT TrangThaiHoc
-        VARCHAR Email
-        VARCHAR SoDienThoai
-        NVARCHAR QueQuan
-        VARCHAR MaLop FK 
-    }
+        VARCHAR_15 MaLop FK
