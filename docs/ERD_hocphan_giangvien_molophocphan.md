@@ -152,6 +152,7 @@ Thực thể LOPHOCPHAN lưu thông tin các lớp học phần được mở tr
 •	Môn học có thể có hoặc không có môn học tiên quyết; nếu có thì môn học tiên quyết phải tồn tại trong hệ thống. 
 
 •	
+```mermaid
 graph TD
     MONHOC --> MONHOC_TIENQUYET
     MONHOC --> LOPHOCPHAN
@@ -160,8 +161,7 @@ graph TD
     LOPHOCPHAN --> LICHHOC
     LICHHOC --> PHONGHOC
 
-
-
+```mermaid
 erDiagram
     MONHOC_TIENQUYET {
         string MaMonHoc PK, FK
