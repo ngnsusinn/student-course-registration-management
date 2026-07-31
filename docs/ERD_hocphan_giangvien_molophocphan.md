@@ -52,6 +52,7 @@ Thực thể HOCKY lưu thông tin các học kỳ được sử dụng để t�
 | DenNgay | date | NOT NULL, CHECK (TuNgay < DenNgay) | Ngày kết thúc học kỳ |
 | TrangThaiDot | nvarchar(30) | NOT NULL | Trạng thái đợt học |
 
+
 ### 2.5 Thực thể PHONGHOC
 Ý nghĩa
 
