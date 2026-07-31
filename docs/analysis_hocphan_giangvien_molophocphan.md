@@ -12,22 +12,26 @@ Sau khi các lớp học phần được tạo thành công, dữ liệu sẽ đ
 •	Xây dựng lịch học và phòng học. 
 •	Chuẩn bị dữ liệu phục vụ sinh viên đăng ký học phần. 
 ## 2. Tác nhân
-Tác nhân	Vai trò
-Phòng Đào tạo	Quản lý học phần, giảng viên và mở lớp học phần
-Giảng viên	Được phân công giảng dạy các lớp học phần
-Sinh viên	Xem danh sách lớp học phần để đăng ký
+## 2. Tác nhân
+
+| Tác nhân | Vai trò |
+| :--- | :--- |
+| Phòng Đào tạo | Quản lý học phần, giảng viên và mở lớp học phần |
+| Giảng viên | Được phân công giảng dạy các lớp học phần |
+| Sinh viên | Xem danh sách lớp học phần để đăng ký |
 
 ## 3. Use Case
-STT	Use Case	Tác nhân	Mô tả
-1	Quản lý học phần	Phòng Đào tạo	Thêm, sửa, xóa và tra cứu thông tin học phần.
-2	Quản lý giảng viên	Phòng Đào tạo	Thêm, sửa, xóa và cập nhật thông tin giảng viên.
-3	Chọn học kỳ	Phòng Đào tạo	Chọn học kỳ để thực hiện mở lớp học phần.
-4	Mở lớp học phần	Phòng Đào tạo	Tạo lớp học phần cho học phần đã chọn.
-5	Phân công giảng viên	Phòng Đào tạo	Phân công giảng viên phụ trách giảng dạy lớp học phần.
-6	Xếp lịch học	Phòng Đào tạo	Thiết lập lịch học, phòng học và sĩ số tối đa cho lớp học phần.
-7	Xem lớp học phần được phân công	Giảng viên	Xem danh sách các lớp học phần được phân công giảng dạy.
-8	Xem danh sách lớp học phần	Sinh viên	Xem danh sách lớp học phần đã được mở để đăng ký.
 
+| STT | Use Case | Tác nhân | Mô tả |
+| :---: | :--- | :--- | :--- |
+| 1 | Quản lý học phần | Phòng Đào tạo | Thêm, sửa, xóa và tra cứu thông tin học phần. |
+| 2 | Quản lý giảng viên | Phòng Đào tạo | Thêm, sửa, xóa và cập nhật thông tin giảng viên. |
+| 3 | Chọn học kỳ | Phòng Đào tạo | Chọn học kỳ để thực hiện mở lớp học phần. |
+| 4 | Mở lớp học phần | Phòng Đào tạo | Tạo lớp học phần cho học phần đã chọn. |
+| 5 | Phân công giảng viên | Phòng Đào tạo | Phân công giảng viên phụ trách giảng dạy lớp học phần. |
+| 6 | Xếp lịch học | Phòng Đào tạo | Thiết lập lịch học, phòng học và sĩ số tối đa cho lớp học phần. |
+| 7 | Xem lớp học phần được phân công | Giảng viên | Xem danh sách các lớp học phần được phân công giảng dạy. |
+| 8 | Xem danh sách lớp học phần | Sinh viên | Xem danh sách lớp học phần đã được mở để đăng ký. |
 ## 4.Phân tích nghiệp vụ
 ### 4.1. Phân tích nghiệp vụ quản lý học phần
 Mô tả
