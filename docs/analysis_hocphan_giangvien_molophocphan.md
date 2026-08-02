@@ -214,3 +214,6 @@ Module sử dụng các thực thể chính:
 •	LICHHOC: Lưu thông tin lịch học của lớp học phần. 
 
 •	LOPHOCPHAN: Lưu thông tin các lớp học phần được mở.
+
+
+
