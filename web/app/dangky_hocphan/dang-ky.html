@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng ký học phần — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Đăng ký học phần</h1>
+        </div>
+        <nav class="app-nav">
+            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
+            <a href="dang-ky.html" class="app-nav__link app-nav__link--active">Đăng ký học phần</a>
+            <a href="thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
+            <a href="danh-sach-dang-ky.html" class="app-nav__link">Danh sách đăng ký</a>
+            <a href="huy-dang-ky.html" class="app-nav__link">Hủy đăng ký</a>
+        </nav>
+        <div class="app-header__user"><span>👤 SV001</span></div>
+    </header>
+
+    <main class="container">
+        <!-- ================================================
+             MÀN HÌNH 1: CHỌN LỚP HỌC PHẦN (đăng ký mới)
+             - Giỏ đăng ký + kiểm tra ràng buộc realtime
+        ================================================= -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">1️⃣ Chọn lớp học phần</h2>
+                <div id="dot-status" class="badge badge--success">Đợt đang mở</div>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã lớp / môn học..." oninput="renderClassList()">
+                <select id="filter-khoi" class="input input--select" onchange="renderClassList()">
+                    <option value="">Tất cả khối</option>
+                    <option value="CNTT">Công nghệ thông tin</option>
+                    <option value="KTT">Kinh tế - Tài chính</option>
+                    <option value="XD">Xây dựng</option>
+                </select>
+                <span class="badge badge--info" id="credit-counter"></span>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã LHP</th>
+                        <th>Môn học</th>
+                        <th>Số TC</th>
+                        <th>Lịch học</th>
+                        <th>Sĩ số</th>
+                        <th>Giảng viên</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="class-list-body"></tbody>
+            </table>
+            <p class="card__note" id="class-list-empty" style="display:none">Không có lớp nào phù hợp.</p>
+        </section>
+
+        <!-- ================================================
+             GIỎ ĐĂNG KÝ
+        ================================================= -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🛒 Giỏ đăng ký của bạn</h2>
+                <span class="badge badge--info" id="registered-total"></span>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã LHP</th><th>Môn học</th><th>Số TC</th><th>Ngày ĐK</th><th>Trạng thái</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="registered-body"></tbody>
+            </table>
+            <p class="card__note" id="registered-empty" style="display:none">Bạn chưa đăng ký lớp nào.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/shared.js"></script>
+    <script src="../../js/mock-data.js"></script>
+    <script src="../../js/dangky.js"></script>
+</body>
+</html>

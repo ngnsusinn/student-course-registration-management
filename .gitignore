@@ -1,0 +1,32 @@
+# Python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+
+# Node
+node_modules/
+dist/
+build/
+
+# SQL Server / IDE
+*.bak
+*.trn
+*.ldf
+*.mdf
+.vs/
+.vscode/
+*.suo
+*.user
+
+# OS
+Thumbs.db
+.DS_Store
+
+# Reports / Slides binaries
+report/*.docx
+slides/*.pptx
+
+# Concurrency demo media (large files)
+docs/concurrency_demo/*.mp4
+docs/concurrency_demo/*.png
