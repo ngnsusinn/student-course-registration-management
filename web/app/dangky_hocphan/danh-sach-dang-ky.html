@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Danh sách đăng ký — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Danh sách đăng ký học phần</h1>
+        </div>
+        <nav class="app-nav">
+            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
+            <a href="dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
+            <a href="thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
+            <a href="danh-sach-dang-ky.html" class="app-nav__link app-nav__link--active">Danh sách đăng ký</a>
+            <a href="huy-dang-ky.html" class="app-nav__link">Hủy đăng ký</a>
+        </nav>
+        <div class="app-header__user"><span>👤 SV001</span></div>
+    </header>
+
+    <main class="container">
+        <!-- ================================================
+             MÀN HÌNH 3: XEM DANH SÁCH ĐĂNG KÝ
+             (tổng hợp + thông tin chi tiết từ VW_SinhVienDangKyChiTiet)
+        ================================================= -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📋 Danh sách đăng ký của bạn</h2>
+                <span class="badge badge--info" id="registered-total"></span>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã LHP</th>
+                        <th>Môn học</th>
+                        <th>Lớp</th>
+                        <th>Số TC</th>
+                        <th>Học kỳ</th>
+                        <th>Ngày đăng ký</th>
+                        <th>Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody id="registered-body"></tbody>
+            </table>
+            <p class="card__note" id="registered-empty" style="display:none">Bạn chưa đăng ký lớp nào.</p>
+        </section>
+
+        <section class="card">
+            <h2 class="card__title">📊 Tóm tắt tín chỉ</h2>
+            <div class="stat-grid">
+                <div class="stat"><div class="stat__value" id="stat-tong">--</div><div class="stat__label">Tổng tín chỉ đã ĐK</div></div>
+                <div class="stat"><div class="stat__value" id="stat-max">--</div><div class="stat__label">Giới hạn tối đa</div></div>
+                <div class="stat"><div class="stat__value" id="stat-con">--</div><div class="stat__label">Còn được ĐK thêm</div></div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/shared.js"></script>
+    <script src="../../js/mock-data.js"></script>
+    <script src="../../js/dangky.js"></script>
+    <script>
+        // Mở rộng render cho màn hình danh sách (thêm học kỳ + tóm tắt)
+        document.addEventListener('DOMContentLoaded', function () {
+            const tbody = document.getElementById('registered-body');
+            if (!tbody) return;
+            const registered = MOCK.registrations.filter(r => r.trangThai === 'DA_DANG_KY');
+            tbody.innerHTML = registered.map(r => {
+                const c = getClass(r.MaLHP);
+                if (!c) return '';
+                return `
+                <tr>
+                    <td><code>${esc(c.MaLHP)}</code></td>
+                    <td>${esc(c.mon)}</td>
+                    <td>${esc(c.tenLop)}</td>
+                    <td>${c.soTinChi}</td>
+                    <td>HK1-2025</td>
+                    <td>${esc(r.ngayDangKy)}</td>
+                    <td><span class="badge badge--success">Đã đăng ký</span></td>
+                </tr>`;
+            }).join('');
+            const empty = document.getElementById('registered-empty');
+            if (empty) empty.style.display = registered.length ? 'none' : 'block';
+
+            const tong = getTongTinChiDaDangKy();
+            const max = MOCK.currentStudent.maxTinChi;
+            const statTong = document.getElementById('stat-tong');
+            const statMax = document.getElementById('stat-max');
+            const statCon = document.getElementById('stat-con');
+            if (statTong) statTong.textContent = tong + ' TC';
+            if (statMax) statMax.textContent = max + ' TC';
+            if (statCon) statCon.textContent = (max - tong) + ' TC';
+        });
+    </script>
+</body>
+</html>

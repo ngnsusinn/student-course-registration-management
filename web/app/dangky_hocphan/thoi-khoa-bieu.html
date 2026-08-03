@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời khóa biểu — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Thời khóa biểu cá nhân</h1>
+        </div>
+        <nav class="app-nav">
+            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
+            <a href="dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
+            <a href="thoi-khoa-bieu.html" class="app-nav__link app-nav__link--active">Thời khóa biểu</a>
+            <a href="danh-sach-dang-ky.html" class="app-nav__link">Danh sách đăng ký</a>
+            <a href="huy-dang-ky.html" class="app-nav__link">Hủy đăng ký</a>
+        </nav>
+        <div class="app-header__user"><span>👤 SV001</span></div>
+    </header>
+
+    <main class="container">
+        <!-- ================================================
+             MÀN HÌNH 2: THỜI KHÓA BIỂU CÁ NHÂN
+        ================================================= -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📅 Thời khóa biểu học kỳ HK1-2025</h2>
+                <span class="badge badge--success">SV001 — Nguyễn Văn An</span>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Thứ</th>
+                        <th>Tiết</th>
+                        <th>Mã LHP</th>
+                        <th>Môn học</th>
+                        <th>Giảng viên</th>
+                    </tr>
+                </thead>
+                <tbody id="tkb-body"></tbody>
+            </table>
+            <p class="card__note" id="tkb-empty" style="display:none">Bạn chưa đăng ký môn nào trong học kỳ này.</p>
+        </section>
+
+        <section class="card">
+            <h2 class="card__title">📌 Lưu ý</h2>
+            <ul style="padding-left: 20px; font-size: 14px; color: var(--color-text-muted);">
+                <li>Lịch học được tổng hợp từ bảng <code>LICHHOC</code> thông qua các lớp bạn đã đăng ký.</li>
+                <li>Nếu phát hiện 2 môn trùng giờ, hệ thống sẽ chặn khi đăng ký (mã lỗi 103).</li>
+            </ul>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/shared.js"></script>
+    <script src="../../js/mock-data.js"></script>
+    <script src="../../js/dangky.js"></script>
+</body>
+</html>

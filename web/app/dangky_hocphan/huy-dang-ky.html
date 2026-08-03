@@ -1,0 +1,95 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hủy đăng ký — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Hủy đăng ký học phần</h1>
+        </div>
+        <nav class="app-nav">
+            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
+            <a href="dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
+            <a href="thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
+            <a href="danh-sach-dang-ky.html" class="app-nav__link">Danh sách đăng ký</a>
+            <a href="huy-dang-ky.html" class="app-nav__link app-nav__link--active">Hủy đăng ký</a>
+        </nav>
+        <div class="app-header__user"><span>👤 SV001</span></div>
+    </header>
+
+    <main class="container">
+        <!-- ================================================
+             MÀN HÌNH 4: XEM/HỦY ĐĂNG KÝ
+             - Thông báo lỗi rõ theo từng ràng buộc (5 loại)
+             - Hủy chỉ được khi đợt còn mở (SP_HuyDangKy)
+        ================================================= -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🗑️ Xem và hủy đăng ký</h2>
+                <span class="badge badge--warning" id="dot-status-warning">Kiểm tra hạn hủy...</span>
+            </div>
+            <div id="han-huy-alert" class="alert alert--success">
+                ✅ Đợt đăng ký đang mở — bạn có thể hủy đăng ký các lớp dưới đây.
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã LHP</th>
+                        <th>Môn học</th>
+                        <th>Số TC</th>
+                        <th>Ngày đăng ký</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="registered-body"></tbody>
+            </table>
+            <p class="card__note" id="registered-empty" style="display:none">Bạn chưa đăng ký lớp nào.</p>
+        </section>
+
+        <!-- ================================================
+             BẢNG MÃ LỖI HỦY (tham chiếu SP_HuyDangKy)
+        ================================================= -->
+        <section class="card">
+            <h2 class="card__title">Mã lỗi khi hủy đăng ký (SP_HuyDangKy)</h2>
+            <table class="table">
+                <thead><tr><th>Mã</th><th>Ý nghĩa</th><th>Thông báo</th></tr></thead>
+                <tbody>
+                    <tr><td><code>0</code></td><td>Thành công</td><td class="success-text">Hủy đăng ký thành công.</td></tr>
+                    <tr><td><code>200</code></td><td>Hết hạn hủy</td><td class="error-text">Hiện tại ngoài thời hạn hủy đăng ký học phần.</td></tr>
+                    <tr><td><code>201</code></td><td>Không tìm thấy</td><td class="error-text">Không tìm thấy bản ghi đăng ký học phần.</td></tr>
+                    <tr><td><code>202</code></td><td>Đã hủy trước đó</td><td class="error-text">Bản ghi không ở trạng thái ĐÃ ĐĂNG KÝ (không thể hủy).</td></tr>
+                </tbody>
+            </table>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/shared.js"></script>
+    <script src="../../js/mock-data.js"></script>
+    <script src="../../js/dangky.js"></script>
+    <script>
+        document.addEventListener('DOMContentLoaded', function () {
+            const dot = getDotHienTai();
+            const badge = document.getElementById('dot-status-warning');
+            const alertEl = document.getElementById('han-huy-alert');
+            if (!dot) {
+                if (badge) badge.textContent = 'Đợt đã đóng';
+                if (alertEl) {
+                    alertEl.className = 'alert alert--error';
+                    alertEl.innerHTML = '❌ Đợt đăng ký đã đóng — bạn KHÔNG thể hủy đăng ký.';
+                }
+            } else if (badge) {
+                badge.textContent = 'Đang mở — hạn hủy: ' + dot.denNgay;
+            }
+        });
+    </script>
+</body>
+</html>
