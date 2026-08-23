@@ -16,6 +16,9 @@ Hệ thống quản lý đăng ký học phần tín chỉ cho sinh viên, bao g
 ```
 ├── docs/                    # Tài liệu thiết kế & phân tích (toàn bộ 5 module)
 ├── sql/                     # Bản gốc T-SQL (SQL Server)
+│   ├── init_database.sql    # Khởi tạo toàn bộ (CREATE DB → DDL → DATA)
+│   ├── ddl/ · data/ · queries/ · procedures/ · triggers/ · indexes/ · transactions/ · security/
+│   └── ban_thao/            # Bản thảo T-SQL ban đầu (lưu trữ, không dùng chạy)
 ├── mysql/                   # ⭐ Bản dịch MySQL (chạy được trên hosting)
 │   ├── init_database.sql    # Hướng dẫn khởi tạo (thứ tự chạy từng file)
 │   ├── ddl/                 # CREATE TABLE (18 bảng)
@@ -31,7 +34,7 @@ Hệ thống quản lý đăng ký học phần tín chỉ cho sinh viên, bao g
 ├── backend/                 # Node.js + Express + mysql2 (API REST + JWT)
 │   ├── server.js            # Entry point (phục vụ cả web/)
 │   ├── src/routes/          # auth, danhmuc, dangky, ketqua, hocphi, giangvien, admin
-│   └── scripts/             # init-db, verify-db, test-api…
+│   └── scripts/             # init-db, verify-db, test-api, e2e-test…
 └── web/                     # Frontend (HTML/JS thuần, kết nối API thật)
     ├── login.html           # Đăng nhập (SV / GV / PĐT)
     ├── index.html           # Dashboard theo vai trò
