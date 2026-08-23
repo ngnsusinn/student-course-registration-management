@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Khoa · Ngành · Lớp — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Khoa · Ngành · Lớp</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <!-- ============ Card A: Khoa ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🏛️ Khoa</h2>
+                <button class="btn btn--primary" onclick="themKhoa()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-khoa" class="input" placeholder="🔍 Tìm theo mã / tên khoa..." oninput="renderKhoa()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã</th><th>Tên khoa</th><th>Điện thoại</th><th>Email</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="khoa-body"></tbody>
+            </table>
+            <p class="card__note" id="khoa-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card B: Ngành ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📚 Ngành đào tạo</h2>
+                <button class="btn btn--primary" onclick="themNganh()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-nganh" class="input" placeholder="🔍 Tìm theo mã / tên ngành..." oninput="renderNganh()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã</th><th>Tên ngành</th><th>TG đào tạo</th><th>Khoa</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="nganh-body"></tbody>
+            </table>
+            <p class="card__note" id="nganh-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card C: Lớp sinh hoạt ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🏫 Lớp sinh hoạt</h2>
+                <button class="btn btn--primary" onclick="themLop()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-lop" class="input" placeholder="🔍 Tìm theo mã / tên lớp..." oninput="renderLop()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã</th><th>Tên lớp</th><th>Niên khóa</th><th>Ngành</th><th>Sĩ số</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="lop-body"></tbody>
+            </table>
+            <p class="card__note" id="lop-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card D: Chương trình đào tạo ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📋 Chương trình đào tạo</h2>
+                <button class="btn btn--primary" onclick="themCtdt()">＋ Thêm môn</button>
+            </div>
+            <div class="toolbar">
+                <label class="text-muted" style="font-size:13px">Ngành:</label>
+                <select id="select-ctdt-nganh" class="input input--select" onchange="loadCtdt()">
+                    <option value="">-- Chọn ngành --</option>
+                </select>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã ngành</th><th>Ngành</th><th>Mã môn</th><th>Môn học</th><th>Số TC</th><th>HK dự kiến</th><th>Bắt buộc</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="ctdt-body"></tbody>
+            </table>
+            <p class="card__note" id="ctdt-empty" style="display:none">Chưa có dữ liệu — vui lòng chọn ngành.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal dùng chung (thêm/sửa khoa, ngành, lớp, CTĐT) -->
+    <div class="modal-mask hidden" id="modal-mask">
+        <div class="modal">
+            <h3 id="modal-title">Thêm mới</h3>
+            <form id="modal-form"></form>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        /* ============ Bảo vệ trang (chỉ PĐT) ============ */
+        if (!requireAuth('PĐT')) { /* chưa đăng nhập / sai vai trò -> đã redirect */ }
+
+        /* ============ Trạng thái ============ */
+        let khoa = [];
+        let nganh = [];
+        let lop = [];
+        let monHoc = [];
+        let ctdt = [];
+
+        let editingKhoa = null;
+        let editingNganh = null;
+        let editingLop = null;
+
+        /* ============ Tiện ích ============ */
+        function badgeBatBuoc(b) {
+            return Number(b) === 1
+                ? '<span class="badge badge--success">Bắt buộc</span>'
+                : '<span class="badge badge--warning">Tự chọn</span>';
+        }
+
+        function moModal(title, html, onsubmit) {
+            document.getElementById('modal-title').textContent = title;
+            const form = document.getElementById('modal-form');
+            form.innerHTML = html + `
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--outline" onclick="dongModal()">Hủy</button>
+                    <button type="submit" class="btn btn--primary">Lưu</button>
+                </div>`;
+            form.onsubmit = onsubmit;
+            document.getElementById('modal-mask').classList.remove('hidden');
+        }
+
+        function dongModal() {
+            document.getElementById('modal-mask').classList.add('hidden');
+        }
+
+        /* ============ Nạp dữ liệu ============ */
+        async function loadData() {
+            try {
+                const [k, n, l, mh] = await Promise.all([
+                    api.get('/api/danhmuc/khoa'),
+                    api.get('/api/danhmuc/nganh'),
+                    api.get('/api/danhmuc/lop'),
+                    api.get('/api/danhmuc/monhoc'),
+                ]);
+                khoa = k.khoa || [];
+                nganh = n.nganh || [];
+                lop = l.lop || [];
+                monHoc = mh.monHoc || [];
+
+                document.getElementById('select-ctdt-nganh').innerHTML =
+                    '<option value="">-- Chọn ngành --</option>' +
+                    nganh.map(x => `<option value="${esc(x.MaNganh)}">${esc(x.MaNganh)} — ${esc(x.TenNganh)}</option>`).join('');
+
+                // Mặc định chọn ngành đầu tiên để xem CTĐT
+                if (nganh.length) {
+                    document.getElementById('select-ctdt-nganh').value = nganh[0].MaNganh;
+                    await loadCtdt();
+                }
+                renderKhoa();
+                renderNganh();
+                renderLop();
+            } catch (e) {
+                showToast(e.message || 'Không tải được dữ liệu.', 'error');
+            }
+        }
+
+        /* ============ Card A: Khoa ============ */
+        function renderKhoa() {
+            const kw = (document.getElementById('search-khoa').value || '').trim().toLowerCase();
+            const rows = khoa.filter(x =>
+                !kw || String(x.MaKhoa || '').toLowerCase().includes(kw) || String(x.TenKhoa || '').toLowerCase().includes(kw));
+            document.getElementById('khoa-body').innerHTML = rows.map(x => {
+                const i = khoa.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaKhoa)}</code></td>
+                    <td>${esc(x.TenKhoa)}</td>
+                    <td>${esc(x.DienThoaiKhoa || '')}</td>
+                    <td>${esc(x.EmailKhoa || '')}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaKhoa(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaKhoa(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('khoa-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        const khoaFormHtml = `
+            <div class="form-group"><label>Mã khoa</label><input class="input" id="f-MaKhoa" required></div>
+            <div class="form-group"><label>Tên khoa</label><input class="input" id="f-TenKhoa" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Điện thoại</label><input class="input" id="f-DienThoaiKhoa"></div>
+                <div class="form-group"><label>Email khoa</label><input type="email" class="input" id="f-EmailKhoa" required></div>
+            </div>`;
+
+        function themKhoa() {
+            editingKhoa = null;
+            moModal('Thêm khoa', khoaFormHtml, luuKhoa);
+            document.getElementById('f-MaKhoa').readOnly = false;
+        }
+
+        function suaKhoa(i) {
+            const x = khoa[i];
+            if (!x) return;
+            editingKhoa = x.MaKhoa;
+            moModal('Sửa khoa — ' + x.MaKhoa, khoaFormHtml, luuKhoa);
+            document.getElementById('f-MaKhoa').value = x.MaKhoa || '';
+            document.getElementById('f-MaKhoa').readOnly = true;
+            document.getElementById('f-TenKhoa').value = x.TenKhoa || '';
+            document.getElementById('f-DienThoaiKhoa').value = x.DienThoaiKhoa || '';
+            document.getElementById('f-EmailKhoa').value = x.EmailKhoa || '';
+        }
+
+        async function luuKhoa(e) {
+            e.preventDefault();
+            const body = {
+                TenKhoa: document.getElementById('f-TenKhoa').value.trim(),
+                DienThoaiKhoa: document.getElementById('f-DienThoaiKhoa').value.trim(),
+                EmailKhoa: document.getElementById('f-EmailKhoa').value.trim(),
+            };
+            try {
+                if (editingKhoa) {
+                    await api.put('/api/danhmuc/khoa/' + encodeURIComponent(editingKhoa), body);
+                    showToast('Cập nhật khoa thành công.', 'success');
+                } else {
+                    body.MaKhoa = document.getElementById('f-MaKhoa').value.trim();
+                    await api.post('/api/danhmuc/khoa', body);
+                    showToast('Thêm khoa thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaKhoa(i) {
+            const x = khoa[i];
+            if (!x) return;
+            if (!confirm(`Xóa khoa "${x.TenKhoa}" (${x.MaKhoa})?`)) return;
+            try {
+                await api.del('/api/danhmuc/khoa/' + encodeURIComponent(x.MaKhoa));
+                showToast('Xóa khoa thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa khoa.', 'error');
+            }
+        }
+
+        /* ============ Card B: Ngành ============ */
+        function renderNganh() {
+            const kw = (document.getElementById('search-nganh').value || '').trim().toLowerCase();
+            const rows = nganh.filter(x =>
+                !kw || String(x.MaNganh || '').toLowerCase().includes(kw) || String(x.TenNganh || '').toLowerCase().includes(kw));
+            document.getElementById('nganh-body').innerHTML = rows.map(x => {
+                const i = nganh.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaNganh)}</code></td>
+                    <td>${esc(x.TenNganh)}</td>
+                    <td>${esc(x.ThoiGianDaoTao)} năm</td>
+                    <td>${esc(x.TenKhoa || x.MaKhoa)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaNganh(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaNganh(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('nganh-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        function khoaOptions(selected) {
+            return khoa.map(k =>
+                `<option value="${esc(k.MaKhoa)}" ${k.MaKhoa === selected ? 'selected' : ''}>${esc(k.MaKhoa)} — ${esc(k.TenKhoa)}</option>`
+            ).join('');
+        }
+
+        const nganhFormHtml = `
+            <div class="form-group"><label>Mã ngành</label><input class="input" id="f-MaNganh" required></div>
+            <div class="form-group"><label>Tên ngành</label><input class="input" id="f-TenNganh" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Thời gian đào tạo (năm)</label><input type="number" min="1" class="input" id="f-ThoiGianDaoTao" required></div>
+                <div class="form-group"><label>Thuộc khoa</label>
+                    <select class="input input--select" id="f-MaKhoa" required><option value="">-- Chọn khoa --</option></select>
+                </div>
+            </div>`;
+
+        function themNganh() {
+            editingNganh = null;
+            moModal('Thêm ngành', nganhFormHtml, luuNganh);
+            document.getElementById('f-MaNganh').readOnly = false;
+            document.getElementById('f-MaKhoa').innerHTML = '<option value="">-- Chọn khoa --</option>' + khoaOptions();
+        }
+
+        function suaNganh(i) {
+            const x = nganh[i];
+            if (!x) return;
+            editingNganh = x.MaNganh;
+            moModal('Sửa ngành — ' + x.MaNganh, nganhFormHtml, luuNganh);
+            document.getElementById('f-MaNganh').value = x.MaNganh || '';
+            document.getElementById('f-MaNganh').readOnly = true;
+            document.getElementById('f-TenNganh').value = x.TenNganh || '';
+            document.getElementById('f-ThoiGianDaoTao').value = x.ThoiGianDaoTao ?? '';
+            document.getElementById('f-MaKhoa').innerHTML = khoaOptions(x.MaKhoa);
+        }
+
+        async function luuNganh(e) {
+            e.preventDefault();
+            const body = {
+                TenNganh: document.getElementById('f-TenNganh').value.trim(),
+                ThoiGianDaoTao: document.getElementById('f-ThoiGianDaoTao').value,
+                MaKhoa: document.getElementById('f-MaKhoa').value,
+            };
+            try {
+                if (editingNganh) {
+                    await api.put('/api/danhmuc/nganh/' + encodeURIComponent(editingNganh), body);
+                    showToast('Cập nhật ngành thành công.', 'success');
+                } else {
+                    body.MaNganh = document.getElementById('f-MaNganh').value.trim();
+                    await api.post('/api/danhmuc/nganh', body);
+                    showToast('Thêm ngành thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaNganh(i) {
+            const x = nganh[i];
+            if (!x) return;
+            if (!confirm(`Xóa ngành "${x.TenNganh}" (${x.MaNganh})?`)) return;
+            try {
+                await api.del('/api/danhmuc/nganh/' + encodeURIComponent(x.MaNganh));
+                showToast('Xóa ngành thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                // Server chặn nếu còn sinh viên -> hiện đúng thông báo lỗi
+                showToast(e.message || 'Không thể xóa ngành.', 'error');
+            }
+        }
+
+        /* ============ Card C: Lớp sinh hoạt ============ */
+        function renderLop() {
+            const kw = (document.getElementById('search-lop').value || '').trim().toLowerCase();
+            const rows = lop.filter(x =>
+                !kw || String(x.MaLopSH || '').toLowerCase().includes(kw) || String(x.TenLopSH || '').toLowerCase().includes(kw));
+            document.getElementById('lop-body').innerHTML = rows.map(x => {
+                const i = lop.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaLopSH)}</code></td>
+                    <td>${esc(x.TenLopSH)}</td>
+                    <td>${esc(x.NienKhoa ?? '')}</td>
+                    <td>${esc(x.TenNganh || x.MaNganh)}</td>
+                    <td>${esc(x.SiSo ?? 0)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaLop(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaLop(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('lop-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        function nganhOptions(selected) {
+            return nganh.map(n =>
+                `<option value="${esc(n.MaNganh)}" ${n.MaNganh === selected ? 'selected' : ''}>${esc(n.MaNganh)} — ${esc(n.TenNganh)}</option>`
+            ).join('');
+        }
+
+        const lopFormHtml = `
+            <div class="form-group"><label>Mã lớp sinh hoạt</label><input class="input" id="f-MaLopSH" required></div>
+            <div class="form-group"><label>Tên lớp</label><input class="input" id="f-TenLopSH" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Niên khóa</label><input type="number" min="2000" class="input" id="f-NienKhoa" required></div>
+                <div class="form-group"><label>Ngành</label>
+                    <select class="input input--select" id="f-MaNganh" required><option value="">-- Chọn ngành --</option></select>
+                </div>
+            </div>`;
+
+        function themLop() {
+            editingLop = null;
+            moModal('Thêm lớp sinh hoạt', lopFormHtml, luuLop);
+            document.getElementById('f-MaLopSH').readOnly = false;
+            document.getElementById('f-MaNganh').innerHTML = '<option value="">-- Chọn ngành --</option>' + nganhOptions();
+        }
+
+        function suaLop(i) {
+            const x = lop[i];
+            if (!x) return;
+            editingLop = x.MaLopSH;
+            moModal('Sửa lớp — ' + x.MaLopSH, lopFormHtml, luuLop);
+            document.getElementById('f-MaLopSH').value = x.MaLopSH || '';
+            document.getElementById('f-MaLopSH').readOnly = true;
+            document.getElementById('f-TenLopSH').value = x.TenLopSH || '';
+            document.getElementById('f-NienKhoa').value = x.NienKhoa ?? '';
+            document.getElementById('f-MaNganh').innerHTML = nganhOptions(x.MaNganh);
+        }
+
+        async function luuLop(e) {
+            e.preventDefault();
+            const body = {
+                TenLopSH: document.getElementById('f-TenLopSH').value.trim(),
+                NienKhoa: document.getElementById('f-NienKhoa').value,
+                MaNganh: document.getElementById('f-MaNganh').value,
+            };
+            try {
+                if (editingLop) {
+                    await api.put('/api/danhmuc/lop/' + encodeURIComponent(editingLop), body);
+                    showToast('Cập nhật lớp sinh hoạt thành công.', 'success');
+                } else {
+                    body.MaLopSH = document.getElementById('f-MaLopSH').value.trim();
+                    await api.post('/api/danhmuc/lop', body);
+                    showToast('Thêm lớp sinh hoạt thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaLop(i) {
+            const x = lop[i];
+            if (!x) return;
+            if (!confirm(`Xóa lớp "${x.TenLopSH}" (${x.MaLopSH})?`)) return;
+            try {
+                await api.del('/api/danhmuc/lop/' + encodeURIComponent(x.MaLopSH));
+                showToast('Xóa lớp sinh hoạt thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa lớp.', 'error');
+            }
+        }
+
+        /* ============ Card D: Chương trình đào tạo ============ */
+        async function loadCtdt() {
+            const maNganh = document.getElementById('select-ctdt-nganh').value;
+            try {
+                if (!maNganh) {
+                    ctdt = [];
+                    renderCtdt();
+                    return;
+                }
+                const r = await api.get('/api/danhmuc/ctdt?MaNganh=' + encodeURIComponent(maNganh));
+                ctdt = r.ctdt || [];
+                renderCtdt();
+            } catch (e) {
+                showToast(e.message || 'Không tải được chương trình đào tạo.', 'error');
+            }
+        }
+
+        function renderCtdt() {
+            document.getElementById('ctdt-body').innerHTML = ctdt.map(x => {
+                const i = ctdt.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaNganh)}</code></td>
+                    <td>${esc(x.TenNganh || '')}</td>
+                    <td><code>${esc(x.MaMonHoc)}</code></td>
+                    <td>${esc(x.TenMonHoc || '')}</td>
+                    <td>${esc(x.SoTinChi ?? '')}</td>
+                    <td>${esc(x.HocKyDuKien ?? '')}</td>
+                    <td>${badgeBatBuoc(x.BatBuoc)}</td>
+                    <td><button class="btn btn--danger btn--sm" onclick="xoaCtdt(${i})">Xóa</button></td>
+                </tr>`;
+            }).join('');
+            document.getElementById('ctdt-empty').style.display = ctdt.length ? 'none' : 'block';
+        }
+
+        function themCtdt() {
+            const maNganh = document.getElementById('select-ctdt-nganh').value;
+            if (!maNganh) {
+                showToast('Vui lòng chọn ngành trước khi thêm môn.', 'warning');
+                return;
+            }
+            const daCo = new Set(ctdt.map(c => c.MaMonHoc));
+            const chuaCo = monHoc.filter(m => !daCo.has(m.MaMonHoc));
+            const opts = chuaCo.length
+                ? chuaCo.map(m => `<option value="${esc(m.MaMonHoc)}">${esc(m.MaMonHoc)} — ${esc(m.TenMonHoc)}</option>`).join('')
+                : '<option value="">Không còn môn nào để thêm</option>';
+
+            moModal('Thêm môn vào CTĐT', `
+                <div class="form-group"><label>Ngành</label>
+                    <input class="input" id="f-ctdt-nganh-ten" value="${esc(maNganh)}" readonly>
+                </div>
+                <div class="form-group"><label>Môn học</label>
+                    <select class="input input--select" id="f-MaMonHoc" required>${opts}</select>
+                </div>
+                <div class="form-row">
+                    <div class="form-group"><label>Học kỳ dự kiến</label><input type="number" min="1" class="input" id="f-HocKyDuKien" required></div>
+                    <div class="form-group"><label>Bắt buộc</label>
+                        <select class="input input--select" id="f-BatBuoc">
+                            <option value="1">Bắt buộc</option>
+                            <option value="0">Tự chọn</option>
+                        </select>
+                    </div>
+                </div>`, luuCtdt);
+        }
+
+        async function luuCtdt(e) {
+            e.preventDefault();
+            const maNganh = document.getElementById('select-ctdt-nganh').value;
+            const body = {
+                MaNganh: maNganh,
+                MaMonHoc: document.getElementById('f-MaMonHoc').value,
+                HocKyDuKien: document.getElementById('f-HocKyDuKien').value,
+                BatBuoc: document.getElementById('f-BatBuoc').value,
+            };
+            if (!body.MaMonHoc) { showToast('Vui lòng chọn môn học.', 'warning'); return; }
+            try {
+                await api.post('/api/danhmuc/ctdt', body);
+                showToast('Thêm môn vào chương trình đào tạo thành công.', 'success');
+                dongModal();
+                await loadCtdt();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaCtdt(i) {
+            const x = ctdt[i];
+            if (!x) return;
+            if (!confirm(`Xóa môn "${x.TenMonHoc}" khỏi CTĐT ngành "${x.TenNganh}"?`)) return;
+            try {
+                await api.del('/api/danhmuc/ctdt/' + encodeURIComponent(x.MaNganh) + '/' + encodeURIComponent(x.MaMonHoc));
+                showToast('Xóa môn khỏi chương trình đào tạo thành công.', 'success');
+                await loadCtdt();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa môn khỏi CTĐT.', 'error');
+            }
+        }
+
+        /* ============ Khởi chạy ============ */
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

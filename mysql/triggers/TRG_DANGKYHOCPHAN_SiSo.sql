@@ -1,0 +1,58 @@
+-- ==========================================================
+-- Ten file : mysql/triggers/TRG_DANGKYHOCPHAN_SiSo.sql
+-- Module   : Dang ky hoc phan (TV3 — Leader)
+-- Mo ta    : Ban dich T-SQL -> MySQL. Bo 3 TRIGGER tu dong
+--            +1 / -1 SiSoHienTai cua LOPHOCPHAN.
+--            T-SQL set-based (inserted/deleted) -> MySQL
+--            FOR EACH ROW (NEW/OLD).
+-- ==========================================================
+
+DROP TRIGGER IF EXISTS TRG_DANGKYHOCPHAN_AFTER_INSERT;
+DROP TRIGGER IF EXISTS TRG_DANGKYHOCPHAN_AFTER_DELETE;
+DROP TRIGGER IF EXISTS TRG_DANGKYHOCPHAN_AFTER_UPDATE;
+
+DELIMITER $$
+
+-- TRIGGER 1: AFTER INSERT — TANG SI SO
+CREATE TRIGGER TRG_DANGKYHOCPHAN_AFTER_INSERT
+AFTER INSERT ON DANGKYHOCPHAN
+FOR EACH ROW
+BEGIN
+    IF NEW.TrangThaiDangKy = 'DA_DANG_KY' THEN
+        UPDATE LOPHOCPHAN
+        SET SiSoHienTai = LEAST(SiSoToiDa, SiSoHienTai + 1)
+        WHERE MaLHP = NEW.MaLHP;
+    END IF;
+END$$
+
+-- TRIGGER 2: AFTER DELETE — GIAM SI SO
+CREATE TRIGGER TRG_DANGKYHOCPHAN_AFTER_DELETE
+AFTER DELETE ON DANGKYHOCPHAN
+FOR EACH ROW
+BEGIN
+    IF OLD.TrangThaiDangKy = 'DA_DANG_KY' THEN
+        UPDATE LOPHOCPHAN
+        SET SiSoHienTai = GREATEST(0, SiSoHienTai - 1)
+        WHERE MaLHP = OLD.MaLHP;
+    END IF;
+END$$
+
+-- TRIGGER 3: AFTER UPDATE — XU LY CHUYEN TRANG THAI
+--   DA_DANG_KY -> khac : -1
+--   khac -> DA_DANG_KY : +1
+CREATE TRIGGER TRG_DANGKYHOCPHAN_AFTER_UPDATE
+AFTER UPDATE ON DANGKYHOCPHAN
+FOR EACH ROW
+BEGIN
+    IF OLD.TrangThaiDangKy = 'DA_DANG_KY' AND NEW.TrangThaiDangKy <> 'DA_DANG_KY' THEN
+        UPDATE LOPHOCPHAN
+        SET SiSoHienTai = GREATEST(0, SiSoHienTai - 1)
+        WHERE MaLHP = OLD.MaLHP;
+    ELSEIF OLD.TrangThaiDangKy <> 'DA_DANG_KY' AND NEW.TrangThaiDangKy = 'DA_DANG_KY' THEN
+        UPDATE LOPHOCPHAN
+        SET SiSoHienTai = LEAST(SiSoToiDa, SiSoHienTai + 1)
+        WHERE MaLHP = NEW.MaLHP;
+    END IF;
+END$$
+
+DELIMITER ;

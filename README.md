@@ -5,80 +5,115 @@
 
 Hệ thống quản lý đăng ký học phần tín chỉ cho sinh viên, bao gồm **18 bảng dữ liệu** thuộc 5 module nghiệp vụ. Module **Đăng ký học phần** là nghiệp vụ lõi, nơi kiểm soát **5 ràng buộc** (hạn đăng ký, tiên quyết, trùng lịch, min-max tín chỉ, sĩ số lớp) và là điểm nhấn về **Giao dịch (ACID)** và **Điều khiển cạnh tranh** (Chương 4 & 5).
 
+> ✅ **Đã chuyển toàn bộ T-SQL → MySQL** (thư mục `mysql/`) và triển khai lên
+> **MySQL remote** `free02.123host.vn` (DB `roacqgfa_dbms`).
+> Backend **Node.js/Express** + Frontend **HTML/JS thuần** đã kết nối DB thật.
+
 ---
 
 ## 📂 Cấu trúc thư mục
 
 ```
-├── docs/                # Tài liệu thiết kế & phân tích
-├── sql/
-│   ├── init_database.sql    # ⭐ Khởi tạo toàn bộ (CREATE DB → DDL → DATA)
-│   ├── ddl/                 # CREATE TABLE (5 module, 18 bảng)
-│   ├── data/                # Dữ liệu mẫu (60 SV, 5 học kỳ)
-│   ├── queries/             # 7 truy vấn + 2 View
-│   ├── procedures/          # 4 Function + SP_DangKyHocPhan + SP_HuyDangKy
-│   ├── triggers/            # 3 Trigger tự cập nhật sĩ số
-│   ├── indexes/             # Non-clustered Index + đo hiệu năng
-│   ├── transactions/        # Transaction + kịch bản 2 session
-│   ├── security/            # (trống — dành cho TV5)
-│   └── backup/              # (trống — dành cho TV5)
-└── web/                     # 4 màn hình đăng ký + template UI chung
+├── docs/                    # Tài liệu thiết kế & phân tích (toàn bộ 5 module)
+├── sql/                     # Bản gốc T-SQL (SQL Server)
+├── mysql/                   # ⭐ Bản dịch MySQL (chạy được trên hosting)
+│   ├── init_database.sql    # Hướng dẫn khởi tạo (thứ tự chạy từng file)
+│   ├── ddl/                 # CREATE TABLE (18 bảng)
+│   ├── data/                # Dữ liệu mẫu (60 SV, 5 học kỳ, 794 lượt ĐK)
+│   ├── functions/           # 8 Function (tiên quyết, trùng lịch, tín chỉ, điểm…)
+│   ├── procedures/          # 12 Stored Procedure (ĐK, hủy, điểm, GPA, học phí…)
+│   ├── triggers/            # 8 Trigger (sĩ số, điểm, trùng lịch, log, chặn xóa)
+│   ├── views/               # 10 View báo cáo
+│   ├── indexes/             # Index tối ưu tra cứu
+│   ├── transactions/        # Transaction & concurrency (bản MySQL)
+│   ├── queries/             # Truy vấn mẫu từng module (bản MySQL)
+│   └── security/            # Phân quyền 3 vai trò (mẫu)
+├── backend/                 # Node.js + Express + mysql2 (API REST + JWT)
+│   ├── server.js            # Entry point (phục vụ cả web/)
+│   ├── src/routes/          # auth, danhmuc, dangky, ketqua, hocphi, giangvien, admin
+│   └── scripts/             # init-db, verify-db, test-api…
+└── web/                     # Frontend (HTML/JS thuần, kết nối API thật)
+    ├── login.html           # Đăng nhập (SV / GV / PĐT)
+    ├── index.html           # Dashboard theo vai trò
+    ├── app/dangky_hocphan/  # Đăng ký, TKB, danh sách ĐK, hủy ĐK (SV)
+    ├── app/diem/            # Bảng điểm & GPA (SV)
+    ├── app/hocphi/          # Học phí của tôi (SV)
+    ├── app/giangvien/       # Lớp của tôi, nhập điểm, TKB (GV)
+    ├── app/danhmuc/         # Quản lý SV, Khoa·Ngành·Lớp, CTĐT (PĐT)
+    ├── app/hocphan/         # Môn học·GV·Phòng, Mở LHP (PĐT)
+    └── app/admin/           # Dashboard, Tài khoản (PĐT)
 ```
 
 ---
 
-## ✅ Đã hoàn thành (11 Issues TV3)
+## 🚀 Cách chạy (đã kết nối MySQL remote)
 
-| Issue | Nội dung | Sản phẩm |
-|---|---|---|
-| #17 | Chuẩn hóa 3NF | `docs/normalization_dangky_hocphan.md` |
-| #18 | DDL bảng trung tâm | `sql/ddl/10_dangky_hocphan_ddl.sql` |
-| #19 | Dữ liệu mẫu (60 SV × 5 kỳ, tình huống biên) | `sql/data/dangky_hocphan_data.sql` |
-| #49 | Truy vấn & View (≥6 SELECT) | `sql/queries/dangky_hocphan_queries.sql` |
-| #50 | SP DangKyHocPhan (5 bước kiểm tra) | `sql/procedures/SP_DangKyHocPhan.sql` |
-| #51 | SP HuyDangKy + 4 Function | `sql/procedures/FN_KiemTra_DangKy.sql`, `SP_HuyDangKy.sql` |
-| #61 | Trigger tự cập nhật sĩ số | `sql/triggers/TRG_DANGKYHOCPHAN_SiSo.sql` |
-| #62 | Non-clustered Index + đo hiệu năng | `sql/indexes/` + `docs/index_benchmark.md` |
-| #72 | Transaction đăng ký (Atomicity) | `sql/transactions/dangky_hocphan_tran.sql` |
-| #73 | Mức cô lập cho đăng ký | `docs/isolation_level_analysis.md` |
-| #74 | Kịch bản test 2 session đồng thời | `sql/transactions/concurrency_test.sql` + `docs/concurrency_demo/` |
+### 1. Khởi tạo Database (MySQL)
 
-**Bổ sung:** `docs/deadlock_analysis.md` (phân tích deadlock toàn hệ thống), `docs/trigger_integration_test.md` (test trigger chain), `docs/conventions.md` (quy ước & cấu trúc thư mục).
-
----
-
-## 🚀 Cách chạy
-
-### 1. Khởi tạo Database (SQL Server)
-
-Mở `sql/init_database.sql` trong **SSMS** và chạy (hoặc `sqlcmd -S .\SQLEXPRESS -i sql/init_database.sql`).
-
-> Script sẽ: Tạo DB `DangKyHocPhan` → Tạo 18 bảng theo thứ tự phụ thuộc → Nạp dữ liệu mẫu → Tạo Index/SP/Trigger.
-
-### 2. Demo giao diện (Web)
+> Database `roacqgfa_dbms` trên `free02.123host.vn` đã có sẵn toàn bộ đối tượng.
+> Nếu cần tạo lại từ đầu, chạy:
 
 ```bash
-cd web
-python -m http.server 8080
-# mở http://localhost:8080
+cd backend
+node scripts/init-db.js     # đọc cấu hình trong backend/.env
 ```
 
-### 3. Kịch bản test concurrency (Issue #74)
+Hoặc chạy lần lượt các file trong `mysql/` theo thứ tự ghi ở `mysql/init_database.sql`.
 
-1. Mở `sql/transactions/concurrency_test.sql` trong **2 cửa sổ SSMS**.
-2. Cửa sổ 1: chạy **PHẦN A** (chuẩn bị) rồi **PHẦN B** (Phiên 1 — SV001).
-3. Trong lúc Phiên 1 giữ khóa, cửa sổ 2 chạy **PHẦN C** (Phiên 2 — SV002) → bị chặn.
-4. Chạy **PHẦN D** để xác nhận kết quả (sĩ số 25/25, SV002 bị từ chối mã 105).
+### 2. Chạy Backend + Frontend
 
-Xem hướng dẫn chi tiết tại `docs/concurrency_demo/README.md`.
+```bash
+cd backend
+npm install
+npm start                   # Backend: http://localhost:3000 (phục vụ luôn web/)
+# Mở trình duyệt: http://localhost:3000  → tự động vào trang đăng nhập
+```
+
+### 3. Tài khoản demo
+
+| Vai trò | Tên đăng nhập | Mật khẩu |
+|---|---|---|
+| Sinh viên | `sv001` | `matkhau@123` |
+| Giảng viên | `gv001` | `matkhau@123` |
+| Phòng Đào Tạo | `admin` | `admin@123` |
+
+---
+
+## 🔌 API chính (backend)
+
+| Nhóm | Endpoint | Vai trò |
+|---|---|---|
+| Auth | `POST /api/auth/login` · `GET /api/auth/me` · `POST /api/auth/doimatkhau` | Tất cả |
+| Đăng ký | `GET /api/dangky/lopmo` · `POST /api/dangky` · `POST /api/dangky/huy` | SV |
+| Đăng ký | `GET /api/dangky/danhsach` · `thoikhoabieu` · `tongtinchi` | SV |
+| Điểm | `GET /api/ketqua/bangdiem` · `gpa` · `cpa` · `canhbao-hocvu` | SV/PĐT |
+| Học phí | `GET /api/hocphi/cua-toi` · `danhsach` · `baocao` · `POST thu/tinh` | SV/PĐT |
+| Giảng viên | `GET /api/giangvien/lopcuatoi` · `sinhvien/:MaLHP` · `POST nhapdiem(-hangloat)` | GV |
+| Danh mục | `GET/POST/PUT/DELETE /api/danhmuc/{khoa,nganh,lop,monhoc,giangvien,phonghoc,hocky,ctdt}` | PĐT |
+| Admin | `GET /api/admin/thongke` · `lophocphan` · `taikhoan` · `POST themsinhvien/molophocphan` | PĐT |
+
+Chi tiết test: `backend/scripts/test-api.js`, `test-crud.js`.
 
 ---
 
 ## 📚 Tài liệu chính
 
 * `docs/analysis_dangky_hocphan.md` — Đặc tả 5 ràng buộc đăng ký + lưu đồ xử lý
-* `docs/erd_dangky_hocphan.md` — ERD bảng trung tâm `DANGKYHOCPHAN` & liên kết hệ thống
-* `docs/isolation_level_analysis.md` — Vì sao `READ COMMITTED` không đủ, chọn `UPDLOCK+HOLDLOCK`
+* `docs/erd_dangky_hocphan.md` — ERD bảng trung tâm `DANGKYHOCPHAN`
+* `docs/isolation_level_analysis.md` — Mức cô lập & khóa (UPDLOCK/HOLDLOCK → `FOR UPDATE`)
 * `docs/deadlock_analysis.md` — Deadlock & cách phòng tránh (Chương 5)
 * `docs/index_benchmark.md` — Đo hiệu năng trước/sau Index (Chương 3)
+* `mysql/transactions/concurrency_test.sql` — Kịch bản test 2 session đồng thời (MySQL)
 * `docs/conventions.md` — Quy ước đặt tên & cấu trúc Git
+
+---
+
+## ✅ Trạng thái hoàn thiện
+
+- [x] Toàn bộ docs phân tích/ERD/chuẩn hóa 5 module
+- [x] Chuyển toàn bộ T-SQL → MySQL (DDL, data, function, SP, trigger, view, index, transaction, query, security)
+- [x] Khởi tạo & chạy trên MySQL remote (`free02.123host.vn`)
+- [x] Backend Node.js/Express (REST + JWT, 7 nhóm route)
+- [x] Frontend kết nối API thật (đăng nhập, đăng ký, điểm, học phí, GV, quản trị)
+- [x] Trigger tự tính điểm / cập nhật sĩ số / chặn xóa ngành — đã kiểm thử
+- [x] SP đăng ký kiểm tra 5 ràng buộc (mã lỗi 100–106) — đã kiểm thử

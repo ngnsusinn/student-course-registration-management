@@ -1,49 +1,67 @@
-# 🖥️ ỨNG DỤNG WEB — MODULE ĐĂNG KÝ HỌC PHẦN
+# 🖥️ ỨNG DỤNG WEB — HỆ THỐNG ĐĂNG KÝ HỌC PHẦN TÍN CHỈ
 
-> **Module:** Đăng ký học phần (TV3 — Leader)  
-> **Issue:** #71 Giao diện Đăng ký học phần (UX phức tạp nhất) + #72 Template UI chung
+> **Module:** Đăng ký học phần (TV3 — Leader) + toàn bộ 5 module nghiệp vụ
+> **Trạng thái:** ✅ Đã kết nối **MySQL remote** qua backend Node.js/Express (không còn mock data)
 
 ## Cấu trúc
 
 ```
 web/
-├── index.html                     # Trang chủ / Dashboard
-├── css/shared.css                 # 🎨 TEMPLATE UI CHUNG (cả nhóm dùng)
+├── login.html                   # Đăng nhập (SV / GV / PĐT — JWT)
+├── index.html                   # Dashboard theo vai trò
+├── css/shared.css               # 🎨 TEMPLATE UI CHUNG (design system)
 ├── js/
-│   ├── shared.js                  # Hàm dùng chung (toast, format, escape)
-│   ├── mock-data.js               # Dữ liệu mẫu (khớp sql/data/)
-│   └── dangky.js                  # Logic đăng ký (5 ràng buộc + mã lỗi SP)
-└── app/dangky_hocphan/            # 4 màn hình chức năng TV3
-    ├── dang-ky.html               # Màn 1: Chọn LHP + Giỏ đăng ký
-    ├── thoi-khoa-bieu.html        # Màn 2: Thời khóa biểu cá nhân
-    ├── danh-sach-dang-ky.html     # Màn 3: Danh sách + tóm tắt tín chỉ
-    └── huy-dang-ky.html           # Màn 4: Xem/Hủy đăng ký + mã lỗi
+│   ├── api.js                   # API client (fetch + JWT + localStorage)
+│   ├── shared.js                # Hàm chung: toast, format, esc, auth guard, menu theo vai trò
+│   └── dangky.js                # Logic đăng ký học phần (gọi API thật)
+└── app/
+    ├── dangky_hocphan/          # SV: đăng ký, TKB, danh sách ĐK, hủy ĐK
+    ├── diem/                    # SV: bảng điểm & GPA/CPA
+    ├── hocphi/                  # SV: học phí của tôi — PĐT: quản lý học phí
+    ├── giangvien/               # GV: lớp của tôi, nhập điểm, TKB
+    ├── danhmuc/                 # PĐT: quản lý SV, Khoa·Ngành·Lớp, CTĐT
+    ├── hocphan/                 # PĐT: môn học·GV·phòng, mở LHP
+    └── admin/                   # PĐT: dashboard, tài khoản
 ```
 
-## Cách chạy (demo front-end)
+## Cách chạy
 
 ```bash
-cd web
-python -m http.server 8080
-# mở trình duyệt: http://localhost:8080
+cd backend
+npm install
+npm start
+# mở trình duyệt: http://localhost:3000  (backend phục vụ luôn thư mục web/)
 ```
 
-Hoặc chỉ cần mở `web/index.html` trực tiếp bằng trình duyệt (không cần server vì dữ liệu là JS mock).
+> Backend Express tự động phục vụ `web/` (xem `backend/server.js`), nên chỉ cần chạy `npm start` là đủ.
 
-## Liên kết với Database (gợi ý tích hợp)
+## Tài khoản demo
 
-Hiện giao diện dùng **mock data** (`js/mock-data.js`) để demo. Khi nối DB thật, thay các hàm trong `js/dangky.js` bằng `fetch` tới API:
+| Vai trò | Tên đăng nhập | Mật khẩu |
+|---|---|---|
+| Sinh viên | `sv001` | `matkhau@123` |
+| Giảng viên | `gv001` | `matkhau@123` |
+| Phòng Đào Tạo | `admin` | `admin@123` |
 
-| Chức năng UI | SP/View tương ứng trong SQL |
+## Liên kết UI ↔ Database (MySQL)
+
+| Chức năng UI | API/SP/View |
 |---|---|
-| Danh sách LHP đang mở | `SELECT ... FROM LOPHOCPHAN WHERE TrangThaiLop = 'MO_DANG_KY'` |
-| Đăng ký | `SP_DangKyHocPhan` (mã lỗi 0/100..106) |
-| Hủy đăng ký | `SP_HuyDangKy` (mã lỗi 0/200..202) |
-| Thời khóa biểu | `VW_ThoiKhoaBieuCaNhan` |
-| Danh sách đăng ký | `VW_SinhVienDangKyChiTiet` |
+| Danh sách LHP đang mở | `GET /api/dangky/lopmo` → `LOPHOCPHAN WHERE TrangThaiLop='MO_DANG_KY'` |
+| Đăng ký | `POST /api/dangky` → `SP_DangKyHocPhan` (mã lỗi 0/100..106) |
+| Hủy đăng ký | `POST /api/dangky/huy` → `SP_HuyDangKy` (mã lỗi 0/200..202) |
+| Thời khóa biểu | `GET /api/dangky/thoikhoabieu` → `VW_ThoiKhoaBieuCaNhan` |
+| Danh sách đăng ký | `GET /api/dangky/danhsach` → `VW_SinhVienDangKyChiTiet` |
 | Kiểm tra tiên quyết | `FN_KiemTraTienQuyet(MaSV, MaMonHoc)` |
 | Kiểm tra trùng lịch | `FN_KiemTraTrungLichHoc(MaSV, MaLHP)` |
 | Tổng tín chỉ | `FN_TinhTongTinChi(MaSV, MaHocKy)` |
+| Bảng điểm | `GET /api/ketqua/bangdiem` → `V_BANGDIEM_SINHVIEN` |
+| GPA/CPA | `SP_TinhGPA_HocKy`, `SP_TinhCPA_TichLuy` |
+| Học phí | `GET /api/hocphi/cua-toi` · `POST /api/hocphi/thu` → `SP_ThuHocPhi` |
+| Nhập điểm GV | `POST /api/giangvien/nhapdiem` → `SP_GV_NHAP_DIEM` |
+| Mở LHP | `POST /api/admin/molophocphan` → `SP_MoLopHocPhan` |
+| Thêm SV | `POST /api/admin/themsinhvien` → `SP_ThemSinhVien_Moi` |
+| Chuyển lớp | `POST /api/danhmuc/sinhvien/chuyenlop` → `SP_ChuyenLop_Nganh` |
 
 ## Mã lỗi giao diện ↔ SP
 

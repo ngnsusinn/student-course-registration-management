@@ -12,14 +12,8 @@
             <span class="app-header__logo">🎓</span>
             <h1 class="app-header__title">Danh sách đăng ký học phần</h1>
         </div>
-        <nav class="app-nav">
-            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
-            <a href="dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
-            <a href="thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
-            <a href="danh-sach-dang-ky.html" class="app-nav__link app-nav__link--active">Danh sách đăng ký</a>
-            <a href="huy-dang-ky.html" class="app-nav__link">Hủy đăng ký</a>
-        </nav>
-        <div class="app-header__user"><span>👤 SV001</span></div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
     </header>
 
     <main class="container">
@@ -62,41 +56,8 @@
     <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
     <div id="toast-container" class="toast-container"></div>
 
+    <script src="../../js/api.js"></script>
     <script src="../../js/shared.js"></script>
-    <script src="../../js/mock-data.js"></script>
     <script src="../../js/dangky.js"></script>
-    <script>
-        // Mở rộng render cho màn hình danh sách (thêm học kỳ + tóm tắt)
-        document.addEventListener('DOMContentLoaded', function () {
-            const tbody = document.getElementById('registered-body');
-            if (!tbody) return;
-            const registered = MOCK.registrations.filter(r => r.trangThai === 'DA_DANG_KY');
-            tbody.innerHTML = registered.map(r => {
-                const c = getClass(r.MaLHP);
-                if (!c) return '';
-                return `
-                <tr>
-                    <td><code>${esc(c.MaLHP)}</code></td>
-                    <td>${esc(c.mon)}</td>
-                    <td>${esc(c.tenLop)}</td>
-                    <td>${c.soTinChi}</td>
-                    <td>HK1-2025</td>
-                    <td>${esc(r.ngayDangKy)}</td>
-                    <td><span class="badge badge--success">Đã đăng ký</span></td>
-                </tr>`;
-            }).join('');
-            const empty = document.getElementById('registered-empty');
-            if (empty) empty.style.display = registered.length ? 'none' : 'block';
-
-            const tong = getTongTinChiDaDangKy();
-            const max = MOCK.currentStudent.maxTinChi;
-            const statTong = document.getElementById('stat-tong');
-            const statMax = document.getElementById('stat-max');
-            const statCon = document.getElementById('stat-con');
-            if (statTong) statTong.textContent = tong + ' TC';
-            if (statMax) statMax.textContent = max + ' TC';
-            if (statCon) statCon.textContent = (max - tong) + ' TC';
-        });
-    </script>
 </body>
 </html>

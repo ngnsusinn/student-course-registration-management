@@ -1,252 +1,274 @@
 /* ==========================================================
-   Tên file : web/js/dangky.js
-   Module   : Đăng ký học phần (TV3 — Leader, Issue #71)
-   Mô tả    : Logic đăng ký học phần phía UI.
-              Mô phỏng 5 ràng buộc + mã lỗi giống SP_DangKyHocPhan.
-              Khi có backend, thay các hàm local bằng fetch API.
-========================================================== */
+   Ten file : web/js/dangky.js
+   Module   : Dang ky hoc phan (TV3 — Leader, Issue #71)
+   Mo ta    : Logic dang ky hoc phan phia UI — goi API backend
+              (SP_DangKyHocPhan / SP_HuyDangKy tren MySQL).
+              Ma loi 0/100..106, 200..202 khop SP.
+   ========================================================== */
 
-// ---------- Tiện ích ----------
-function getRegisteredLHP() {
-    return MOCK.registrations.filter(r => r.trangThai === 'DA_DANG_KY').map(r => r.MaLHP);
-}
-function getClass(MaLHP) {
-    return MOCK.classes.find(c => c.MaLHP === MaLHP);
-}
+const DK_ERROR_MESSAGES = {
+  100: 'Rất tiếc! Hiện tại ngoài thời hạn đăng ký học phần của học kỳ này.',
+  101: 'Bạn đã đăng ký lớp học phần này rồi.',
+  102: 'Không thể đăng ký! Bạn chưa hoàn thành môn tiên quyết của môn học này.',
+  103: 'Đăng ký thất bại! Lớp học phần bị trùng lịch học với lớp bạn đã đăng ký.',
+  104: 'Không thể đăng ký! Tổng số tín chỉ vượt quá giới hạn tối đa cho phép.',
+  105: 'Đăng ký thất bại! Lớp học phần đã đầy sĩ số (hết chỗ trống).',
+  106: 'Lớp học phần không tồn tại hoặc không ở trạng thái mở đăng ký.',
+  500: 'Lỗi hệ thống khi xử lý đăng ký.',
+};
 
-// ---------- Tổng tín chỉ đã đăng ký ----------
-function getTongTinChiDaDangKy() {
-    return getRegisteredLHP().reduce((sum, lhp) => sum + (getClass(lhp)?.soTinChi || 0), 0);
-}
+// ---------- State ----------
+let STATE = {
+  hocKy: null,
+  lopHocPhan: [],
+  danhSachDangKy: [],
+  tongTinChi: 0,
+  maxTinChi: 24,
+};
 
-// ---------- Kiểm tra 5 ràng buộc (mã lỗi giống SP) ----------
-// Trả về { ok: true } hoặc { ok: false, maLoi, message }
-function kiemTraDangKy(MaLHP) {
-    // Bước 1: Hạn đăng ký (mã 100)
-    const dot = getDotHienTai();
-    if (!dot) {
-        return { ok: false, maLoi: 100, message: 'Rất tiếc! Hiện tại ngoài thời hạn đăng ký học phần của học kỳ này.' };
-    }
-
-    // Bước 2: Đăng ký trùng LHP (mã 101)
-    if (getRegisteredLHP().includes(MaLHP)) {
-        return { ok: false, maLoi: 101, message: `Bạn đã đăng ký lớp học phần ${MaLHP} rồi.` };
-    }
-
-    const cls = getClass(MaLHP);
-    if (!cls) {
-        return { ok: false, maLoi: 106, message: `Không tồn tại lớp học phần: ${MaLHP}` };
-    }
-
-    // Bước 3: Môn tiên quyết (mã 102) — mock theo cấu hình
-    const PREREQ = {
-        'LHP501': ['MH004'], 'LHP502': ['MH006'], 'LHP503': ['MH004'],
-        'LHP504': ['MH003'], 'LHP505': ['MH009'], 'LHP507': ['MH012'],
-        'LHP508': ['MH007'], 'LHP514': ['MH033'], 'LHP516': ['MH035'],
-    };
-    const require = PREREQ[MaLHP] || [];
-    const thieu = require.filter(m => !MOCK.passedSubjects.includes(m));
-    if (thieu.length > 0) {
-        return { ok: false, maLoi: 102, message: 'Không thể đăng ký! Bạn chưa hoàn thành môn học tiên quyết: ' + thieu.join(', ') + '.' };
-    }
-
-    // Bước 4: Trùng lịch học (mã 103)
-    for (const lhpDaDK of getRegisteredLHP()) {
-        const c = getClass(lhpDaDK);
-        if (!c) continue;
-        // Cùng Thứ + khung tiết giao nhau
-        if (c.thu === cls.thu &&
-            c.tietBatDau <= cls.tietBatDau + cls.soTiet - 1 &&
-            c.tietBatDau + c.soTiet - 1 >= cls.tietBatDau) {
-            return { ok: false, maLoi: 103, message: `Đăng ký thất bại! Lớp học phần ${MaLHP} bị trùng lịch học với lớp ${lhpDaDK} (Thứ ${c.thu}, tiết ${c.tietBatDau}-${c.tietBatDau + c.soTiet - 1}).` };
-        }
-    }
-
-    // Bước 5: Giới hạn tín chỉ (mã 104)
-    const tongMoi = getTongTinChiDaDangKy() + cls.soTinChi;
-    if (tongMoi > MOCK.currentStudent.maxTinChi) {
-        return { ok: false, maLoi: 104, message: `Không thể đăng ký! Tổng số tín chỉ sau khi thêm (${tongMoi} TC) vượt quá giới hạn tối đa cho phép (${MOCK.currentStudent.maxTinChi} TC) trong học kỳ này.` };
-    }
-
-    // Bước 6: Sĩ số (mã 105)
-    if (cls.siSoHienTai >= cls.siSoToiDa) {
-        return { ok: false, maLoi: 105, message: `Đăng ký thất bại! Lớp học phần ${MaLHP} đã đầy sĩ số (Hết chỗ trống).` };
-    }
-
-    return { ok: true };
+// ---------- Tai du lieu khoi tao ----------
+async function loadState() {
+  const [hk, lopmo, danhsach] = await Promise.all([
+    api.get('/api/dangky/hocky-hientai'),
+    api.get('/api/dangky/lopmo'),
+    api.get('/api/dangky/danhsach'),
+  ]);
+  STATE.hocKy = hk.hocKy;
+  STATE.lopHocPhan = lopmo.lopHocPhan || [];
+  STATE.danhSachDangKy = danhsach.danhSach || [];
+  try {
+    const tc = await api.get('/api/dangky/tongtinchi');
+    STATE.tongTinChi = Number(tc.tongTinChi || 0);
+  } catch { STATE.tongTinChi = 0; }
 }
 
-// ---------- Đăng ký ----------
-function dangKy(MaLHP) {
-    const kq = kiemTraDangKy(MaLHP);
-    if (!kq.ok) {
-        showToast(kq.message, 'error');
-        return false;
+// ---------- Dang ky ----------
+async function dangKy(MaLHP) {
+  if (!requireAuth('SV')) return;
+  try {
+    const r = await api.post('/api/dangky', { MaLHP, MaxTinChi: STATE.maxTinChi });
+    showToast(`✅ ${r.message} — ${MaLHP}`, 'success');
+    await refresh();
+  } catch (e) {
+    if (e.data && e.data.ketQua && DK_ERROR_MESSAGES[e.data.ketQua]) {
+      showToast(DK_ERROR_MESSAGES[e.data.ketQua], 'error');
+    } else {
+      showToast(e.message, 'error');
     }
-    const cls = getClass(MaLHP);
-    cls.siSoHienTai += 1;
-    MOCK.registrations.push({
-        MaLHP, trangThai: 'DA_DANG_KY',
-        ngayDangKy: new Date().toISOString().slice(0, 19).replace('T', ' '),
-        ghiChu: null,
-    });
-    showToast(`✅ Đăng ký học phần THÀNH CÔNG: ${MaLHP} (${cls.mon})`, 'success');
-    renderClassList();
-    renderDashboard();
-    return true;
+  }
 }
 
-// ---------- Hủy đăng ký ----------
-function huyDangKy(MaLHP) {
-    const dot = getDotHienTai();
-    if (!dot) {
-        showToast('Rất tiếc! Hiện tại ngoài thời hạn hủy đăng ký học phần.', 'error');
-        return;
-    }
-    const rec = MOCK.registrations.find(r => r.MaLHP === MaLHP && r.trangThai === 'DA_DANG_KY');
-    if (!rec) {
-        showToast(`Không tìm thấy bản ghi đăng ký học phần ${MaLHP} đang hiệu lực.`, 'error');
-        return;
-    }
-    rec.trangThai = 'DA_HUY';
-    const cls = getClass(MaLHP);
-    if (cls) cls.siSoHienTai -= 1;
-    showToast(`✅ Hủy đăng ký THÀNH CÔNG: ${MaLHP}`, 'success');
-    renderClassList();
-    renderDashboard();
+// ---------- Huy dang ky ----------
+async function huyDangKy(MaLHP) {
+  if (!requireAuth('SV')) return;
+  if (!confirm(`Bạn có chắc muốn HỦY đăng ký lớp ${MaLHP}?`)) return;
+  try {
+    const r = await api.post('/api/dangky/huy', { MaLHP });
+    showToast(`✅ ${r.message}`, 'success');
+    await refresh();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
+}
+
+// ---------- Refresh toan bo ----------
+async function refresh() {
+  await loadState();
+  renderClassList();
+  renderDaDangKy();
+  renderDashboard();
+  renderThoiKhoaBieu();
+  renderDotStatus();
 }
 
 // ---------- Render: Dashboard ----------
 function renderDashboard() {
-    const elTinChi = document.getElementById('stat-tong-tin-chi');
-    const elSoLop = document.getElementById('stat-so-lop');
-    const elHan = document.getElementById('stat-han-dang-ky');
-    const elTrangThai = document.getElementById('stat-trang-thai');
-
-    if (elTinChi) elTinChi.textContent = getTongTinChiDaDangKy() + ' TC';
-    if (elSoLop) elSoLop.textContent = getRegisteredLHP().length + ' lớp';
-    if (elHan) {
-        const dot = getDotHienTai();
-        elHan.textContent = dot ? dot.denNgay : 'Đã đóng';
-    }
-    if (elTrangThai) {
-        const dot = getDotHienTai();
-        elTrangThai.textContent = dot ? 'Đang mở' : 'Đã đóng';
-    }
+  const elTinChi = document.getElementById('stat-tong-tin-chi');
+  const elSoLop = document.getElementById('stat-so-lop');
+  const elHan = document.getElementById('stat-han-dang-ky');
+  const elTrangThai = document.getElementById('stat-trang-thai');
+  if (elTinChi) elTinChi.textContent = STATE.tongTinChi + ' TC';
+  if (elSoLop) {
+    const n = STATE.danhSachDangKy.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY').length;
+    elSoLop.textContent = n + ' lớp';
+  }
+  if (elHan) elHan.textContent = STATE.hocKy ? STATE.hocKy.DenNgay : 'Đã đóng';
+  if (elTrangThai) elTrangThai.textContent = STATE.hocKy ? 'Đang mở' : 'Đã đóng';
 }
 
-// ---------- Render: Danh sách lớp ----------
+// ---------- Render: Trang thai dot ----------
+function renderDotStatus() {
+  const badge = document.getElementById('dot-status');
+  const badgeWarn = document.getElementById('dot-status-warning');
+  const alertEl = document.getElementById('han-huy-alert');
+  if (badge) {
+    badge.className = STATE.hocKy ? 'badge badge--success' : 'badge badge--error';
+    badge.textContent = STATE.hocKy ? `Đợt đang mở (hạn: ${STATE.hocKy.DenNgay})` : 'Đợt đã đóng';
+  }
+  if (badgeWarn) {
+    badgeWarn.textContent = STATE.hocKy ? `Đang mở — hạn hủy: ${STATE.hocKy.DenNgay}` : 'Đợt đã đóng';
+  }
+  if (alertEl) {
+    if (STATE.hocKy) {
+      alertEl.className = 'alert alert--success';
+      alertEl.innerHTML = '✅ Đợt đăng ký đang mở — bạn có thể đăng ký / hủy các lớp dưới đây.';
+    } else {
+      alertEl.className = 'alert alert--error';
+      alertEl.innerHTML = '❌ Đợt đăng ký đã đóng — bạn KHÔNG thể đăng ký hoặc hủy.';
+    }
+  }
+}
+
+// ---------- Render: Danh sach lop ----------
 function renderClassList() {
-    // Cập nhật bộ đếm tín chỉ (trên trang đăng ký)
-    const creditCounter = document.getElementById('credit-counter');
-    if (creditCounter) {
-        creditCounter.textContent = `Đã ĐK: ${getTongTinChiDaDangKy()} TC / tối đa ${MOCK.currentStudent.maxTinChi} TC`;
-    }
+  const creditCounter = document.getElementById('credit-counter');
+  if (creditCounter) {
+    creditCounter.textContent = `Đã ĐK: ${STATE.tongTinChi} TC / tối đa ${STATE.maxTinChi} TC`;
+  }
 
-    const search = (document.getElementById('search-input')?.value || '').toLowerCase();
-    const filterKhoi = document.getElementById('filter-khoi')?.value || '';
+  const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+  const filterKhoi = document.getElementById('filter-khoi')?.value || '';
 
-    const filtered = MOCK.classes.filter(c => {
-        const matchSearch = !search ||
-            c.MaLHP.toLowerCase().includes(search) ||
-            c.mon.toLowerCase().includes(search);
-        // Map khối theo mã môn (đơn giản hoá)
-        let khoi = 'CNTT';
-        if (c.MaLHP >= 'LHP509' && c.MaLHP <= 'LHP512') khoi = 'KTT';
-        if (c.MaLHP >= 'LHP513') khoi = 'XD';
-        const matchKhoi = !filterKhoi || khoi === filterKhoi;
-        return matchSearch && matchKhoi;
-    });
+  const filtered = STATE.lopHocPhan.filter(c => {
+    const matchSearch = !search ||
+      c.MaLHP.toLowerCase().includes(search) ||
+      (c.TenMonHoc || '').toLowerCase().includes(search) ||
+      (c.TenLHP || '').toLowerCase().includes(search);
+    let khoi = 'CNTT';
+    if (c.MaLHP >= 'LHP509' && c.MaLHP <= 'LHP512') khoi = 'KTT';
+    if (c.MaLHP >= 'LHP513') khoi = 'XD';
+    const matchKhoi = !filterKhoi || khoi === filterKhoi;
+    return matchSearch && matchKhoi;
+  });
 
-    const tbody = document.getElementById('class-list-body');
-    const empty = document.getElementById('class-list-empty');
-    if (!tbody) return;
+  const tbody = document.getElementById('class-list-body');
+  const empty = document.getElementById('class-list-empty');
+  if (!tbody) return;
 
-    const registered = getRegisteredLHP();
+  const daDangKySet = new Set(
+    STATE.danhSachDangKy.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY').map(d => d.MaLHP)
+  );
 
-    tbody.innerHTML = filtered.map(c => {
-        const daDangKy = registered.includes(c.MaLHP);
-        const hetCho = c.siSoHienTai >= c.siSoToiDa;
-        return `
-        <tr>
-            <td><code>${esc(c.MaLHP)}</code></td>
-            <td>${esc(c.tenLop)}</td>
-            <td>${esc(c.mon)}</td>
-            <td>${c.soTinChi}</td>
-            <td>${formatTiSo(c.siSoHienTai, c.siSoToiDa)}</td>
-            <td>${esc(c.giangVien)}</td>
-            <td>
-                ${daDangKy
-                    ? `<span class="badge badge--success">Đã đăng ký</span>
-                       <button class="btn btn--danger btn--sm" onclick="huyDangKy('${c.MaLHP}')">Hủy</button>`
-                    : hetCho
-                        ? `<button class="btn btn--primary btn--sm" disabled>Hết chỗ</button>`
-                        : `<button class="btn btn--success btn--sm" onclick="dangKy('${c.MaLHP}')">Đăng ký</button>`
-                }
-            </td>
-        </tr>`;
-    }).join('');
+  tbody.innerHTML = filtered.map(c => {
+    const daDangKy = daDangKySet.has(c.MaLHP);
+    const hetCho = Number(c.SiSoHienTai) >= Number(c.SiSoToiDa);
+    return `
+    <tr>
+        <td><code>${esc(c.MaLHP)}</code></td>
+        <td>${esc(c.TenMonHoc)}<br><small class="text-muted">${esc(c.TenLHP || '')}</small></td>
+        <td>${c.SoTinChi}</td>
+        <td>${esc(c.LichHoc || '—')}</td>
+        <td>${formatTiSo(Number(c.SiSoHienTai), Number(c.SiSoToiDa))}</td>
+        <td>${esc(c.TenGV || '—')}</td>
+        <td>
+            ${daDangKy
+              ? `<span class="badge badge--success">Đã đăng ký</span>
+                 <button class="btn btn--danger btn--sm" onclick="huyDangKy('${c.MaLHP}')">Hủy</button>`
+              : hetCho
+                ? `<button class="btn btn--primary btn--sm" disabled>Hết chỗ</button>`
+                : `<button class="btn btn--success btn--sm" onclick="dangKy('${c.MaLHP}')">Đăng ký</button>`}
+        </td>
+    </tr>`;
+  }).join('');
 
-    if (empty) empty.style.display = filtered.length ? 'none' : 'block';
+  if (empty) empty.style.display = filtered.length ? 'none' : 'block';
 }
 
-// ---------- Render: Giỏ đăng ký / đã đăng ký ----------
+// ---------- Render: Gio dang ky / da dang ky ----------
 function renderDaDangKy() {
-    const tbody = document.getElementById('registered-body');
-    if (!tbody) return;
+  const tbody = document.getElementById('registered-body');
+  if (!tbody) return;
 
-    const registered = MOCK.registrations.filter(r => r.trangThai === 'DA_DANG_KY');
-    tbody.innerHTML = registered.map(r => {
-        const c = getClass(r.MaLHP);
-        if (!c) return '';
-        return `
-        <tr>
-            <td><code>${esc(c.MaLHP)}</code></td>
-            <td>${esc(c.mon)}</td>
-            <td>${c.soTinChi}</td>
-            <td>${esc(r.ngayDangKy)}</td>
-            <td><span class="badge badge--success">Đã đăng ký</span></td>
-            <td><button class="btn btn--danger btn--sm" onclick="huyDangKy('${c.MaLHP}')">Hủy</button></td>
-        </tr>`;
-    }).join('');
+  const registered = STATE.danhSachDangKy.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY');
+  tbody.innerHTML = registered.map(d => `
+    <tr>
+        <td><code>${esc(d.MaLHP)}</code></td>
+        <td>${esc(d.TenMonHoc)}</td>
+        <td>${d.SoTinChi}</td>
+        <td>${esc(d.NgayDangKy || '')}</td>
+        <td>${badgeTrangThaiDangKy(d.TrangThaiDangKy)}</td>
+        <td><button class="btn btn--danger btn--sm" onclick="huyDangKy('${d.MaLHP}')">Hủy</button></td>
+    </tr>`).join('');
 
-    // Empty state
-    const empty = document.getElementById('registered-empty');
-    if (empty) empty.style.display = registered.length ? 'none' : 'block';
+  const empty = document.getElementById('registered-empty');
+  if (empty) empty.style.display = registered.length ? 'none' : 'block';
 
-    const total = document.getElementById('registered-total');
-    if (total) total.textContent = getTongTinChiDaDangKy() + ' TC / ' + MOCK.currentStudent.maxTinChi + ' TC';
+  const total = document.getElementById('registered-total');
+  if (total) total.textContent = `${STATE.tongTinChi} TC / ${STATE.maxTinChi} TC`;
+
+  // Màn hình danh sách đăng ký (trang danh-sach-dang-ky.html — 7 cột + tóm tắt)
+  if (document.getElementById('stat-tong')) {
+    const dsBody = document.getElementById('registered-body');
+    const all = STATE.danhSachDangKy;
+    dsBody.innerHTML = all.map(d => `
+      <tr>
+        <td><code>${esc(d.MaLHP)}</code></td>
+        <td>${esc(d.TenMonHoc)}</td>
+        <td>${esc(d.TenLHP)}</td>
+        <td>${d.SoTinChi}</td>
+        <td>${esc(d.MaHocKy)}</td>
+        <td>${esc(d.NgayDangKy || '')}</td>
+        <td>${badgeTrangThaiDangKy(d.TrangThaiDangKy)}</td>
+      </tr>`).join('');
+    if (empty) empty.style.display = all.length ? 'none' : 'block';
+
+    const statTong = document.getElementById('stat-tong');
+    const statMax = document.getElementById('stat-max');
+    const statCon = document.getElementById('stat-con');
+    if (statTong) statTong.textContent = STATE.tongTinChi + ' TC';
+    if (statMax) statMax.textContent = STATE.maxTinChi + ' TC';
+    if (statCon) statCon.textContent = Math.max(0, STATE.maxTinChi - STATE.tongTinChi) + ' TC';
+  }
 }
 
-// ---------- Render: Thời khóa biểu ----------
+// ---------- Render: Thoi khoa bieu ----------
 function renderThoiKhoaBieu() {
-    const tbody = document.getElementById('tkb-body');
-    if (!tbody) return;
+  const tbody = document.getElementById('tkb-body');
+  if (!tbody) return;
 
-    const registered = getRegisteredLHP().map(getClass).filter(Boolean)
-        .sort((a, b) => a.thu - b.thu || a.tietBatDau - b.tietBatDau);
-
-    const thuNames = { 2: 'Thứ Hai', 3: 'Thứ Ba', 4: 'Thứ Tư', 5: 'Thứ Năm', 6: 'Thứ Sáu', 7: 'Thứ Bảy', 8: 'Chủ nhật' };
-
-    tbody.innerHTML = registered.map(c => `
+  const rows = STATE.danhSachDangKy.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY');
+  // Lấy lịch từ lớp đã đăng ký qua API thoikhoabieu
+  api.get('/api/dangky/thoikhoabieu')
+    .then(r => {
+      const list = (r.thoiKhoaBieu || []).sort((a, b) => a.Thu - b.Thu || a.TietBatDau - b.TietBatDau);
+      tbody.innerHTML = list.map(c => `
         <tr>
-            <td>${thuNames[c.thu]}</td>
-            <td>Tiết ${c.tietBatDau} - ${c.tietBatDau + c.soTiet - 1}</td>
+            <td>${thuName(c.Thu)}</td>
+            <td>Tiết ${c.TietBatDau} - ${Number(c.TietBatDau) + Number(c.SoTiet) - 1}</td>
             <td><code>${esc(c.MaLHP)}</code></td>
-            <td>${esc(c.mon)}</td>
-            <td>${esc(c.giangVien)}</td>
+            <td>${esc(c.TenMonHoc)}</td>
+            <td>${esc(c.TenPhong || '')}</td>
+            <td>${esc(c.HoTenGV || '—')}</td>
         </tr>`).join('');
-
-    const empty = document.getElementById('tkb-empty');
-    if (empty) empty.style.display = registered.length ? 'none' : 'block';
+      const empty = document.getElementById('tkb-empty');
+      if (empty) empty.style.display = list.length ? 'none' : 'block';
+    })
+    .catch(() => {
+      if (tbody) tbody.innerHTML = `<tr><td colspan="6" class="text-muted">Không tải được thời khóa biểu.</td></tr>`;
+    });
 }
 
-// ---------- Render theo trang hiện tại ----------
-function initPage() {
+// ---------- Hien thi ten SV tren header ----------
+function renderUserInfo() {
+  const u = api.getUser();
+  const el = document.getElementById('user-name');
+  if (el && u) el.textContent = `${u.HoTen} (${u.MaSV || u.MaGV || u.TenDangNhap})`;
+}
+
+// ---------- Khoi dong trang ----------
+async function initPage() {
+  if (!requireAuth('SV')) return;
+  try {
+    await loadState();
     renderDashboard();
-    if (document.getElementById('class-list-body')) renderClassList();
-    if (document.getElementById('registered-body')) renderDaDangKy();
-    if (document.getElementById('tkb-body')) renderThoiKhoaBieu();
+    renderClassList();
+    renderDaDangKy();
+    renderThoiKhoaBieu();
+    renderDotStatus();
+    renderUserInfo();
+  } catch (e) {
+    showToast(e.message, 'error');
+  }
 }
 
 document.addEventListener('DOMContentLoaded', initPage);

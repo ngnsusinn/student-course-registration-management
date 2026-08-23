@@ -12,14 +12,8 @@
             <span class="app-header__logo">🎓</span>
             <h1 class="app-header__title">Hủy đăng ký học phần</h1>
         </div>
-        <nav class="app-nav">
-            <a href="../../index.html" class="app-nav__link">Trang chủ</a>
-            <a href="dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
-            <a href="thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
-            <a href="danh-sach-dang-ky.html" class="app-nav__link">Danh sách đăng ký</a>
-            <a href="huy-dang-ky.html" class="app-nav__link app-nav__link--active">Hủy đăng ký</a>
-        </nav>
-        <div class="app-header__user"><span>👤 SV001</span></div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
     </header>
 
     <main class="container">
@@ -72,24 +66,8 @@
     <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Module Đăng ký học phần (TV3)</p></footer>
     <div id="toast-container" class="toast-container"></div>
 
+    <script src="../../js/api.js"></script>
     <script src="../../js/shared.js"></script>
-    <script src="../../js/mock-data.js"></script>
     <script src="../../js/dangky.js"></script>
-    <script>
-        document.addEventListener('DOMContentLoaded', function () {
-            const dot = getDotHienTai();
-            const badge = document.getElementById('dot-status-warning');
-            const alertEl = document.getElementById('han-huy-alert');
-            if (!dot) {
-                if (badge) badge.textContent = 'Đợt đã đóng';
-                if (alertEl) {
-                    alertEl.className = 'alert alert--error';
-                    alertEl.innerHTML = '❌ Đợt đăng ký đã đóng — bạn KHÔNG thể hủy đăng ký.';
-                }
-            } else if (badge) {
-                badge.textContent = 'Đang mở — hạn hủy: ' + dot.denNgay;
-            }
-        });
-    </script>
 </body>
 </html>

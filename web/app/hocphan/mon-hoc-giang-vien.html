@@ -1,0 +1,594 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Môn học · Giảng viên · Phòng — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Môn học · Giảng viên · Phòng</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <!-- ============ Card A: Môn học ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📖 Môn học</h2>
+                <button class="btn btn--primary" onclick="themMonHoc()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-monhoc" class="input" placeholder="🔍 Tìm theo mã / tên môn học..." oninput="renderMonHoc()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã</th><th>Tên môn học</th><th>Số TC</th><th>LT</th><th>TH</th><th>Khoa</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="monhoc-body"></tbody>
+            </table>
+            <p class="card__note" id="monhoc-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card B: Giảng viên ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">👩‍🏫 Giảng viên</h2>
+                <button class="btn btn--primary" onclick="themGiangVien()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-giangvien" class="input" placeholder="🔍 Tìm theo mã / tên giảng viên..." oninput="renderGiangVien()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã GV</th><th>Họ tên</th><th>Email</th><th>Khoa</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="giangvien-body"></tbody>
+            </table>
+            <p class="card__note" id="giangvien-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card C: Phòng học ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🚪 Phòng học</h2>
+                <button class="btn btn--primary" onclick="themPhongHoc()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-phonghoc" class="input" placeholder="🔍 Tìm theo mã / tên phòng..." oninput="renderPhongHoc()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã phòng</th><th>Tên phòng</th><th>Sức chứa</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="phonghoc-body"></tbody>
+            </table>
+            <p class="card__note" id="phonghoc-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Card D: Học kỳ / Đợt đăng ký ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🗓️ Học kỳ / Đợt đăng ký</h2>
+                <button class="btn btn--primary" onclick="themHocKy()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-hocky" class="input" placeholder="🔍 Tìm theo mã / tên học kỳ..." oninput="renderHocKy()">
+            </div>
+            <table class="table">
+                <thead>
+                    <tr><th>Mã HK</th><th>Tên học kỳ</th><th>Năm học</th><th>Từ ngày</th><th>Đến ngày</th><th>Trạng thái</th><th>Đợt ĐK</th><th>Thao tác</th></tr>
+                </thead>
+                <tbody id="hocky-body"></tbody>
+            </table>
+            <p class="card__note" id="hocky-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal dùng chung (thêm/sửa môn học, giảng viên, phòng, học kỳ) -->
+    <div class="modal-mask hidden" id="modal-mask">
+        <div class="modal">
+            <h3 id="modal-title">Thêm mới</h3>
+            <form id="modal-form"></form>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        /* ============ Bảo vệ trang (chỉ PĐT) ============ */
+        if (!requireAuth('PĐT')) { /* chưa đăng nhập / sai vai trò -> đã redirect */ }
+
+        /* ============ Trạng thái ============ */
+        let khoa = [];
+        let monHoc = [];
+        let giangVien = [];
+        let phongHoc = [];
+        let hocKy = [];
+        let tienQuyetMap = {}; // MaMonHoc -> [MaMonTienQuyet]
+
+        let editingMonHoc = null;
+        let editingGiangVien = null;
+        let editingPhongHoc = null;
+        let editingHocKy = null;
+
+        /* ============ Tiện ích ============ */
+        function fmtDate(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            if (isNaN(d)) return String(v).slice(0, 10);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function badgeTrangThaiDot(tt) {
+            const map = { MO: ['success', 'Mở đăng ký'], DONG: ['warning', 'Đóng đăng ký'] };
+            const [cls, label] = map[tt] || ['info', tt || '—'];
+            return `<span class="badge badge--${cls}">${label}</span>`;
+        }
+
+        function badgeDangMoDangKy(d) {
+            return Number(d) === 1
+                ? '<span class="badge badge--success">Đang mở</span>'
+                : '<span class="badge badge--warning">Chưa mở</span>';
+        }
+
+        function moModal(title, html, onsubmit) {
+            document.getElementById('modal-title').textContent = title;
+            const form = document.getElementById('modal-form');
+            form.innerHTML = html + `
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--outline" onclick="dongModal()">Hủy</button>
+                    <button type="submit" class="btn btn--primary">Lưu</button>
+                </div>`;
+            form.onsubmit = onsubmit;
+            document.getElementById('modal-mask').classList.remove('hidden');
+        }
+
+        function dongModal() {
+            document.getElementById('modal-mask').classList.add('hidden');
+        }
+
+        /* ============ Nạp dữ liệu ============ */
+        async function loadData() {
+            try {
+                const [k, mh, gv, ph, hk, tq] = await Promise.all([
+                    api.get('/api/danhmuc/khoa'),
+                    api.get('/api/danhmuc/monhoc'),
+                    api.get('/api/danhmuc/giangvien'),
+                    api.get('/api/danhmuc/phonghoc'),
+                    api.get('/api/danhmuc/hocky'),
+                    api.get('/api/danhmuc/tienquyet'),
+                ]);
+                khoa = k.khoa || [];
+                monHoc = mh.monHoc || [];
+                giangVien = gv.giangVien || [];
+                phongHoc = ph.phongHoc || [];
+                hocKy = hk.hocKy || [];
+
+                tienQuyetMap = {};
+                (tq.tienQuyet || []).forEach(r => {
+                    if (!tienQuyetMap[r.MaMonHoc]) tienQuyetMap[r.MaMonHoc] = [];
+                    tienQuyetMap[r.MaMonHoc].push(r.MaMonTienQuyet);
+                });
+
+                renderMonHoc();
+                renderGiangVien();
+                renderPhongHoc();
+                renderHocKy();
+            } catch (e) {
+                showToast(e.message || 'Không tải được dữ liệu.', 'error');
+            }
+        }
+
+        function khoaOptions(selected) {
+            return khoa.map(k =>
+                `<option value="${esc(k.MaKhoa)}" ${k.MaKhoa === selected ? 'selected' : ''}>${esc(k.MaKhoa)} — ${esc(k.TenKhoa)}</option>`
+            ).join('');
+        }
+
+        /* ============ Card A: Môn học ============ */
+        function renderMonHoc() {
+            const kw = (document.getElementById('search-monhoc').value || '').trim().toLowerCase();
+            const rows = monHoc.filter(x =>
+                !kw || String(x.MaMonHoc || '').toLowerCase().includes(kw) || String(x.TenMonHoc || '').toLowerCase().includes(kw));
+            document.getElementById('monhoc-body').innerHTML = rows.map(x => {
+                const i = monHoc.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaMonHoc)}</code></td>
+                    <td>${esc(x.TenMonHoc)}</td>
+                    <td>${esc(x.SoTinChi ?? '')}</td>
+                    <td>${esc(x.SoTietLyThuyet ?? 0)}</td>
+                    <td>${esc(x.SoTietThucHanh ?? 0)}</td>
+                    <td>${esc(x.TenKhoa || x.MaKhoa)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaMonHoc(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaMonHoc(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('monhoc-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        const monHocFormHtml = `
+            <div class="form-group"><label>Mã môn học</label><input class="input" id="f-MaMonHoc" required></div>
+            <div class="form-group"><label>Tên môn học</label><input class="input" id="f-TenMonHoc" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Số tín chỉ</label><input type="number" min="0" class="input" id="f-SoTinChi" required></div>
+                <div class="form-group"><label>Thuộc khoa</label>
+                    <select class="input input--select" id="f-MaKhoa" required><option value="">-- Chọn khoa --</option></select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Số tiết lý thuyết</label><input type="number" min="0" class="input" id="f-SoTietLyThuyet" value="0"></div>
+                <div class="form-group"><label>Số tiết thực hành</label><input type="number" min="0" class="input" id="f-SoTietThucHanh" value="0"></div>
+            </div>
+            <div class="form-group">
+                <label>Môn tiên quyết <span class="text-muted">(chọn các môn phải học trước)</span></label>
+                <div id="f-TienQuyet" style="max-height:150px;overflow-y:auto;border:1px solid var(--color-border);border-radius:var(--radius);padding:8px 10px;"></div>
+            </div>`;
+
+        function tienQuyetChecks(excludeMa) {
+            const checked = new Set((tienQuyetMap[excludeMa] || []));
+            const others = monHoc.filter(m => m.MaMonHoc !== excludeMa);
+            if (!others.length) return '<span class="text-muted">Chưa có môn học nào khác.</span>';
+            return others.map(m => {
+                const ck = checked.has(m.MaMonHoc) ? ' checked' : '';
+                return `<label style="display:flex;align-items:center;gap:8px;font-size:13px;padding:3px 0;cursor:pointer">
+                    <input type="checkbox" value="${esc(m.MaMonHoc)}"${ck}>
+                    <span>${esc(m.MaMonHoc)} — ${esc(m.TenMonHoc)}</span>
+                </label>`;
+            }).join('');
+        }
+
+        function themMonHoc() {
+            editingMonHoc = null;
+            moModal('Thêm môn học', monHocFormHtml, luuMonHoc);
+            document.getElementById('f-MaMonHoc').readOnly = false;
+            document.getElementById('f-MaKhoa').innerHTML = '<option value="">-- Chọn khoa --</option>' + khoaOptions();
+            document.getElementById('f-TienQuyet').innerHTML = tienQuyetChecks(null);
+        }
+
+        function suaMonHoc(i) {
+            const x = monHoc[i];
+            if (!x) return;
+            editingMonHoc = x.MaMonHoc;
+            moModal('Sửa môn học — ' + x.MaMonHoc, monHocFormHtml, luuMonHoc);
+            document.getElementById('f-MaMonHoc').value = x.MaMonHoc || '';
+            document.getElementById('f-MaMonHoc').readOnly = true;
+            document.getElementById('f-TenMonHoc').value = x.TenMonHoc || '';
+            document.getElementById('f-SoTinChi').value = x.SoTinChi ?? '';
+            document.getElementById('f-MaKhoa').innerHTML = khoaOptions(x.MaKhoa);
+            document.getElementById('f-SoTietLyThuyet').value = x.SoTietLyThuyet ?? 0;
+            document.getElementById('f-SoTietThucHanh').value = x.SoTietThucHanh ?? 0;
+            document.getElementById('f-TienQuyet').innerHTML = tienQuyetChecks(x.MaMonHoc);
+        }
+
+        async function luuMonHoc(e) {
+            e.preventDefault();
+            const body = {
+                TenMonHoc: document.getElementById('f-TenMonHoc').value.trim(),
+                SoTinChi: document.getElementById('f-SoTinChi').value,
+                SoTietLyThuyet: document.getElementById('f-SoTietLyThuyet').value || 0,
+                SoTietThucHanh: document.getElementById('f-SoTietThucHanh').value || 0,
+                MaKhoa: document.getElementById('f-MaKhoa').value,
+            };
+            try {
+                if (editingMonHoc) {
+                    // PUT không gửi TienQuyet (chỉ thêm khi tạo mới)
+                    await api.put('/api/danhmuc/monhoc/' + encodeURIComponent(editingMonHoc), body);
+                    showToast('Cập nhật môn học thành công.', 'success');
+                } else {
+                    body.MaMonHoc = document.getElementById('f-MaMonHoc').value.trim();
+                    body.TienQuyet = Array.from(document.querySelectorAll('#f-TienQuyet input[type="checkbox"]:checked'))
+                        .map(c => c.value);
+                    await api.post('/api/danhmuc/monhoc', body);
+                    showToast('Thêm môn học thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaMonHoc(i) {
+            const x = monHoc[i];
+            if (!x) return;
+            if (!confirm(`Xóa môn học "${x.TenMonHoc}" (${x.MaMonHoc})?`)) return;
+            try {
+                await api.del('/api/danhmuc/monhoc/' + encodeURIComponent(x.MaMonHoc));
+                showToast('Xóa môn học thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa môn học.', 'error');
+            }
+        }
+
+        /* ============ Card B: Giảng viên ============ */
+        function renderGiangVien() {
+            const kw = (document.getElementById('search-giangvien').value || '').trim().toLowerCase();
+            const rows = giangVien.filter(x =>
+                !kw || String(x.MaGV || '').toLowerCase().includes(kw) || String(x.HoTen || '').toLowerCase().includes(kw));
+            document.getElementById('giangvien-body').innerHTML = rows.map(x => {
+                const i = giangVien.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaGV)}</code></td>
+                    <td>${esc(x.HoTen)}</td>
+                    <td>${esc(x.Email || '')}</td>
+                    <td>${esc(x.TenKhoa || x.MaKhoa)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaGiangVien(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaGiangVien(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('giangvien-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        const giangVienFormHtml = `
+            <div class="form-group"><label>Mã giảng viên</label><input class="input" id="f-MaGV" required></div>
+            <div class="form-group"><label>Họ tên</label><input class="input" id="f-HoTen" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input type="email" class="input" id="f-Email" required></div>
+                <div class="form-group"><label>Thuộc khoa</label>
+                    <select class="input input--select" id="f-MaKhoa" required><option value="">-- Chọn khoa --</option></select>
+                </div>
+            </div>`;
+
+        function themGiangVien() {
+            editingGiangVien = null;
+            moModal('Thêm giảng viên', giangVienFormHtml, luuGiangVien);
+            document.getElementById('f-MaGV').readOnly = false;
+            document.getElementById('f-MaKhoa').innerHTML = '<option value="">-- Chọn khoa --</option>' + khoaOptions();
+        }
+
+        function suaGiangVien(i) {
+            const x = giangVien[i];
+            if (!x) return;
+            editingGiangVien = x.MaGV;
+            moModal('Sửa giảng viên — ' + x.MaGV, giangVienFormHtml, luuGiangVien);
+            document.getElementById('f-MaGV').value = x.MaGV || '';
+            document.getElementById('f-MaGV').readOnly = true;
+            document.getElementById('f-HoTen').value = x.HoTen || '';
+            document.getElementById('f-Email').value = x.Email || '';
+            document.getElementById('f-MaKhoa').innerHTML = khoaOptions(x.MaKhoa);
+        }
+
+        async function luuGiangVien(e) {
+            e.preventDefault();
+            const body = {
+                HoTen: document.getElementById('f-HoTen').value.trim(),
+                Email: document.getElementById('f-Email').value.trim(),
+                MaKhoa: document.getElementById('f-MaKhoa').value,
+            };
+            try {
+                if (editingGiangVien) {
+                    await api.put('/api/danhmuc/giangvien/' + encodeURIComponent(editingGiangVien), body);
+                    showToast('Cập nhật giảng viên thành công.', 'success');
+                } else {
+                    body.MaGV = document.getElementById('f-MaGV').value.trim();
+                    await api.post('/api/danhmuc/giangvien', body);
+                    showToast('Thêm giảng viên thành công (kèm tài khoản).', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaGiangVien(i) {
+            const x = giangVien[i];
+            if (!x) return;
+            if (!confirm(`Xóa giảng viên "${x.HoTen}" (${x.MaGV})?`)) return;
+            try {
+                await api.del('/api/danhmuc/giangvien/' + encodeURIComponent(x.MaGV));
+                showToast('Xóa giảng viên thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa giảng viên.', 'error');
+            }
+        }
+
+        /* ============ Card C: Phòng học ============ */
+        function renderPhongHoc() {
+            const kw = (document.getElementById('search-phonghoc').value || '').trim().toLowerCase();
+            const rows = phongHoc.filter(x =>
+                !kw || String(x.MaPhong || '').toLowerCase().includes(kw) || String(x.TenPhong || '').toLowerCase().includes(kw));
+            document.getElementById('phonghoc-body').innerHTML = rows.map(x => {
+                const i = phongHoc.indexOf(x);
+                return `<tr>
+                    <td><code>${esc(x.MaPhong)}</code></td>
+                    <td>${esc(x.TenPhong)}</td>
+                    <td>${esc(x.SucChua ?? '')}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaPhongHoc(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaPhongHoc(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('phonghoc-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        const phongHocFormHtml = `
+            <div class="form-group"><label>Mã phòng</label><input class="input" id="f-MaPhong" required></div>
+            <div class="form-group"><label>Tên phòng</label><input class="input" id="f-TenPhong" required></div>
+            <div class="form-group"><label>Sức chứa</label><input type="number" min="1" class="input" id="f-SucChua" required></div>`;
+
+        function themPhongHoc() {
+            editingPhongHoc = null;
+            moModal('Thêm phòng học', phongHocFormHtml, luuPhongHoc);
+            document.getElementById('f-MaPhong').readOnly = false;
+        }
+
+        function suaPhongHoc(i) {
+            const x = phongHoc[i];
+            if (!x) return;
+            editingPhongHoc = x.MaPhong;
+            moModal('Sửa phòng học — ' + x.MaPhong, phongHocFormHtml, luuPhongHoc);
+            document.getElementById('f-MaPhong').value = x.MaPhong || '';
+            document.getElementById('f-MaPhong').readOnly = true;
+            document.getElementById('f-TenPhong').value = x.TenPhong || '';
+            document.getElementById('f-SucChua').value = x.SucChua ?? '';
+        }
+
+        async function luuPhongHoc(e) {
+            e.preventDefault();
+            const body = {
+                TenPhong: document.getElementById('f-TenPhong').value.trim(),
+                SucChua: document.getElementById('f-SucChua').value,
+            };
+            try {
+                if (editingPhongHoc) {
+                    await api.put('/api/danhmuc/phonghoc/' + encodeURIComponent(editingPhongHoc), body);
+                    showToast('Cập nhật phòng học thành công.', 'success');
+                } else {
+                    body.MaPhong = document.getElementById('f-MaPhong').value.trim();
+                    await api.post('/api/danhmuc/phonghoc', body);
+                    showToast('Thêm phòng học thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaPhongHoc(i) {
+            const x = phongHoc[i];
+            if (!x) return;
+            if (!confirm(`Xóa phòng "${x.TenPhong}" (${x.MaPhong})?`)) return;
+            try {
+                await api.del('/api/danhmuc/phonghoc/' + encodeURIComponent(x.MaPhong));
+                showToast('Xóa phòng học thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa phòng học.', 'error');
+            }
+        }
+
+        /* ============ Card D: Học kỳ / Đợt đăng ký ============ */
+        function renderHocKy() {
+            const kw = (document.getElementById('search-hocky').value || '').trim().toLowerCase();
+            const rows = hocKy.filter(x =>
+                !kw || String(x.MaHocKy || '').toLowerCase().includes(kw) || String(x.TenHocKy || '').toLowerCase().includes(kw));
+            document.getElementById('hocky-body').innerHTML = rows.map(x => {
+                const i = hocKy.indexOf(x);
+                const dangMo = x.TrangThaiDot === 'MO';
+                return `<tr>
+                    <td><code>${esc(x.MaHocKy)}</code></td>
+                    <td>${esc(x.TenHocKy)}</td>
+                    <td>${esc(x.NamHoc ?? '')}</td>
+                    <td>${esc(fmtDate(x.TuNgay))}</td>
+                    <td>${esc(fmtDate(x.DenNgay))}</td>
+                    <td>${badgeTrangThaiDot(x.TrangThaiDot)}</td>
+                    <td>${badgeDangMoDangKy(x.DangMoDangKy)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaHocKy(${i})">Sửa</button>
+                        <button class="btn btn--${dangMo ? 'warning' : 'success'} btn--sm" onclick="toggleHocKy(${i})">${dangMo ? 'Đóng' : 'Mở'}</button>
+                    </td>
+                </tr>`;
+            }).join('');
+            document.getElementById('hocky-empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        const hocKyFormHtml = `
+            <div class="form-group"><label>Mã học kỳ</label><input class="input" id="f-MaHocKy" required></div>
+            <div class="form-group"><label>Tên học kỳ</label><input class="input" id="f-TenHocKy" required></div>
+            <div class="form-row">
+                <div class="form-group"><label>Năm học</label><input type="number" min="2000" class="input" id="f-NamHoc" required></div>
+                <div class="form-group"><label>Trạng thái</label>
+                    <select class="input input--select" id="f-TrangThaiDot">
+                        <option value="MO">Mở đăng ký</option>
+                        <option value="DONG">Đóng đăng ký</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Từ ngày</label><input type="date" class="input" id="f-TuNgay" required></div>
+                <div class="form-group"><label>Đến ngày</label><input type="date" class="input" id="f-DenNgay" required></div>
+            </div>`;
+
+        function themHocKy() {
+            editingHocKy = null;
+            moModal('Thêm học kỳ', hocKyFormHtml, luuHocKy);
+            document.getElementById('f-MaHocKy').readOnly = false;
+        }
+
+        function suaHocKy(i) {
+            const x = hocKy[i];
+            if (!x) return;
+            editingHocKy = x.MaHocKy;
+            moModal('Sửa học kỳ — ' + x.MaHocKy, hocKyFormHtml, luuHocKy);
+            document.getElementById('f-MaHocKy').value = x.MaHocKy || '';
+            document.getElementById('f-MaHocKy').readOnly = true;
+            document.getElementById('f-TenHocKy').value = x.TenHocKy || '';
+            document.getElementById('f-NamHoc').value = x.NamHoc ?? '';
+            document.getElementById('f-TrangThaiDot').value = x.TrangThaiDot === 'MO' ? 'MO' : 'DONG';
+            document.getElementById('f-TuNgay').value = fmtDate(x.TuNgay);
+            document.getElementById('f-DenNgay').value = fmtDate(x.DenNgay);
+        }
+
+        async function luuHocKy(e) {
+            e.preventDefault();
+            const body = {
+                TenHocKy: document.getElementById('f-TenHocKy').value.trim(),
+                NamHoc: document.getElementById('f-NamHoc').value,
+                TuNgay: document.getElementById('f-TuNgay').value,
+                DenNgay: document.getElementById('f-DenNgay').value,
+                TrangThaiDot: document.getElementById('f-TrangThaiDot').value,
+            };
+            try {
+                if (editingHocKy) {
+                    await api.put('/api/danhmuc/hocky/' + encodeURIComponent(editingHocKy), body);
+                    showToast('Cập nhật học kỳ thành công.', 'success');
+                } else {
+                    body.MaHocKy = document.getElementById('f-MaHocKy').value.trim();
+                    await api.post('/api/danhmuc/hocky', body);
+                    showToast('Thêm học kỳ thành công.', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        // Mở/Đóng đợt đăng ký: PUT giữ nguyên các trường khác, chỉ đổi TrangThaiDot
+        async function toggleHocKy(i) {
+            const x = hocKy[i];
+            if (!x) return;
+            const dangMo = x.TrangThaiDot === 'MO';
+            const moi = dangMo ? 'DONG' : 'MO';
+            if (!confirm(`Xác nhận ${dangMo ? 'ĐÓNG' : 'MỞ'} đợt đăng ký "${x.TenHocKy}"?`)) return;
+            try {
+                await api.put('/api/danhmuc/hocky/' + encodeURIComponent(x.MaHocKy), {
+                    TenHocKy: x.TenHocKy,
+                    NamHoc: x.NamHoc,
+                    TuNgay: fmtDate(x.TuNgay),
+                    DenNgay: fmtDate(x.DenNgay),
+                    TrangThaiDot: moi,
+                });
+                showToast(moi === 'MO' ? 'Đã mở đợt đăng ký.' : 'Đã đóng đợt đăng ký.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể cập nhật trạng thái.', 'error');
+            }
+        }
+
+        /* ============ Khởi chạy ============ */
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>

@@ -169,6 +169,7 @@ body {
 .badge--success { background: var(--color-success-bg); color: var(--color-success); }
 .badge--warning { background: var(--color-warning-bg); color: var(--color-warning); }
 .badge--error   { background: var(--color-error-bg);   color: var(--color-error); }
+.badge--info    { background: #e3f2fd;                 color: #1565c0; }
 
 /* ---------- Form ---------- */
 .toolbar { display: flex; gap: 12px; margin-bottom: 16px; flex-wrap: wrap; align-items: center; }
@@ -243,3 +244,37 @@ body {
     .table { font-size: 12px; }
     .app-header { padding: 12px; }
 }
+
+/* ---------- Modal ---------- */
+.modal-mask {
+    position: fixed;
+    inset: 0;
+    background: rgba(0,0,0,.45);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 1000;
+    padding: 20px;
+}
+.modal {
+    background: #fff;
+    border-radius: 12px;
+    box-shadow: 0 20px 60px rgba(0,0,0,.3);
+    padding: 24px;
+    width: 100%;
+    max-width: 560px;
+    max-height: 90vh;
+    overflow-y: auto;
+}
+.modal h3 { margin-bottom: 16px; color: var(--color-primary-dark); }
+.modal-actions { display: flex; justify-content: flex-end; gap: 10px; margin-top: 20px; }
+.modal .form-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; }
+@media (max-width: 560px) { .modal .form-row { grid-template-columns: 1fr; } }
+
+/* ---------- Misc helpers ---------- */
+.text-muted { color: var(--color-text-muted); }
+.text-center { text-align: center; }
+.mt-1 { margin-top: 8px; } .mt-2 { margin-top: 16px; } .mt-3 { margin-top: 24px; }
+.w-100 { width: 100%; }
+.grid-2 { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+@media (max-width: 768px) { .grid-2 { grid-template-columns: 1fr; } }

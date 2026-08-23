@@ -3,124 +3,34 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký học phần — Quản lý sinh viên đăng ký học phần tín chỉ</title>
+    <title>Trang chủ — Hệ thống đăng ký học phần tín chỉ</title>
     <link rel="stylesheet" href="css/shared.css">
 </head>
 <body>
-    <!-- ================================================
-         LAYOUT CHUNG (Template TV3 — Issue #72)
-         Các thành viên khác dùng lại khung này.
-    ================================================= -->
     <header class="app-header">
         <div class="app-header__brand">
             <span class="app-header__logo">🎓</span>
             <h1 class="app-header__title">Hệ thống Đăng ký học phần tín chỉ</h1>
         </div>
-        <nav class="app-nav">
-            <a href="index.html" class="app-nav__link app-nav__link--active">Trang chủ</a>
-            <a href="app/dangky_hocphan/dang-ky.html" class="app-nav__link">Đăng ký học phần</a>
-            <a href="app/dangky_hocphan/thoi-khoa-bieu.html" class="app-nav__link">Thời khóa biểu</a>
-            <a href="app/dangky_hocphan/danh-sach-dang-ky.html" class="app-nav__link">Danh sách đăng ký</a>
-            <a href="app/dangky_hocphan/huy-dang-ky.html" class="app-nav__link">Hủy đăng ký</a>
-        </nav>
-        <div class="app-header__user">
-            <span>👤 SV001</span>
-            <button class="btn btn--outline btn--sm" onclick="handleLogout()">Đăng xuất</button>
-        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
     </header>
 
     <main class="container">
-        <!-- ================================================
-             DASHBOARD TỔNG QUAN
-        ================================================= -->
         <section class="card">
             <h2 class="card__title">Chào mừng đến với Hệ thống đăng ký học phần</h2>
             <p class="card__subtitle">
                 Hệ thống quản lý đăng ký học phần tín chỉ — Môn: Hệ Quản trị Cơ sở dữ liệu.
-                Đồ án Nhóm 5, Đề tài 6.
+                Đồ án Nhóm 5, Đề tài 6. Kết nối MySQL remote (<code>free02.123host.vn</code>).
             </p>
-            <div class="stat-grid">
-                <div class="stat">
-                    <div class="stat__value" id="stat-tong-tin-chi">--</div>
-                    <div class="stat__label">Tổng tín chỉ đã ĐK</div>
-                </div>
-                <div class="stat">
-                    <div class="stat__value" id="stat-so-lop">--</div>
-                    <div class="stat__label">Số lớp đã ĐK</div>
-                </div>
-                <div class="stat">
-                    <div class="stat__value" id="stat-han-dang-ky">--</div>
-                    <div class="stat__label">Hạn đăng ký</div>
-                </div>
-                <div class="stat">
-                    <div class="stat__value" id="stat-trang-thai">--</div>
-                    <div class="stat__label">Trạng thái đợt</div>
-                </div>
-            </div>
+            <div id="welcome-box"></div>
+            <div class="stat-grid" id="stat-grid"></div>
         </section>
 
-        <!-- ================================================
-             5 RÀNG BUỘC ĐĂNG KÝ (thông báo lỗi mẫu)
-        ================================================= -->
-        <section class="card">
-            <h2 class="card__title">5 Ràng buộc Đăng ký học phần</h2>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>#</th>
-                        <th>Ràng buộc</th>
-                        <th>Mã lỗi</th>
-                        <th>Thông báo lỗi khi vi phạm</th>
-                    </tr>
-                </thead>
-                <tbody>
-                    <tr>
-                        <td>1</td>
-                        <td>Hạn đăng ký</td>
-                        <td><code>100</code></td>
-                        <td class="error-text">Rất tiếc! Hiện tại ngoài thời hạn đăng ký học phần của học kỳ này.</td>
-                    </tr>
-                    <tr>
-                        <td>2</td>
-                        <td>Đăng ký trùng LHP</td>
-                        <td><code>101</code></td>
-                        <td class="error-text">Bạn đã đăng ký lớp học phần này rồi.</td>
-                    </tr>
-                    <tr>
-                        <td>3</td>
-                        <td>Môn tiên quyết</td>
-                        <td><code>102</code></td>
-                        <td class="error-text">Không thể đăng ký! Bạn chưa hoàn thành môn học tiên quyết.</td>
-                    </tr>
-                    <tr>
-                        <td>4</td>
-                        <td>Trùng lịch học</td>
-                        <td><code>103</code></td>
-                        <td class="error-text">Đăng ký thất bại! Lớp học phần bị trùng lịch học với lớp bạn đã đăng ký.</td>
-                    </tr>
-                    <tr>
-                        <td>5</td>
-                        <td>Giới hạn tín chỉ</td>
-                        <td><code>104</code></td>
-                        <td class="error-text">Tổng số tín chỉ sau khi thêm vượt quá giới hạn tối đa cho phép.</td>
-                    </tr>
-                    <tr>
-                        <td>6</td>
-                        <td>Sĩ số lớp đầy</td>
-                        <td><code>105</code></td>
-                        <td class="error-text">Đăng ký thất bại! Lớp học phần đã đầy sĩ số (Hết chỗ trống).</td>
-                    </tr>
-                </tbody>
-            </table>
-        </section>
-
-        <!-- ================================================
-             DANH SÁCH LỚP HỌC PHẦN ĐANG MỞ
-        ================================================= -->
         <section class="card">
             <div class="card__header">
                 <h2 class="card__title">Danh sách lớp học phần đang mở đăng ký</h2>
-                <span class="badge badge--success">Đợt HK1-2025 đang mở</span>
+                <span class="badge badge--success" id="dot-badge">Đang tải...</span>
             </div>
             <div class="toolbar">
                 <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã lớp / môn học..." oninput="renderClassList()">
@@ -135,7 +45,6 @@
                 <thead>
                     <tr>
                         <th>Mã LHP</th>
-                        <th>Tên lớp</th>
                         <th>Môn học</th>
                         <th>Số TC</th>
                         <th>Sĩ số</th>
@@ -155,11 +64,136 @@
 
     <div id="toast-container" class="toast-container"></div>
 
-    <!-- ================================================
-         MOCK DATA + LOGIC (thay bằng API thật khi có backend)
-    ================================================= -->
+    <script src="js/api.js"></script>
     <script src="js/shared.js"></script>
-    <script src="js/mock-data.js"></script>
-    <script src="js/dangky.js"></script>
+    <script>
+        const DK_ERROR_MESSAGES = {
+            100: 'Rất tiếc! Hiện tại ngoài thời hạn đăng ký học phần của học kỳ này.',
+            101: 'Bạn đã đăng ký lớp học phần này rồi.',
+            102: 'Không thể đăng ký! Bạn chưa hoàn thành môn tiên quyết của môn học này.',
+            103: 'Đăng ký thất bại! Lớp học phần bị trùng lịch học với lớp bạn đã đăng ký.',
+            104: 'Không thể đăng ký! Tổng số tín chỉ vượt quá giới hạn tối đa cho phép.',
+            105: 'Đăng ký thất bại! Lớp học phần đã đầy sĩ số (hết chỗ trống).',
+            106: 'Lớp học phần không tồn tại hoặc không ở trạng thái mở đăng ký.',
+        };
+
+        let STATE = { hocKy: null, lopHocPhan: [], danhSach: [], tongTinChi: 0 };
+
+        async function loadAll() {
+            const u = api.getUser();
+            const role = u ? u.MaVaiTro : null;
+
+            // Welcome box
+            const wb = document.getElementById('welcome-box');
+            if (wb) {
+                if (!u) {
+                    wb.innerHTML = `<p class="card__note"><a href="login.html">Đăng nhập</a> để sử dụng các chức năng.</p>`;
+                } else {
+                    wb.innerHTML = `<p class="card__note">👤 <strong>${esc(u.HoTen)}</strong> — vai trò: <span class="badge badge--info">${esc(u.TenVaiTro || u.MaVaiTro)}</span></p>`;
+                }
+            }
+
+            const grid = document.getElementById('stat-grid');
+            if (!grid) return;
+
+            if (role === 'SV') {
+                // Sinh viên: tín chỉ + lớp đã đăng ký + hạn đăng ký
+                try {
+                    const [hk, lopmo, ds] = await Promise.all([
+                        api.get('/api/dangky/hocky-hientai'),
+                        api.get('/api/dangky/lopmo'),
+                        api.get('/api/dangky/danhsach'),
+                    ]);
+                    STATE.hocKy = hk.hocKy;
+                    STATE.lopHocPhan = lopmo.lopHocPhan || [];
+                    STATE.danhSach = ds.danhSach || [];
+                    let tc = 0;
+                    try { const r = await api.get('/api/dangky/tongtinchi'); tc = Number(r.tongTinChi || 0); } catch {}
+                    STATE.tongTinChi = tc;
+                    const dangKySet = new Set(STATE.danhSach.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY').map(d => d.MaLHP));
+
+                    grid.innerHTML = `
+                        <div class="stat"><div class="stat__value">${tc} TC</div><div class="stat__label">Tổng tín chỉ đã ĐK</div></div>
+                        <div class="stat"><div class="stat__value">${dangKySet.size} lớp</div><div class="stat__label">Số lớp đã ĐK</div></div>
+                        <div class="stat"><div class="stat__value">${hk.hocKy ? esc(hk.hocKy.DenNgay) : 'Đã đóng'}</div><div class="stat__label">Hạn đăng ký</div></div>
+                        <div class="stat"><div class="stat__value">${hk.hocKy ? 'Đang mở' : 'Đã đóng'}</div><div class="stat__label">Trạng thái đợt</div></div>
+                    `;
+                    document.getElementById('dot-badge').textContent = hk.hocKy ? `Đợt ${hk.hocKy.MaHocKy} đang mở` : 'Đợt đã đóng';
+                    renderClassList(dangKySet);
+                } catch (e) {
+                    grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`;
+                }
+            } else if (role === 'GV') {
+                try {
+                    const lop = await api.get('/api/giangvien/lopcuatoi');
+                    grid.innerHTML = `
+                        <div class="stat"><div class="stat__value">${lop.lop.length}</div><div class="stat__label">Lớp học phần phụ trách</div></div>
+                    `;
+                    document.getElementById('dot-badge').textContent = 'Giảng viên';
+                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
+            } else if (role === 'PĐT') {
+                try {
+                    const st = await api.get('/api/admin/thongke');
+                    grid.innerHTML = `
+                        <div class="stat"><div class="stat__value">${st.tongHop.SvDangHoc}</div><div class="stat__label">Sinh viên đang học</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongGiangVien}</div><div class="stat__label">Giảng viên</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongLopHocPhan}</div><div class="stat__label">Lớp học phần</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.LopDangMo}</div><div class="stat__label">Lớp đang mở ĐK</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongDangKyHieuLuc}</div><div class="stat__label">Lượt ĐK hiệu lực</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongTaiKhoan}</div><div class="stat__label">Tài khoản</div></div>
+                    `;
+                    document.getElementById('dot-badge').textContent = 'Phòng Đào Tạo';
+                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
+            } else {
+                grid.innerHTML = `<p class="card__note"><a href="login.html">Đăng nhập</a> để xem thống kê.</p>`;
+            }
+        }
+
+        function renderClassList(dangKySet) {
+            const search = (document.getElementById('search-input')?.value || '').toLowerCase();
+            const filterKhoi = document.getElementById('filter-khoi')?.value || '';
+            const filtered = STATE.lopHocPhan.filter(c => {
+                const matchSearch = !search || c.MaLHP.toLowerCase().includes(search) || (c.TenMonHoc || '').toLowerCase().includes(search);
+                let khoi = 'CNTT';
+                if (c.MaLHP >= 'LHP509' && c.MaLHP <= 'LHP512') khoi = 'KTT';
+                if (c.MaLHP >= 'LHP513') khoi = 'XD';
+                return matchSearch && (!filterKhoi || khoi === filterKhoi);
+            });
+            const tbody = document.getElementById('class-list-body');
+            const empty = document.getElementById('class-list-empty');
+            if (!tbody) return;
+            tbody.innerHTML = filtered.map(c => {
+                const daDangKy = dangKySet.has(c.MaLHP);
+                const hetCho = Number(c.SiSoHienTai) >= Number(c.SiSoToiDa);
+                const dangKyBtn = daDangKy
+                    ? `<span class="badge badge--success">Đã đăng ký</span>`
+                    : hetCho
+                        ? `<button class="btn btn--primary btn--sm" disabled>Hết chỗ</button>`
+                        : `<button class="btn btn--success btn--sm" onclick="dangKyLHP('${c.MaLHP}')">Đăng ký</button>`;
+                return `<tr>
+                    <td><code>${esc(c.MaLHP)}</code></td>
+                    <td>${esc(c.TenMonHoc)}</td>
+                    <td>${c.SoTinChi}</td>
+                    <td>${formatTiSo(Number(c.SiSoHienTai), Number(c.SiSoToiDa))}</td>
+                    <td>${esc(c.TenGV || '—')}</td>
+                    <td>${dangKyBtn}</td>
+                </tr>`;
+            }).join('');
+            if (empty) empty.style.display = filtered.length ? 'none' : 'block';
+        }
+
+        async function dangKyLHP(MaLHP) {
+            try {
+                const r = await api.post('/api/dangky', { MaLHP });
+                showToast(`✅ ${r.message}`, 'success');
+                await loadAll();
+            } catch (e) {
+                const msg = (e.data && e.data.ketQua && DK_ERROR_MESSAGES[e.data.ketQua]) || e.message;
+                showToast(msg, 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', loadAll);
+    </script>
 </body>
 </html>

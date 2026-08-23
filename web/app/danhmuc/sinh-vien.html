@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý sinh viên — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Quản lý sinh viên</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <!-- ============ Danh sách sinh viên ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">👨‍🎓 Danh sách sinh viên</h2>
+                <button class="btn btn--primary" onclick="themMoi()">＋ Thêm mới</button>
+            </div>
+            <div class="toolbar">
+                <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã SV / họ tên..." oninput="render()">
+                <select id="filter-lop" class="input input--select" onchange="render()">
+                    <option value="">Tất cả lớp</option>
+                </select>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã SV</th>
+                        <th>Họ tên</th>
+                        <th>Ngày sinh</th>
+                        <th>Giới tính</th>
+                        <th>Lớp</th>
+                        <th>Ngành</th>
+                        <th>Email</th>
+                        <th>SĐT</th>
+                        <th>Trạng thái học</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <p class="card__note" id="empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- ============ Chuyển lớp ============ -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🔄 Chuyển lớp</h2>
+            </div>
+            <div class="toolbar">
+                <select id="chuyenlop-sv" class="input input--select"></select>
+                <select id="chuyenlop-lop" class="input input--select"></select>
+                <button class="btn btn--success" onclick="chuyenLop()">Chuyển lớp</button>
+            </div>
+            <p class="card__note">Chọn sinh viên và lớp mới — hệ thống tự cập nhật ngành tương ứng của lớp.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal thêm / sửa sinh viên -->
+    <div class="modal-mask hidden" id="modal-mask">
+        <div class="modal">
+            <h3 id="modal-title">Thêm mới</h3>
+            <form id="modal-form"></form>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        /* ============ Bảo vệ trang (chỉ PĐT) ============ */
+        if (!requireAuth('PĐT')) { /* chưa đăng nhập / sai vai trò -> đã redirect */ }
+
+        /* ============ Trạng thái ============ */
+        let sinhVien = [];
+        let lop = [];
+        let editingMaSV = null; // null = thêm mới, ngược lại = mã SV đang sửa
+
+        /* ============ Tiện ích ============ */
+        function fmtDate(v) {
+            if (!v) return '';
+            const d = new Date(v);
+            if (isNaN(d)) return String(v).slice(0, 10);
+            const y = d.getFullYear();
+            const m = String(d.getMonth() + 1).padStart(2, '0');
+            const day = String(d.getDate()).padStart(2, '0');
+            return `${y}-${m}-${day}`;
+        }
+
+        function badgeTrangThaiHoc(tt) {
+            const map = { 1: ['success', 'Đang học'], 2: ['warning', 'Bảo lưu'], 3: ['error', 'Thôi học'] };
+            const [cls, label] = map[Number(tt)] || ['info', '—'];
+            return `<span class="badge badge--${cls}">${label}</span>`;
+        }
+
+        /* ============ Nạp dữ liệu ============ */
+        async function loadData() {
+            try {
+                const [sv, l] = await Promise.all([
+                    api.get('/api/danhmuc/sinhvien'),
+                    api.get('/api/danhmuc/lop'),
+                ]);
+                sinhVien = sv.sinhVien || [];
+                lop = l.lop || [];
+                fillLopSelects();
+                render();
+            } catch (e) {
+                showToast(e.message || 'Không tải được dữ liệu.', 'error');
+            }
+        }
+
+        function fillLopSelects() {
+            const opts = lop.map(x =>
+                `<option value="${esc(x.MaLopSH)}">${esc(x.MaLopSH)} — ${esc(x.TenLopSH)}</option>`
+            ).join('');
+
+            document.getElementById('filter-lop').innerHTML = '<option value="">Tất cả lớp</option>' + opts;
+
+            const fLop = document.getElementById('f-MaLopSH');
+            if (fLop) fLop.innerHTML = opts;
+
+            document.getElementById('chuyenlop-lop').innerHTML = opts;
+            document.getElementById('chuyenlop-sv').innerHTML = sinhVien.map(s =>
+                `<option value="${esc(s.MaSV)}">${esc(s.MaSV)} — ${esc(s.HoTen)} (${esc(s.TenLopSH || '')})</option>`
+            ).join('');
+        }
+
+        /* ============ Hiển thị bảng (lọc phía client) ============ */
+        function render() {
+            const kw = (document.getElementById('search-input').value || '').trim().toLowerCase();
+            const maLop = document.getElementById('filter-lop').value;
+
+            const rows = sinhVien.filter(s => {
+                const okKw = !kw
+                    || String(s.MaSV || '').toLowerCase().includes(kw)
+                    || String(s.HoTen || '').toLowerCase().includes(kw);
+                const okLop = !maLop || String(s.MaLopSH || '') === maLop;
+                return okKw && okLop;
+            });
+
+            const tbody = document.getElementById('table-body');
+            tbody.innerHTML = rows.map(s => {
+                const i = sinhVien.indexOf(s);
+                return `<tr>
+                    <td><code>${esc(s.MaSV)}</code></td>
+                    <td>${esc(s.HoTen)}</td>
+                    <td>${esc(fmtDate(s.NgaySinh))}</td>
+                    <td>${Number(s.GioiTinh) === 1 ? 'Nam' : 'Nữ'}</td>
+                    <td>${esc(s.TenLopSH || s.MaLopSH)}</td>
+                    <td>${esc(s.TenNganh || '')}</td>
+                    <td>${esc(s.Email || '')}</td>
+                    <td>${esc(s.SoDienThoai || '')}</td>
+                    <td>${badgeTrangThaiHoc(s.TrangThaiHoc)}</td>
+                    <td>
+                        <button class="btn btn--outline btn--sm" onclick="suaSV(${i})">Sửa</button>
+                        <button class="btn btn--danger btn--sm" onclick="xoaSV(${i})">Xóa</button>
+                    </td>
+                </tr>`;
+            }).join('');
+
+            document.getElementById('empty').style.display = rows.length ? 'none' : 'block';
+        }
+
+        /* ============ Modal ============ */
+        const svFormHtml = `
+            <div class="form-row">
+                <div class="form-group"><label>Mã sinh viên</label><input class="input" id="f-MaSV" required></div>
+                <div class="form-group"><label>Họ tên</label><input class="input" id="f-HoTen" required></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Ngày sinh</label><input type="date" class="input" id="f-NgaySinh" required></div>
+                <div class="form-group"><label>Giới tính</label>
+                    <select class="input input--select" id="f-GioiTinh">
+                        <option value="1">Nam</option>
+                        <option value="0">Nữ</option>
+                    </select>
+                </div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input type="email" class="input" id="f-Email" required></div>
+                <div class="form-group"><label>Số điện thoại</label><input class="input" id="f-SoDienThoai" required></div>
+            </div>
+            <div class="form-group"><label>Quê quán</label><input class="input" id="f-QueQuan"></div>
+            <div class="form-row">
+                <div class="form-group"><label>Lớp sinh hoạt</label>
+                    <select class="input input--select" id="f-MaLopSH" required></select>
+                </div>
+                <div class="form-group"><label>Trạng thái học</label>
+                    <select class="input input--select" id="f-TrangThaiHoc">
+                        <option value="1">Đang học</option>
+                        <option value="2">Bảo lưu</option>
+                        <option value="3">Thôi học</option>
+                    </select>
+                </div>
+            </div>`;
+
+        function moModal(title, html, onsubmit) {
+            document.getElementById('modal-title').textContent = title;
+            const form = document.getElementById('modal-form');
+            form.innerHTML = html + `
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--outline" onclick="dongModal()">Hủy</button>
+                    <button type="submit" class="btn btn--primary">Lưu</button>
+                </div>`;
+            form.onsubmit = onsubmit;
+            document.getElementById('modal-mask').classList.remove('hidden');
+        }
+
+        function dongModal() {
+            document.getElementById('modal-mask').classList.add('hidden');
+        }
+
+        function themMoi() {
+            editingMaSV = null;
+            moModal('Thêm sinh viên', svFormHtml, luuSV);
+            document.getElementById('f-MaSV').readOnly = false;
+            document.getElementById('f-GioiTinh').value = '1';
+            document.getElementById('f-TrangThaiHoc').value = '1';
+            fillLopSelects();
+        }
+
+        function suaSV(i) {
+            const s = sinhVien[i];
+            if (!s) return;
+            editingMaSV = s.MaSV;
+            moModal('Sửa sinh viên — ' + s.MaSV, svFormHtml, luuSV);
+            document.getElementById('f-MaSV').value = s.MaSV || '';
+            document.getElementById('f-MaSV').readOnly = true;
+            document.getElementById('f-HoTen').value = s.HoTen || '';
+            document.getElementById('f-NgaySinh').value = fmtDate(s.NgaySinh);
+            document.getElementById('f-GioiTinh').value = String(Number(s.GioiTinh) === 1 ? 1 : 0);
+            document.getElementById('f-Email').value = s.Email || '';
+            document.getElementById('f-SoDienThoai').value = s.SoDienThoai || '';
+            document.getElementById('f-QueQuan').value = s.QueQuan || '';
+            document.getElementById('f-TrangThaiHoc').value = String(s.TrangThaiHoc ?? 1);
+            fillLopSelects();
+            document.getElementById('f-MaLopSH').value = s.MaLopSH || '';
+        }
+
+        async function luuSV(e) {
+            e.preventDefault();
+            const body = {
+                HoTen: document.getElementById('f-HoTen').value.trim(),
+                NgaySinh: document.getElementById('f-NgaySinh').value,
+                GioiTinh: document.getElementById('f-GioiTinh').value,
+                Email: document.getElementById('f-Email').value.trim(),
+                SoDienThoai: document.getElementById('f-SoDienThoai').value.trim(),
+                QueQuan: document.getElementById('f-QueQuan').value.trim(),
+                MaLopSH: document.getElementById('f-MaLopSH').value,
+            };
+            try {
+                if (editingMaSV) {
+                    body.TrangThaiHoc = document.getElementById('f-TrangThaiHoc').value;
+                    await api.put('/api/danhmuc/sinhvien/' + encodeURIComponent(editingMaSV), body);
+                    showToast('Cập nhật hồ sơ sinh viên thành công.', 'success');
+                } else {
+                    body.MaSV = document.getElementById('f-MaSV').value.trim();
+                    await api.post('/api/admin/themsinhvien', body);
+                    showToast('Thêm sinh viên thành công (kèm tài khoản đăng nhập).', 'success');
+                }
+                dongModal();
+                await loadData();
+            } catch (err) {
+                showToast(err.message || 'Đã có lỗi xảy ra.', 'error');
+            }
+        }
+
+        async function xoaSV(i) {
+            const s = sinhVien[i];
+            if (!s) return;
+            if (!confirm(`Xóa sinh viên "${s.HoTen}" (${s.MaSV})?`)) return;
+            try {
+                await api.del('/api/danhmuc/sinhvien/' + encodeURIComponent(s.MaSV));
+                showToast('Xóa sinh viên thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Không thể xóa sinh viên.', 'error');
+            }
+        }
+
+        /* ============ Chuyển lớp ============ */
+        async function chuyenLop() {
+            const MaSV = document.getElementById('chuyenlop-sv').value;
+            const MaLopSH = document.getElementById('chuyenlop-lop').value;
+            if (!MaSV || !MaLopSH) {
+                showToast('Vui lòng chọn sinh viên và lớp mới.', 'warning');
+                return;
+            }
+            try {
+                await api.post('/api/danhmuc/sinhvien/chuyenlop', { MaSV, MaLopSH });
+                showToast('Chuyển lớp thành công.', 'success');
+                await loadData();
+            } catch (e) {
+                showToast(e.message || 'Chuyển lớp thất bại.', 'error');
+            }
+        }
+
+        /* ============ Khởi chạy ============ */
+        document.addEventListener('DOMContentLoaded', loadData);
+    </script>
+</body>
+</html>
