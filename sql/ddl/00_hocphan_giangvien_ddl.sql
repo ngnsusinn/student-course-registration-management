@@ -1,7 +1,7 @@
 -- ==========================================================
 -- Tên file : sql/ddl/00_hocphan_giangvien_ddl.sql
 -- Module   : Học phần, Giảng viên & Mở lớp học phần (TV2)
--- Mô tả    : 7 bảng TV2 theo docs/ERD_hocphan_giangvien_molophocphan.md.
+-- Mô tả    : 7 bảng TV2 theo docs/erd_hocphan_giangvien_molophocphan.md.
 --            Gồm MONHOC, MONHOC_TIENQUYET, GIANGVIEN, HOCKY,
 --            PHONGHOC, LOPHOCPHAN, LICHHOC — là bảng CHA của
 --            DANGKYHOCPHAN (TV3). LICHHOC dùng ON DELETE CASCADE
