@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lớp của tôi — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Lớp của tôi</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <!-- Thống kê nhanh -->
+        <section class="card">
+            <h2 class="card__title">📊 Tổng quan</h2>
+            <div class="stat-grid">
+                <div class="stat">
+                    <div class="stat__value" id="stat-lop">0</div>
+                    <div class="stat__label">Số lớp phụ trách</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__value" id="stat-sv">0</div>
+                    <div class="stat__label">Tổng sinh viên</div>
+                </div>
+                <div class="stat">
+                    <div class="stat__value" id="stat-mo">0</div>
+                    <div class="stat__label">Lớp đang mở đăng ký</div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Danh sách lớp học phần -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📚 Danh sách lớp học phần</h2>
+                <select id="select-hocky" class="input input--select" onchange="locTheoHocKy()">
+                    <option value="">Tất cả học kỳ</option>
+                </select>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã LHP</th>
+                        <th>Tên lớp</th>
+                        <th>Môn học</th>
+                        <th>Số TC</th>
+                        <th>Học kỳ</th>
+                        <th>Sĩ số</th>
+                        <th>Lịch học</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <p class="card__note" id="empty" style="display:none">Không có lớp học phần nào.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        /* ==========================================================
+           Trang: Lớp của tôi (GV)
+           API: GET /api/giangvien/lopcuatoi?MaHocKy=
+                GET /api/danhmuc/hocky
+        ========================================================== */
+        let lop = [];
+
+        // ---------- Lọc theo học kỳ ----------
+        function locTheoHocKy() {
+            const ma = document.getElementById('select-hocky').value;
+            const base = 'lop-cua-toi.html';
+            location.href = ma ? base + '?MaHocKy=' + encodeURIComponent(ma) : base;
+        }
+
+        // ---------- Nạp danh sách học kỳ vào select ----------
+        async function loadHocKy() {
+            const r = await api.get('/api/danhmuc/hocky');
+            const hocKy = r.hocKy || [];
+            const current = new URLSearchParams(location.search).get('MaHocKy') || '';
+            const sel = document.getElementById('select-hocky');
+            sel.innerHTML = '<option value="">Tất cả học kỳ</option>' + hocKy.map(h => {
+                const ten = `${h.TenHocKy} — ${h.NamHoc}`;
+                return `<option value="${esc(h.MaHocKy)}" ${h.MaHocKy === current ? 'selected' : ''}>${esc(ten)}</option>`;
+            }).join('');
+        }
+
+        // ---------- Nạp danh sách lớp của GV ----------
+        async function loadLop() {
+            const maHK = new URLSearchParams(location.search).get('MaHocKy');
+            const url = '/api/giangvien/lopcuatoi' + (maHK ? '?MaHocKy=' + encodeURIComponent(maHK) : '');
+            const r = await api.get(url);
+            lop = r.lop || [];
+            render();
+        }
+
+        // ---------- Render thống kê + bảng ----------
+        function render() {
+            // Thống kê
+            document.getElementById('stat-lop').textContent = lop.length;
+            const tongSV = lop.reduce((s, l) => s + Number(l.SiSoHienTai || 0), 0);
+            document.getElementById('stat-sv').textContent = tongSV;
+            document.getElementById('stat-mo').textContent =
+                lop.filter(l => l.TrangThaiLop === 'MO_DANG_KY').length;
+
+            // Bảng
+            const tbody = document.getElementById('table-body');
+            const empty = document.getElementById('empty');
+            if (!lop.length) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            tbody.innerHTML = lop.map(r => `
+                <tr>
+                    <td><code>${esc(r.MaLHP)}</code></td>
+                    <td>${esc(r.TenLHP || '—')}</td>
+                    <td>${esc(r.TenMonHoc)}</td>
+                    <td>${esc(r.SoTinChi)}</td>
+                    <td>${esc(r.TenHocKy)} — ${esc(r.NamHoc)}</td>
+                    <td>${formatTiSo(Number(r.SiSoHienTai), Number(r.SiSoToiDa))}</td>
+                    <td>${esc(r.LichHoc || '—')}</td>
+                    <td>${badgeTrangThaiLop(r.TrangThaiLop)}</td>
+                    <td><a class="btn btn--primary btn--sm" href="nhap-diem.html?MaLHP=${encodeURIComponent(r.MaLHP)}">Quản lý điểm</a></td>
+                </tr>`).join('');
+        }
+
+        // ---------- Khởi động trang ----------
+        async function initPage() {
+            if (!requireAuth('GV')) return;
+            try {
+                await Promise.all([loadHocKy(), loadLop()]);
+            } catch (e) {
+                showToast(e.message || 'Không tải được dữ liệu.', 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

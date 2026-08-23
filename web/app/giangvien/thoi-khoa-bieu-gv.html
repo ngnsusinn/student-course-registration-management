@@ -1,0 +1,157 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thời khóa biểu giảng viên — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Thời khóa biểu giảng viên</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">📅 Thời khóa biểu của tôi</h2>
+                <select id="select-hocky" class="input input--select" onchange="locTheoHocKy()">
+                    <option value="">Tất cả học kỳ</option>
+                </select>
+            </div>
+            <div class="alert alert--warning" id="warning-empty" style="display:none">
+                ⚠️ Bạn chưa có lớp học phần nào trong học kỳ này.
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Thứ</th>
+                        <th>Tiết</th>
+                        <th>Mã LHP</th>
+                        <th>Môn học</th>
+                        <th>Phòng</th>
+                        <th>Sĩ số</th>
+                    </tr>
+                </thead>
+                <tbody id="table-body"></tbody>
+            </table>
+            <p class="card__note" id="empty" style="display:none">Không có buổi học nào.</p>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        /* ==========================================================
+           Trang: Thời khóa biểu giảng viên (GV)
+           API: GET /api/giangvien/lopcuatoi?MaHocKy=
+                GET /api/danhmuc/hocky
+           LichHoc dạng: "2:1-3; 4:5-7" (hoặc "Thu:TietBD-TietKT@Phòng").
+        ========================================================== */
+        let lop = [];
+        let tkb = [];
+
+        // ---------- Lọc theo học kỳ ----------
+        function locTheoHocKy() {
+            const ma = document.getElementById('select-hocky').value;
+            const base = 'thoi-khoa-bieu-gv.html';
+            location.href = ma ? base + '?MaHocKy=' + encodeURIComponent(ma) : base;
+        }
+
+        // ---------- Nạp danh sách học kỳ vào select ----------
+        async function loadHocKy() {
+            const r = await api.get('/api/danhmuc/hocky');
+            const hocKy = r.hocKy || [];
+            const current = new URLSearchParams(location.search).get('MaHocKy') || '';
+            const sel = document.getElementById('select-hocky');
+            sel.innerHTML = '<option value="">Tất cả học kỳ</option>' + hocKy.map(h => {
+                const ten = `${h.TenHocKy} — ${h.NamHoc}`;
+                return `<option value="${esc(h.MaHocKy)}" ${h.MaHocKy === current ? 'selected' : ''}>${esc(ten)}</option>`;
+            }).join('');
+        }
+
+        // ---------- Nạp lớp của GV theo học kỳ ----------
+        async function loadLop() {
+            const maHK = new URLSearchParams(location.search).get('MaHocKy');
+            const url = '/api/giangvien/lopcuatoi' + (maHK ? '?MaHocKy=' + encodeURIComponent(maHK) : '');
+            const r = await api.get(url);
+            lop = r.lop || [];
+            tkb = buildTkb(lop);
+            render();
+        }
+
+        // ---------- Phân tích chuỗi LichHoc thành các buổi học ----------
+        function buildTkb(lop) {
+            const rows = [];
+            lop.forEach(l => {
+                const lich = String(l.LichHoc || '').split(';');
+                lich.forEach(entry => {
+                    entry = entry.trim();
+                    if (!entry) return;
+                    // Dạng: "2:1-3" hoặc "2:1-3@Phòng 201"
+                    const m = entry.match(/^(\d+):(\d+)-(\d+)(?:@\s*(.*))?$/);
+                    if (!m) return;
+                    rows.push({
+                        Thu: Number(m[1]),
+                        TietBatDau: Number(m[2]),
+                        TietKetThuc: Number(m[3]),
+                        MaLHP: l.MaLHP,
+                        TenMonHoc: l.TenMonHoc,
+                        Phong: (m[4] || '').trim() || '—',
+                        SiSoHienTai: Number(l.SiSoHienTai || 0),
+                        SiSoToiDa: Number(l.SiSoToiDa || 0),
+                    });
+                });
+            });
+            // Sắp xếp theo thứ, rồi tiết bắt đầu
+            rows.sort((a, b) => a.Thu - b.Thu || a.TietBatDau - b.TietBatDau);
+            return rows;
+        }
+
+        // ---------- Render bảng thời khóa biểu ----------
+        function render() {
+            const tbody = document.getElementById('table-body');
+            const empty = document.getElementById('empty');
+            const warn = document.getElementById('warning-empty');
+
+            warn.style.display = lop.length ? 'none' : 'block';
+
+            if (!tkb.length) {
+                tbody.innerHTML = '';
+                empty.style.display = 'block';
+                return;
+            }
+            empty.style.display = 'none';
+            tbody.innerHTML = tkb.map(e => `
+                <tr>
+                    <td>${thuName(e.Thu)}</td>
+                    <td>Tiết ${e.TietBatDau} - ${e.TietKetThuc}</td>
+                    <td><code>${esc(e.MaLHP)}</code></td>
+                    <td>${esc(e.TenMonHoc)}</td>
+                    <td>${esc(e.Phong)}</td>
+                    <td>${formatTiSo(e.SiSoHienTai, e.SiSoToiDa)}</td>
+                </tr>`).join('');
+        }
+
+        // ---------- Khởi động trang ----------
+        async function initPage() {
+            if (!requireAuth('GV')) return;
+            try {
+                await Promise.all([loadHocKy(), loadLop()]);
+            } catch (e) {
+                showToast(e.message || 'Không tải được dữ liệu.', 'error');
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', initPage);
+    </script>
+</body>
+</html>

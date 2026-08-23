@@ -1,0 +1,49 @@
+-- ==========================================================
+-- Ten file : mysql/security/phan_quyen_3_vai_tro.sql
+-- Module   : Phan quyen & Bao mat he thong
+-- Mo ta    : Ban dich T-SQL -> MySQL.
+--
+-- LUU Ý MOI TRUONG:
+--   * MySQL 5.7 khong ho tro CREATE ROLE (chi co tu 8.0).
+--   * Tren shared hosting (123host), tai khoan DB khong co
+--     quyen CREATE USER/GRANT cho user khac.
+--   => Phan quyen 3 vai tro (SINHVIEN / GIANGVIEN / PĐT) duoc
+--     thuc thi o LOP UNG DUNG (backend Node.js + JWT), con
+--     cac cau GRANT duoi day la MAU de chay khi co quyen admin
+--     (server rieng / MySQL 8.0).
+--
+-- NGUYEN TAC (giu nguyen tu ban T-SQL):
+--   - Sinh vien: chi xem diem cua minh (API loc theo MaSV).
+--   - Giang vien: nhap diem qua SP (SP_GV_NHAP_DIEM kiem tra
+--     lop phu trach), khong truy cap bang diem truc tiep.
+--   - PĐT: toan quyen.
+-- ==========================================================
+
+-- ================= MAU (MySQL 8.0+, server rieng) =================
+-- CREATE ROLE IF NOT EXISTS 'ROLE_SINHVIEN', 'ROLE_GIANGVIEN', 'ROLE_PDT';
+--
+-- Tao user ung voi moi vai tro:
+-- CREATE USER IF NOT EXISTS 'app_sinhvien'@'%' IDENTIFIED BY '<password>';
+-- CREATE USER IF NOT EXISTS 'app_giangvien'@'%' IDENTIFIED BY '<password>';
+-- CREATE USER IF NOT EXISTS 'app_pdt'@'%' IDENTIFIED BY '<password>';
+--
+-- SINH VIEN: chi SELECT view diem (loc theo MaSV o ung dung)
+-- GRANT SELECT ON roacqgfa_dbms.V_BANGDIEM_SINHVIEN TO 'app_sinhvien'@'%';
+-- GRANT SELECT ON roacqgfa_dbms.VW_ThoiKhoaBieuCaNhan TO 'app_sinhvien'@'%';
+-- GRANT SELECT ON roacqgfa_dbms.VW_SinhVienDangKyChiTiet TO 'app_sinhvien'@'%';
+--
+-- GIANG VIEN: chi EXECUTE SP nhap diem + xem lop phu trach
+-- GRANT EXECUTE ON roacqgfa_dbms.SP_GV_NHAP_DIEM TO 'app_giangvien'@'%';
+-- GRANT SELECT ON roacqgfa_dbms.LOPHOCPHAN TO 'app_giangvien'@'%';
+-- GRANT SELECT ON roacqgfa_dbms.V_THONGKE_KETQUA_MONHOC TO 'app_giangvien'@'%';
+--
+-- PĐT: toan quyen tren database
+-- GRANT ALL PRIVILEGES ON roacqgfa_dbms.* TO 'app_pdt'@'%';
+--
+-- GRANT 'ROLE_SINHVIEN' TO 'app_sinhvien'@'%';
+-- GRANT 'ROLE_GIANGVIEN' TO 'app_giangvien'@'%';
+-- GRANT 'ROLE_PDT' TO 'app_pdt'@'%';
+-- FLUSH PRIVILEGES;
+
+-- ================= KIEM TRA (chay duoc moi moi truong) =================
+SELECT 'Phan quyen 3 vai tro duoc thuc thi o lop ung dung (JWT middleware).' AS GhiChu;

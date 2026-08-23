@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Quản lý học phí — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="../../css/shared.css">
+</head>
+<body>
+    <header class="app-header">
+        <div class="app-header__brand">
+            <span class="app-header__logo">🎓</span>
+            <h1 class="app-header__title">Quản lý học phí</h1>
+        </div>
+        <nav class="app-nav" id="app-nav"></nav>
+        <div class="app-header__user" id="app-user"></div>
+    </header>
+
+    <main class="container">
+        <!-- Danh sách phiếu học phí -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">💳 Danh sách phiếu học phí</h2>
+                <button class="btn btn--outline btn--sm" onclick="loadHocPhi()">⟳ Làm mới</button>
+            </div>
+            <div class="toolbar">
+                <select id="filter-hocky" class="input input--select">
+                    <option value="">Tất cả học kỳ</option>
+                </select>
+                <select id="filter-trangthai" class="input input--select">
+                    <option value="">Tất cả trạng thái</option>
+                    <option value="CHUA_THANH_TOAN">Chưa thanh toán</option>
+                    <option value="DANG_XU_LY">Đang xử lý</option>
+                    <option value="DA_THANH_TOAN">Đã thanh toán</option>
+                    <option value="QUA_HAN">Quá hạn</option>
+                </select>
+                <button class="btn btn--primary" onclick="loadHocPhi()">🔍 Lọc</button>
+            </div>
+            <table class="table">
+                <thead>
+                    <tr>
+                        <th>Mã phiếu</th>
+                        <th>Sinh viên</th>
+                        <th>Lớp</th>
+                        <th>Học kỳ</th>
+                        <th>Số TC</th>
+                        <th>Tổng tiền</th>
+                        <th>Đã nộp</th>
+                        <th>Còn nợ</th>
+                        <th>Trạng thái</th>
+                        <th>Thao tác</th>
+                    </tr>
+                </thead>
+                <tbody id="hp-body"></tbody>
+            </table>
+            <p class="card__note" id="hp-empty" style="display:none">Không có dữ liệu.</p>
+        </section>
+
+        <!-- Tính học phí -->
+        <section class="card">
+            <div class="card__header">
+                <h2 class="card__title">🧮 Tính học phí</h2>
+                <span class="card__note">Tạo phiếu học phí cho sinh viên theo học kỳ (đơn giá tín chỉ).</span>
+            </div>
+            <form id="form-tinh">
+                <div class="grid-2">
+                    <div class="form-group">
+                        <label for="tinh-masv">Sinh viên</label>
+                        <select id="tinh-masv" class="input input--select w-100" required>
+                            <option value="">— Chọn sinh viên —</option>
+                        </select>
+                    </div>
+                    <div class="form-group">
+                        <label for="tinh-mahocky">Học kỳ</label>
+                        <select id="tinh-mahocky" class="input input--select w-100" required>
+                            <option value="">— Chọn học kỳ —</option>
+                        </select>
+                    </div>
+                </div>
+                <div class="form-group">
+                    <label for="tinh-dongia">Đơn giá tín chỉ (VNĐ)</label>
+                    <input type="number" class="input" id="tinh-dongia" value="850000" min="1" step="1000" required>
+                </div>
+                <button type="submit" class="btn btn--primary">Tính học phí</button>
+            </form>
+        </section>
+    </main>
+
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
+    <div id="toast-container" class="toast-container"></div>
+
+    <!-- Modal thu tiền -->
+    <div class="modal-mask hidden" id="modal-mask">
+        <div class="modal">
+            <h3>Thu tiền học phí</h3>
+            <p class="card__note" id="thu-info"></p>
+            <form id="form-thu">
+                <div class="form-group">
+                    <label for="thu-sotien">Số tiền nộp (VNĐ)</label>
+                    <input type="number" class="input w-100" id="thu-sotien" min="1" step="1000" required placeholder="Nhập số tiền">
+                </div>
+                <div class="modal-actions">
+                    <button type="button" class="btn btn--outline" onclick="dongModalThu()">Hủy</button>
+                    <button type="submit" class="btn btn--success">Nộp tiền</button>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <script src="../../js/api.js"></script>
+    <script src="../../js/shared.js"></script>
+    <script>
+        (function () {
+            if (!requireAuth('PĐT')) return;
+
+            // ---------- Danh sách học phí ----------
+            async function loadHocPhi() {
+                const MaHocKy = document.getElementById('filter-hocky').value;
+                const TrangThai = document.getElementById('filter-trangthai').value;
+                const qs = new URLSearchParams();
+                if (MaHocKy) qs.set('MaHocKy', MaHocKy);
+                if (TrangThai) qs.set('TrangThai', TrangThai);
+                const suffix = qs.toString() ? '?' + qs.toString() : '';
+                try {
+                    const data = await api.get('/api/hocphi/danhsach' + suffix);
+                    const rows = data.hocPhi || [];
+                    const tbody = document.getElementById('hp-body');
+                    const empty = document.getElementById('hp-empty');
+                    if (!rows.length) {
+                        tbody.innerHTML = '';
+                        empty.style.display = '';
+                        return;
+                    }
+                    empty.style.display = 'none';
+                    tbody.innerHTML = rows.map(r => (
+                        '<tr>' +
+                            '<td><code>' + esc(r.MaHocPhi) + '</code></td>' +
+                            '<td><code>' + esc(r.MaSV) + '</code><br><span class="text-muted">' + esc(r.HoTen || '') + '</span></td>' +
+                            '<td>' + esc(r.TenLopSH || '—') + '</td>' +
+                            '<td><code>' + esc(r.MaHocKy) + '</code></td>' +
+                            '<td>' + esc(r.SoTinChi) + '</td>' +
+                            '<td>' + fmtMoney(r.TongTien) + '</td>' +
+                            '<td>' + fmtMoney(r.DaNop) + '</td>' +
+                            '<td class="error-text">' + fmtMoney(r.ConNo) + '</td>' +
+                            '<td>' + badgeHocPhi(r.TrangThai) + '</td>' +
+                            '<td><button class="btn btn--success btn--sm" data-action="thu" data-ma="' + esc(r.MaHocPhi) + '" data-conno="' + esc(r.ConNo) + '">Thu tiền</button></td>' +
+                        '</tr>'
+                    )).join('');
+                } catch (e) {
+                    showToast(e.message || 'Không tải được danh sách học phí.', 'error');
+                }
+            }
+
+            // ---------- Modal thu tiền ----------
+            let thuMaHocPhi = null;
+            let thuConNo = 0;
+
+            function moModalThu(maHocPhi, conNo) {
+                thuMaHocPhi = maHocPhi;
+                thuConNo = Number(conNo || 0);
+                document.getElementById('thu-info').innerHTML =
+                    'Mã phiếu: <code>' + esc(maHocPhi) + '</code> — Số tiền còn nợ: <strong>' + fmtMoney(thuConNo) + '</strong>';
+                document.getElementById('thu-sotien').value = '';
+                document.getElementById('modal-mask').classList.remove('hidden');
+            }
+
+            function dongModalThu() {
+                document.getElementById('modal-mask').classList.add('hidden');
+            }
+
+            document.getElementById('form-thu').addEventListener('submit', async e => {
+                e.preventDefault();
+                const soTien = Number(document.getElementById('thu-sotien').value);
+                if (!Number.isFinite(soTien) || soTien <= 0) {
+                    return showToast('Số tiền nộp phải lớn hơn 0.', 'error');
+                }
+                if (soTien > thuConNo) {
+                    return showToast('Số tiền nộp vượt quá số tiền còn nợ (' + fmtMoney(thuConNo) + ').', 'error');
+                }
+                try {
+                    await api.post('/api/hocphi/thu', { MaHocPhi: thuMaHocPhi, SoTien: soTien });
+                    showToast('Thu học phí thành công.', 'success');
+                    dongModalThu();
+                    loadHocPhi();
+                } catch (err) {
+                    showToast(err.message || 'Thu học phí thất bại.', 'error');
+                }
+            });
+
+            // Delegation: nút Thu tiền
+            document.getElementById('hp-body').addEventListener('click', e => {
+                const btn = e.target.closest('button[data-action="thu"]');
+                if (!btn) return;
+                moModalThu(btn.dataset.ma, btn.dataset.conno);
+            });
+
+            // ---------- Tính học phí ----------
+            document.getElementById('form-tinh').addEventListener('submit', async e => {
+                e.preventDefault();
+                const MaSV = document.getElementById('tinh-masv').value;
+                const MaHocKy = document.getElementById('tinh-mahocky').value;
+                const DonGiaTinChi = Number(document.getElementById('tinh-dongia').value);
+                if (!MaSV) return showToast('Vui lòng chọn sinh viên.', 'error');
+                if (!MaHocKy) return showToast('Vui lòng chọn học kỳ.', 'error');
+                if (!Number.isFinite(DonGiaTinChi) || DonGiaTinChi <= 0) {
+                    return showToast('Đơn giá tín chỉ không hợp lệ.', 'error');
+                }
+                try {
+                    await api.post('/api/hocphi/tinh', { MaSV, MaHocKy, DonGiaTinChi });
+                    showToast('Tính học phí thành công.', 'success');
+                    loadHocPhi();
+                } catch (err) {
+                    showToast(err.message || 'Tính học phí thất bại.', 'error');
+                }
+            });
+
+            // ---------- Danh mục (filter + form) ----------
+            async function loadFilters() {
+                try {
+                    const [hkRes, svRes] = await Promise.all([
+                        api.get('/api/danhmuc/hocky'),
+                        api.get('/api/danhmuc/sinhvien'),
+                    ]);
+                    const hk = hkRes.hocKy || [];
+                    document.getElementById('filter-hocky').innerHTML =
+                        '<option value="">Tất cả học kỳ</option>' +
+                        hk.map(h => '<option value="' + esc(h.MaHocKy) + '">' + esc(h.TenHocKy) + ' (' + esc(h.NamHoc) + ')</option>').join('');
+                    document.getElementById('tinh-mahocky').innerHTML =
+                        '<option value="">— Chọn học kỳ —</option>' +
+                        hk.map(h => '<option value="' + esc(h.MaHocKy) + '">' + esc(h.TenHocKy) + ' (' + esc(h.NamHoc) + ')</option>').join('');
+                    const sv = svRes.sinhVien || [];
+                    document.getElementById('tinh-masv').innerHTML =
+                        '<option value="">— Chọn sinh viên —</option>' +
+                        sv.map(s => '<option value="' + esc(s.MaSV) + '">' + esc(s.MaSV) + ' — ' + esc(s.HoTen) + '</option>').join('');
+                } catch (e) {
+                    showToast(e.message || 'Không tải được danh mục.', 'error');
+                }
+            }
+
+            window.loadHocPhi = loadHocPhi;
+            window.dongModalThu = dongModalThu;
+
+            async function init() {
+                await loadFilters();
+                await loadHocPhi();
+            }
+            init();
+        })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,102 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Đăng nhập — Hệ thống đăng ký học phần tín chỉ</title>
+    <link rel="stylesheet" href="css/shared.css">
+    <style>
+        .login-wrap {
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #0f2c4e 0%, #1a4a7a 100%);
+            padding: 20px;
+        }
+        .login-card {
+            width: 100%;
+            max-width: 420px;
+            background: #fff;
+            border-radius: 14px;
+            padding: 36px 32px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.35);
+        }
+        .login-card__logo { font-size: 52px; text-align: center; margin-bottom: 6px; }
+        .login-card h1 { font-size: 20px; text-align: center; color: #0f2c4e; margin: 0 0 4px; }
+        .login-card__sub { text-align: center; color: #7a8aa0; font-size: 13px; margin-bottom: 24px; }
+        .form-group { margin-bottom: 16px; }
+        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #33475b; margin-bottom: 6px; }
+        .login-card .input { width: 100%; }
+        .login-error { display: none; background: #fdecea; color: #c0392b; border: 1px solid #f5c6c0; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
+        .login-card .btn { width: 100%; padding: 12px; font-size: 15px; }
+        .demo-accounts { margin-top: 20px; border-top: 1px dashed #dde5ec; padding-top: 14px; font-size: 12px; color: #5d6f83; }
+        .demo-accounts table { width: 100%; border-collapse: collapse; margin-top: 8px; }
+        .demo-accounts td { padding: 4px 2px; border-bottom: 1px solid #eef2f6; }
+        .demo-accounts code { background: #eef3f8; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
+    </style>
+</head>
+<body>
+    <div class="login-wrap">
+        <div class="login-card">
+            <div class="login-card__logo">🎓</div>
+            <h1>Hệ thống Đăng ký học phần tín chỉ</h1>
+            <p class="login-card__sub">Đồ án Hệ Quản trị CSDL — Nhóm 5 · Đề tài 6</p>
+
+            <div class="login-error" id="login-error"></div>
+
+            <form id="login-form" autocomplete="off">
+                <div class="form-group">
+                    <label for="TenDangNhap">Tên đăng nhập</label>
+                    <input type="text" id="TenDangNhap" class="input" placeholder="VD: sv001, gv001, admin" required>
+                </div>
+                <div class="form-group">
+                    <label for="MatKhau">Mật khẩu</label>
+                    <input type="password" id="MatKhau" class="input" placeholder="••••••••" required>
+                </div>
+                <button type="submit" class="btn btn--primary" id="btn-login">Đăng nhập</button>
+            </form>
+
+            <div class="demo-accounts">
+                <strong>Tài khoản demo:</strong>
+                <table>
+                    <tr><td>📘 Sinh viên</td><td><code>sv001</code></td><td><code>matkhau@123</code></td></tr>
+                    <tr><td>👨‍🏫 Giảng viên</td><td><code>gv001</code></td><td><code>matkhau@123</code></td></tr>
+                    <tr><td>🏢 Phòng Đào Tạo</td><td><code>admin</code></td><td><code>admin@123</code></td></tr>
+                </table>
+            </div>
+        </div>
+    </div>
+
+    <div id="toast-container" class="toast-container"></div>
+
+    <script src="js/api.js"></script>
+    <script src="js/shared.js"></script>
+    <script>
+        // Neu da dang nhap -> vao trang chinh
+        if (api.isAuthed()) location.href = 'index.html';
+
+        document.getElementById('login-form').addEventListener('submit', async (e) => {
+            e.preventDefault();
+            const btn = document.getElementById('btn-login');
+            const errBox = document.getElementById('login-error');
+            errBox.style.display = 'none';
+            btn.disabled = true;
+            btn.textContent = 'Đang đăng nhập...';
+            try {
+                const user = await api.login(
+                    document.getElementById('TenDangNhap').value.trim(),
+                    document.getElementById('MatKhau').value
+                );
+                showToast(`Chào mừng ${user.HoTen}!`, 'success');
+                setTimeout(() => { location.href = 'index.html'; }, 400);
+            } catch (err) {
+                errBox.textContent = err.message || 'Đăng nhập thất bại.';
+                errBox.style.display = 'block';
+                btn.disabled = false;
+                btn.textContent = 'Đăng nhập';
+            }
+        });
+    </script>
+</body>
+</html>
