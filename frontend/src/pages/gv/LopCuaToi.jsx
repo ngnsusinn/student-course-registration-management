@@ -9,6 +9,8 @@ import api, { errMessage } from '../../api/client';
 import { SectionCard, StatBox } from '../../components/SectionCard';
 import { SiSoChip, StatusChip } from '../../components/StatusBadges';
 import { thuName } from '../../utils/format';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // LOP CUA TOI (GV) — danh sach LHP phu trach + xem SV/thong ke
@@ -57,14 +59,26 @@ export default function LopCuaToi() {
 
   return (
     <Box>
-      <SectionCard title="Lớp học phần của tôi" action={<Chip size="small" color="primary" label={`${rows.length} lớp`} />}>
+      <SectionCard title="Lớp học phần của tôi" action={
+        <Stack direction="row" spacing={1} alignItems="center">
+          <Chip size="small" color="primary" label={`${rows.length} lớp`} />
+          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+            onClick={() => xuatExcel('Lop-cua-toi', [
+              { header: 'Mã LHP', key: 'MaLHP' }, { header: 'Tên lớp HP', key: 'TenLHP' },
+              { header: 'Tên môn học', key: 'TenMonHoc' }, { header: 'Tín chỉ', key: 'SoTinChi' },
+              { header: 'Học kỳ', value: (r) => `${r.TenHocKy} ${r.NamHoc}` },
+              { header: 'SS hiện tại', key: 'SiSoHienTai' }, { header: 'SS tối đa', key: 'SiSoToiDa' },
+              { header: 'Trạng thái lớp HP', key: 'TrangThaiLop' },
+            ], rows)}>Xuất Excel</Button>
+        </Stack>
+      }>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Mã LHP</TableCell><TableCell>Tên lớp HP</TableCell><TableCell>Môn học</TableCell>
-                <TableCell align="center">TC</TableCell><TableCell>Học kỳ</TableCell><TableCell>Lịch học</TableCell>
-                <TableCell align="center">Sĩ số</TableCell><TableCell>Trạng thái</TableCell><TableCell align="right">Thao tác</TableCell>
+                <TableCell>Mã LHP</TableCell><TableCell>Tên lớp HP</TableCell><TableCell>Tên môn học</TableCell>
+                <TableCell align="center">Tín chỉ</TableCell><TableCell>Học kỳ</TableCell><TableCell>Lịch học</TableCell>
+                <TableCell align="center">SS tối đa</TableCell><TableCell>Trạng thái lớp HP</TableCell><TableCell align="right">Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -109,9 +123,9 @@ export default function LopCuaToi() {
                 <Table size="small">
                   <TableHead>
                     <TableRow>
-                      <TableCell>Mã SV</TableCell><TableCell>Họ tên</TableCell><TableCell>Lớp SH</TableCell>
-                      <TableCell align="center">CC</TableCell><TableCell align="center">GK</TableCell><TableCell align="center">CK</TableCell>
-                      <TableCell align="center"><b>TK</b></TableCell><TableCell align="center">Chữ</TableCell><TableCell align="center">Hệ 4</TableCell>
+                      <TableCell>Mã SV</TableCell><TableCell>Họ và tên</TableCell><TableCell>Lớp SH</TableCell>
+                      <TableCell align="center">Chuyên cần</TableCell><TableCell align="center">Giữa kỳ</TableCell><TableCell align="center">Cuối kỳ</TableCell>
+                      <TableCell align="center"><b>Tổng kết</b></TableCell><TableCell align="center">Điểm chữ</TableCell><TableCell align="center">Hệ 4</TableCell>
                     </TableRow>
                   </TableHead>
                   <TableBody>

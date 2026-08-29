@@ -66,14 +66,18 @@ export default function HuyDangKy() {
         </Alert>
       )}
 
-      <SectionCard title="Học phần có thể hủy (đã đăng ký — học kỳ hiện tại)"
+      <SectionCard title="Hủy đăng ký lớp học phần (đã đăng ký — học kỳ hiện tại)"
         action={<Chip size="small" color="primary" label={`${rows.length} lớp`} />}>
+        <Alert severity="warning" sx={{ mb: 1.5 }}>
+          ⚠️ Cảnh báo hủy học phần có điểm hoặc học phí: nếu lớp đã có điểm hoặc đã phát sinh học phí,
+          vui lòng nhập lý do khi hủy. Lớp đã được duyệt sẽ không thể hủy — liên hệ Trung tâm Thông tin - Thư viện.
+        </Alert>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Mã LHP</TableCell><TableCell>Môn học</TableCell><TableCell align="center">Số TC</TableCell>
-                <TableCell>Giảng viên</TableCell><TableCell>Ngày đăng ký</TableCell><TableCell align="right">Thao tác</TableCell>
+                <TableCell>Mã LHP</TableCell><TableCell>Tên môn học</TableCell><TableCell align="center">Tín chỉ</TableCell>
+                <TableCell>GV dự kiến</TableCell><TableCell>Ngày đăng ký</TableCell><TableCell align="right">Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>
@@ -115,7 +119,7 @@ export default function HuyDangKy() {
 
       <ConfirmDialog
         open={!!target}
-        title="Xác nhận hủy đăng ký"
+        title="Xác nhận hủy đăng ký học phần"
         text={target ? `Bạn có chắc muốn HỦY đăng ký lớp ${target.MaLHP} — ${target.TenMonHoc} (${target.SoTinChi} TC)?\nHành động này không thể hoàn tác.` : ''}
         confirmText="Hủy đăng ký"
         danger

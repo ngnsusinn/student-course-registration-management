@@ -7,6 +7,7 @@ import { selectUser } from './store/authSlice';
 import Login from './pages/Login';
 import Dashboard from './pages/Dashboard';
 // — Sinh viên —
+import ThongTinCaNhan from './pages/sv/ThongTinCaNhan';
 import DangKyHocPhan from './pages/sv/DangKyHocPhan';
 import ThoiKhoaBieu from './pages/sv/ThoiKhoaBieu';
 import DanhSachDangKy from './pages/sv/DanhSachDangKy';
@@ -40,6 +41,7 @@ export default function App() {
     <Routes>
       <Route path="/login" element={<Login />} />
       <Route path="/" element={<ProtectedRoute><PortalLayout><Home /></PortalLayout></ProtectedRoute>} />
+      <Route path="/thong-tin-ca-nhan" element={<ProtectedRoute roles={SV}><PortalLayout><ThongTinCaNhan /></PortalLayout></ProtectedRoute>} />
       <Route path="/dang-ky" element={<ProtectedRoute roles={SV}><PortalLayout><DangKyHocPhan /></PortalLayout></ProtectedRoute>} />
       <Route path="/thoi-khoa-bieu" element={<ProtectedRoute roles={SV}><PortalLayout><ThoiKhoaBieu /></PortalLayout></ProtectedRoute>} />
       <Route path="/dang-ky-cua-toi" element={<ProtectedRoute roles={SV}><PortalLayout><DanhSachDangKy /></PortalLayout></ProtectedRoute>} />

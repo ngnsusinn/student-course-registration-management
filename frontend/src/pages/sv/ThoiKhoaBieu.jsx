@@ -1,11 +1,13 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box, Grid, Card, CardContent, Typography, Stack, MenuItem, TextField, Table,
-  TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Chip,
+  TableBody, TableCell, TableContainer, TableHead, TableRow, CircularProgress, Chip, Button,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { thuName } from '../../utils/format';
+import { xuatExcel } from '../../utils/export';
 import { TEAL, TEAL_DARKER } from '../../theme';
 
 // ============================================================
@@ -69,6 +71,13 @@ export default function ThoiKhoaBieu() {
               {cacKy.map(([k, v]) => <MenuItem key={k} value={k}>{v}</MenuItem>)}
             </TextField>
             <Chip color="primary" label={`Tổng cộng: ${tongTC} tín chỉ`} />
+            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />} sx={{ ml: 'auto' }}
+              onClick={() => xuatExcel('Thoi-khoa-bieu', [
+                { header: 'Mã LHP', key: 'MaLHP' }, { header: 'Tên môn học', key: 'TenMonHoc' },
+                { header: 'Tín chỉ', key: 'SoTinChi' }, { header: 'Thứ', value: (r) => thuName(r.Thu) },
+                { header: 'Tiết', value: (r) => `${r.TietBatDau}–${Number(r.TietBatDau) + Number(r.SoTiet) - 1}` },
+                { header: 'Phòng', key: 'TenPhong' }, { header: 'GV dự kiến', key: 'HoTenGV' },
+              ], tkb)}>Xuất Excel</Button>
           </Stack>
         </CardContent>
       </Card>
@@ -100,13 +109,13 @@ export default function ThoiKhoaBieu() {
 
       <Card>
         <CardContent>
-          <Typography variant="h6" sx={{ mb: 1.5 }}>Danh sách lớp đã đăng ký</Typography>
+          <Typography variant="h6" sx={{ mb: 1.5 }}>Danh sách lớp học phần đã đăng ký</Typography>
           <TableContainer>
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Mã LHP</TableCell><TableCell>Môn học</TableCell><TableCell align="center">TC</TableCell>
-                  <TableCell align="center">Thứ</TableCell><TableCell align="center">Tiết</TableCell><TableCell>Phòng</TableCell><TableCell>Giảng viên</TableCell>
+                  <TableCell>Mã LHP</TableCell><TableCell>Tên môn học</TableCell><TableCell align="center">Tín chỉ</TableCell>
+                  <TableCell align="center">Thứ</TableCell><TableCell align="center">Tiết</TableCell><TableCell>Phòng</TableCell><TableCell>GV dự kiến</TableCell>
                 </TableRow>
               </TableHead>
               <TableBody>

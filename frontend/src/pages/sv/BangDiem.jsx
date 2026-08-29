@@ -1,11 +1,14 @@
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Box, Grid, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  TextField, MenuItem, Alert, Chip, Typography, CircularProgress,
+  TextField, MenuItem, Alert, Chip, Typography, CircularProgress, Button,
+  LinearProgress, Stack,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard, StatBox } from '../../components/SectionCard';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // BANG DIEM — GPA hoc ky / CPA tich luy / bang diem / thang chu
@@ -70,15 +73,48 @@ export default function BangDiem() {
         )}
       </SectionCard>
 
-      <SectionCard title={`Bảng điểm học tập — ${cacKy.find(([k]) => k === maHocKy)?.[1] || ''}`}>
+      <SectionCard title="Tiến độ học tập">
+        {(() => {
+          const toanKhoa = 150;
+          const dat = Number(cpa?.TinChiDatPassed || 0);
+          const pct = Math.min(100, Math.round((dat / toanKhoa) * 100));
+          return (
+            <Box>
+              <Stack direction="row" justifyContent="space-between" alignItems="baseline" sx={{ mb: 1 }}>
+                <Typography variant="body2">Đã đạt: <b>{dat} tín chỉ</b> / {toanKhoa} TC toàn khóa</Typography>
+                <Typography variant="body2" sx={{ fontWeight: 700, color: 'primary.main' }}>{pct}%</Typography>
+              </Stack>
+              <LinearProgress variant="determinate" value={pct} sx={{ height: 10, borderRadius: 5 }} />
+              <Grid container spacing={1.5} sx={{ mt: 2 }}>
+                <Grid item xs={6} sm={3}><StatBox value={cpa ? d(cpa.CPA_TichLuy) : '—'} label="CPA tích lũy" /></Grid>
+                <Grid item xs={6} sm={3}><StatBox value={cpa?.XepLoaiTichLuy || '—'} label="Xếp loại chung" /></Grid>
+                <Grid item xs={6} sm={3}><StatBox value={cpa?.TongTinChiTichLuy ?? '—'} label="TC đã học" /></Grid>
+                <Grid item xs={6} sm={3}><StatBox value={toanKhoa - dat} label="TC còn lại" /></Grid>
+              </Grid>
+            </Box>
+          );
+        })()}
+      </SectionCard>
+
+      <SectionCard title={`Bảng điểm học tập — ${cacKy.find(([k]) => k === maHocKy)?.[1] || ''}`}
+        action={
+          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+            onClick={() => xuatExcel(`Bang-diem-${maHocKy}`, [
+              { header: 'Mã LHP', key: 'MaLHP' }, { header: 'Tên môn học', key: 'TenMonHoc' },
+              { header: 'Tín chỉ', key: 'SoTinChi' }, { header: 'Chuyên cần', key: 'DiemChuyenCan' },
+              { header: 'Giữa kỳ', key: 'DiemGiuaKy' }, { header: 'Cuối kỳ', key: 'DiemCuoiKy' },
+              { header: 'Tổng kết', key: 'DiemTongKet' }, { header: 'Điểm chữ', key: 'DiemChu' },
+              { header: 'Hệ 4', key: 'DiemHe4' }, { header: 'Xếp loại', key: 'XepLoaiMonHoc' },
+            ], rowsKy)}>Xuất Excel</Button>
+        }>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell align="center">STT</TableCell><TableCell>Mã LHP</TableCell><TableCell>Môn học</TableCell>
-                <TableCell align="center">Số TC</TableCell><TableCell align="center">Điểm CC</TableCell>
-                <TableCell align="center">Điểm GK</TableCell><TableCell align="center">Điểm CK</TableCell>
-                <TableCell align="center"><b>Điểm TK</b></TableCell><TableCell align="center">Chữ</TableCell>
+                <TableCell align="center">STT</TableCell><TableCell>Mã LHP</TableCell><TableCell>Tên môn học</TableCell>
+                <TableCell align="center">Tín chỉ</TableCell><TableCell align="center">Chuyên cần</TableCell>
+                <TableCell align="center">Giữa kỳ</TableCell><TableCell align="center">Cuối kỳ</TableCell>
+                <TableCell align="center"><b>Tổng kết</b></TableCell><TableCell align="center">Điểm chữ</TableCell>
                 <TableCell align="center">Hệ 4</TableCell><TableCell>Xếp loại</TableCell>
               </TableRow>
             </TableHead>

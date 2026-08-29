@@ -5,18 +5,20 @@ import {
   Typography, CircularProgress,
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard } from '../../components/SectionCard';
 import { SiSoChip, StatusChip } from '../../components/StatusBadges';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { DK_ERRORS, HUY_ERRORS, thuName } from '../../utils/format';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // DANG KY HOC PHAN — "Hoc phan dang cho dang ky" +
 // "Hoc phan da dang ky trong hoc ky nay" (mau portal)
 // ============================================================
-const LOAI_LABEL = { HOC_MOI: 'Học mới', HOC_LAI: 'Học lại', CAI_THIEN: 'Học cải thiện' };
+const LOAI_LABEL = { HOC_MOI: 'Đăng ký mới', HOC_LAI: 'Học lại', CAI_THIEN: 'Cải thiện' };
 
 function renderLich(str) {
   if (!str) return '—';
@@ -105,6 +107,13 @@ export default function DangKyHocPhan() {
             <Chip size="small" color={hocKy ? 'success' : 'error'}
               label={hocKy ? `Đợt ${hocKy.MaHocKy} đang mở — hạn ${hocKy.DenNgay}` : 'Đợt đã đóng'} />
             <Chip size="small" color="primary" label={`${tongTC}/24 TC`} />
+            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+              onClick={() => xuatExcel('Dang-ky-lop-hoc-phan', [
+                { header: 'Mã LHP', key: 'MaLHP' }, { header: 'Tên môn học', key: 'TenMonHoc' },
+                { header: 'Số tín chỉ', key: 'SoTinChi' }, { header: 'Lịch học', value: (r) => renderLich(r.LichHoc) },
+                { header: 'SS hiện tại', key: 'SiSoHienTai' }, { header: 'SS tối đa', key: 'SiSoToiDa' },
+                { header: 'GV dự kiến', key: 'TenGV' },
+              ], filtered)}>Xuất Excel</Button>
           </Stack>
         }
       >
@@ -122,8 +131,8 @@ export default function DangKyHocPhan() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Mã LHP</TableCell><TableCell>Môn học</TableCell><TableCell align="center">Số TC</TableCell>
-                  <TableCell>Lịch học</TableCell><TableCell align="center">Sĩ số</TableCell><TableCell>Giảng viên</TableCell>
+                  <TableCell>Mã LHP</TableCell><TableCell>Tên môn học</TableCell><TableCell align="center">Tín chỉ</TableCell>
+                  <TableCell>Lịch học</TableCell><TableCell align="center">SS tối đa</TableCell><TableCell>GV dự kiến</TableCell>
                   <TableCell align="right">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
@@ -168,8 +177,8 @@ export default function DangKyHocPhan() {
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Mã LHP</TableCell><TableCell>Môn học</TableCell><TableCell align="center">Số TC</TableCell>
-                <TableCell>Ngày ĐK</TableCell><TableCell>Trạng thái</TableCell><TableCell align="right">Thao tác</TableCell>
+                <TableCell>Mã LHP</TableCell><TableCell>Tên môn học</TableCell><TableCell align="center">Tín chỉ</TableCell>
+                <TableCell>Ngày đăng ký</TableCell><TableCell>Trạng thái ĐK</TableCell><TableCell align="right">Thao tác</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

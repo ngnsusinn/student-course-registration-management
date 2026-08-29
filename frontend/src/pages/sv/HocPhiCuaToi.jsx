@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box, Grid, Alert, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  Typography, CircularProgress,
+  Typography, CircularProgress, Button,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard, StatBox } from '../../components/SectionCard';
 import { StatusChip } from '../../components/StatusBadges';
 import { fmtMoney } from '../../utils/format';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // HOC PHI CUA TOI — danh sach phieu hoc phi theo ky
@@ -46,12 +48,21 @@ export default function HocPhiCuaToi() {
         )}
       </SectionCard>
 
-      <SectionCard title="Chi tiết học phí theo học kỳ">
+      <SectionCard title="Tra cứu học phí — chi tiết theo học kỳ"
+        action={
+          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+            onClick={() => xuatExcel('Hoc-phi-cua-toi', [
+              { header: 'Mã phiếu', key: 'MaHocPhi' }, { header: 'Học kỳ', value: (r) => `${r.TenHocKy} — ${r.NamHoc}` },
+              { header: 'Tín chỉ', key: 'SoTinChi' }, { header: 'Đơn giá/TC', key: 'DonGiaTinChi' },
+              { header: 'Tổng học phí', key: 'TongTien' }, { header: 'Đã nộp', key: 'DaNop' },
+              { header: 'Còn nợ', key: 'ConNo' }, { header: 'Trạng thái', key: 'TrangThai' },
+            ], rows)}>Xuất Excel</Button>
+        }>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Mã phiếu</TableCell><TableCell>Học kỳ</TableCell><TableCell align="center">Số TC</TableCell>
+                <TableCell>Mã phiếu</TableCell><TableCell>Học kỳ</TableCell><TableCell align="center">Tín chỉ</TableCell>
                 <TableCell align="right">Đơn giá/TC</TableCell><TableCell align="right">Tổng học phí</TableCell>
                 <TableCell align="right">Đã nộp</TableCell><TableCell align="right">Còn nợ</TableCell><TableCell>Trạng thái</TableCell>
               </TableRow>

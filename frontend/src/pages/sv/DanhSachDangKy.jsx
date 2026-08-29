@@ -1,13 +1,15 @@
 import { useEffect, useMemo, useState } from 'react';
 import {
   Box, Grid, Stack, Table, TableBody, TableCell, TableContainer, TableHead, TableRow,
-  CircularProgress, Chip, Typography,
+  CircularProgress, Chip, Typography, Button,
 } from '@mui/material';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard, StatBox } from '../../components/SectionCard';
 import { StatusChip } from '../../components/StatusBadges';
 import { fmtNgay } from '../../utils/format';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // DANH SACH DANG KY — toan bo hoc phan da dang ky + tom tat TC
@@ -51,14 +53,24 @@ export default function DanhSachDangKy() {
         </Grid>
       </SectionCard>
 
-      <SectionCard title="Học phần đã đăng ký (tất cả học kỳ)">
+      <SectionCard title="Danh sách lớp học phần đã đăng ký"
+        action={
+          <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+            onClick={() => xuatExcel('Danh-sach-dang-ky', [
+              { header: 'Mã LHP', key: 'MaLHP' }, { header: 'Tên lớp HP', key: 'TenLHP' },
+              { header: 'Tên môn học', key: 'TenMonHoc' }, { header: 'Tín chỉ', key: 'SoTinChi' },
+              { header: 'Học kỳ', value: (r) => `${r.TenHocKy} ${r.NamHoc}` },
+              { header: 'Ngày đăng ký', value: (r) => fmtNgay(r.NgayDangKy) },
+              { header: 'Trạng thái ĐK', key: 'TrangThaiDangKy' }, { header: 'Ghi chú', key: 'GhiChu' },
+            ], rows)}>Xuất Excel</Button>
+        }>
         <TableContainer>
           <Table size="small">
             <TableHead>
               <TableRow>
-                <TableCell>Mã LHP</TableCell><TableCell>Tên lớp HP</TableCell><TableCell>Môn học</TableCell>
-                <TableCell align="center">Số TC</TableCell><TableCell>Học kỳ</TableCell>
-                <TableCell>Ngày đăng ký</TableCell><TableCell>Trạng thái</TableCell><TableCell>Ghi chú</TableCell>
+                <TableCell>Mã LHP</TableCell><TableCell>Tên lớp HP</TableCell><TableCell>Tên môn học</TableCell>
+                <TableCell align="center">Tín chỉ</TableCell><TableCell>Học kỳ</TableCell>
+                <TableCell>Ngày đăng ký</TableCell><TableCell>Trạng thái ĐK</TableCell><TableCell>Ghi chú</TableCell>
               </TableRow>
             </TableHead>
             <TableBody>

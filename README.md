@@ -20,7 +20,7 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 - [5. Nghiệp vụ Đăng ký học phần & 5 ràng buộc](#5-nghiệp-vụ-đăng-ký-học-phần--5-ràng-buộc)
 - [6. Các đối tượng Database](#6-các-đối-tượng-database)
 - [7. Backend API](#7-backend-api)
-- [8. Frontend — React SPA, 19 màn hình](#8-frontend--react-spa-19-màn-hình)
+- [8. Frontend — React SPA, 20 màn hình](#8-frontend--react-spa-20-màn-hình)
 - [9. Yêu cầu môi trường & Cài đặt](#9-yêu-cầu-môi-trường--cài-đặt)
 - [10. Hướng dẫn sử dụng theo vai trò](#10-hướng-dẫn-sử-dụng-theo-vai-trò)
 - [11. Kiểm thử](#11-kiểm-thử)
@@ -64,7 +64,7 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 │  FRONTEND (frontend/) — React 18 SPA (giống stack portal thật)   │
 │  Vite · Material UI (MUI 5) · Redux Toolkit · React Router v6   │
 │  axios · react-toastify · Montserrat/Roboto · teal #008689      │
-│  19 màn hình theo 3 vai trò · Đăng nhập JWT · localStorage      │
+│  20 màn hình theo 3 vai trò · Đăng nhập JWT · localStorage      │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  REST API (JSON) + Bearer Token
 ┌───────────────────────────────▼─────────────────────────────────┐
@@ -159,7 +159,7 @@ student-course-registration-management/
     ├── public/images/             #   Logo trường, nền đăng nhập (asset thật UTH)
     └── src/
         ├── main.jsx               #   Provider + Router + ThemeProvider + Toast
-        ├── App.jsx                #   19 route + ProtectedRoute theo vai trò
+        ├── App.jsx                #   20 route + ProtectedRoute theo vai trò
         ├── theme.js               #   Design system teal #008689 (MUI createTheme)
         ├── api/client.js          #   axios + Bearer JWT + interceptor 401
         ├── store/authSlice.js     #   Redux Toolkit: phiên đăng nhập
@@ -367,16 +367,21 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 ---
 
-## 8. Frontend — React SPA, 19 màn hình
+## 8. Frontend — React SPA, 20 màn hình
 
 > 🎨 **Cùng công nghệ với portal.ut.edu.vn**: React 18 + Vite + Material UI (MUI 5) + Redux Toolkit +
-> React Router v6 + axios + react-toastify. Nhận diện thương hiệu Trường ĐH Giao thông vận tải TP.HCM
+> React Router v6 + axios + react-toastify. Nhận diện thương hiệu **Portal UTH — Trường ĐH Giao thông vận tải TP. HCM**
 > (logo, teal `#008689`, font Montserrat/Roboto) — topbar + header trắng + thanh menu teal + breadcrumb +
-> footer 3 cột, dựng trong `components/PortalLayout.jsx` cho toàn bộ 19 màn hình.
+> footer 3 cột, dựng trong `components/PortalLayout.jsx` cho toàn bộ 20 màn hình.
+>
+> 🔎 **Thuật ngữ & bố cục được đối chiếu từ chính JS bundle công khai của portal thật** (trích ~1.000 chuỗi
+> tiếng Việt): "Đăng ký lớp học phần", "Lớp HP đã đăng ký", "Kết quả học tập", "Tiến độ học tập",
+> "GV dự kiến", "SS tối đa", "Xếp lịch", "Điểm quá trình/cuối kỳ", "Hệ 4", "Xuất Excel"…
 
 | Nhóm | Route React | Vai trò |
 |---|---|---|
 | Chung | `/login` (đăng nhập) · `/` (dashboard theo vai trò) | Tất cả |
+| Cá nhân | `/thong-tin-ca-nhan` (hồ sơ SV + cập nhật liên hệ) | SV |
 | Đăng ký | `/dang-ky` · `/thoi-khoa-bieu` · `/dang-ky-cua-toi` · `/huy-dang-ky` | SV |
 | Điểm & Học phí | `/bang-diem` · `/hoc-phi` | SV |
 | GV | `/lop-cua-toi` · `/nhap-diem` · `/thoi-khoa-bieu-gv` | GV |
@@ -384,7 +389,8 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 **Cơ chế chung:** `api/client.js` (axios + Bearer JWT, interceptor tự đá về `/login` khi 401) ·
 `store/authSlice.js` (Redux Toolkit) · `ProtectedRoute` theo `MaVaiTro` · `theme.js` (design system teal) ·
-`react-toastify` cho thông báo · `ConfirmDialog` thay `window.confirm` · modal **Đổi mật khẩu** toàn cục.
+`react-toastify` cho thông báo · `ConfirmDialog` thay `window.confirm` · modal **Đổi mật khẩu** toàn cục ·
+`utils/export.js` — nút **Xuất Excel** (CSV BOM UTF-8) trên các bảng lớn, giống portal thật.
 
 **Đăng nhập (1 bước):**
 - `POST /api/auth/login` — tài khoản + mật khẩu (SHA-256) → cấp JWT `{token, user}`; lưu `localStorage`, `ProtectedRoute` giữ phiên.
@@ -493,7 +499,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 | `backend/scripts/e2e-test.js` | **25 test E2E** qua 3 vai trò (auth, đăng ký, điểm, học phí, GV, admin, danh mục) | ✅ 25/25 PASS |
 | `backend/scripts/verify-db.js` | Kiểm tra nhanh đối tượng DB (sĩ số, điểm F, học phí, tài khoản, function, view) | ✅ |
 | Đăng nhập 1 bước | `POST /auth/login` (sai mật khẩu → 401; tài khoản khóa → 403; đúng → cấp JWT) | ✅ |
-| `npm run build` (frontend) | Vite build React SPA — 19 route, không lỗi biên dịch | ✅ |
+| `npm run build` (frontend) | Vite build React SPA — 20 route, không lỗi biên dịch | ✅ |
 | Trigger | Tự +1/−1 sĩ số khi đăng ký/hủy · tự tính điểm · chặn trùng lịch · chặn xóa ngành | ✅ đã kiểm thử |
 | Concurrency | `mysql/transactions/concurrency_test.sql` — 2 session tranh chỗ cuối (kịch bản 2 cửa sổ mysql client) | theo docs |
 
@@ -526,7 +532,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 - [x] Chuyển **toàn bộ T-SQL → MySQL** (DDL, data, 9 FN, 12 SP, 9 Trigger, 10 View, Index, Transaction, Query, Security)
 - [x] Triển khai & chạy trên **MySQL remote** (`free02.123host.vn`)
 - [x] Backend **Node.js/Express** — REST + JWT, 7 nhóm route (~70 endpoint), phân quyền 3 vai trò
-- [x] **Viết lại frontend bằng React 18 + Vite + MUI + Redux Toolkit** — cùng công nghệ portal.ut.edu.vn, 19 màn hình, kết nối DB thật (không mock data)
+- [x] **Viết lại frontend bằng React 18 + Vite + MUI + Redux Toolkit** — cùng công nghệ portal.ut.edu.vn, 20 màn hình, kết nối DB thật (không mock data)
 - [x] Đăng nhập **1 bước** (tài khoản + mật khẩu → JWT) + hồ sơ cá nhân `/auth/hoso` (OTP 2 bước portal thật tạm bỏ)
 - [x] Express phục vụ bản build `frontend/dist` (SPA fallback) — 1 tiến trình duy nhất
 - [x] SP đăng ký kiểm tra **5 ràng buộc** (mã 100–106) + Transaction chống Lost Update — đã kiểm thử

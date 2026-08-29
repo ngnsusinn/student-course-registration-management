@@ -4,10 +4,12 @@ import {
   TableRow, Button, Alert, Typography, CircularProgress, Stack, Chip,
 } from '@mui/material';
 import SaveIcon from '@mui/icons-material/Save';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard } from '../../components/SectionCard';
 import ConfirmDialog from '../../components/ConfirmDialog';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // NHAP DIEM (GV) — bang cham diem; Trigger tu tinh TK/chu/he4
@@ -99,20 +101,27 @@ export default function NhapDiem() {
   return (
     <Box>
       <SectionCard
-        title="Bảng chấm điểm"
+        title="Nhập kết quả học tập sinh viên"
         action={
           <Stack direction="row" spacing={1.5} alignItems="center">
             <TextField select size="small" label="Lớp học phần" value={maLHP} onChange={(e) => setMaLHP(e.target.value)} sx={{ minWidth: 320 }}>
               {lops.map(l => <MenuItem key={l.MaLHP} value={l.MaLHP}>{l.MaLHP} — {l.TenMonHoc} ({l.TenHocKy})</MenuItem>)}
             </TextField>
+            <Button variant="outlined" startIcon={<FileDownloadIcon />} disabled={!rows.length}
+              onClick={() => xuatExcel(`Bang-diem-${maLHP}`, [
+                { header: 'Mã SV', key: 'MaSV' }, { header: 'Họ và tên', key: 'HoTen' }, { header: 'Lớp SH', key: 'MaLopSH' },
+                { header: 'Chuyên cần', key: 'DiemChuyenCan' }, { header: 'Giữa kỳ', key: 'DiemGiuaKy' },
+                { header: 'Cuối kỳ', key: 'DiemCuoiKy' }, { header: 'Tổng kết', key: 'DiemTongKet' },
+                { header: 'Điểm chữ', key: 'DiemChu' }, { header: 'Hệ 4', key: 'DiemHe4' },
+              ], rows)}>Xuất Excel</Button>
             <Button variant="contained" startIcon={<SaveIcon />} disabled={!rows.length || saving !== null} onClick={() => setConfirmAll(true)}>
-              Lưu tất cả
+              💾 Lưu điểm
             </Button>
           </Stack>
         }
       >
         <Alert severity="info" sx={{ mb: 2 }}>
-          Điểm tổng kết = 10% CC + 20% GK + 70% CK; điểm chữ và điểm hệ 4 do <b>Trigger tự tính</b> khi lưu.
+          📈 Điểm tổng kết = 10% chuyên cần + 20% giữa kỳ + 70% cuối kỳ; điểm chữ và điểm hệ 4 do <b>Trigger tự tính</b> khi lưu.
           {lopHienTai && <> Lớp <code>{lopHienTai.MaLHP}</code> — {lopHienTai.TenMonHoc}, sĩ số {lopHienTai.SiSoHienTai}/{lopHienTai.SiSoToiDa}.</>}
         </Alert>
 
@@ -121,11 +130,11 @@ export default function NhapDiem() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Mã SV</TableCell><TableCell>Họ tên</TableCell><TableCell>Lớp SH</TableCell>
-                  <TableCell align="center" sx={{ width: 110 }}>Điểm CC</TableCell>
-                  <TableCell align="center" sx={{ width: 110 }}>Điểm GK</TableCell>
-                  <TableCell align="center" sx={{ width: 110 }}>Điểm CK</TableCell>
-                  <TableCell align="center">TK</TableCell><TableCell align="center">Chữ</TableCell>
+                  <TableCell>Mã SV</TableCell><TableCell>Họ và tên</TableCell><TableCell>Lớp SH</TableCell>
+                  <TableCell align="center" sx={{ width: 110 }}>Chuyên cần</TableCell>
+                  <TableCell align="center" sx={{ width: 110 }}>Giữa kỳ</TableCell>
+                  <TableCell align="center" sx={{ width: 110 }}>Cuối kỳ</TableCell>
+                  <TableCell align="center">Tổng kết</TableCell><TableCell align="center">Điểm chữ</TableCell>
                   <TableCell align="center">Hệ 4</TableCell><TableCell align="right"></TableCell>
                 </TableRow>
               </TableHead>

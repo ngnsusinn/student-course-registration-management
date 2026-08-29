@@ -21,8 +21,9 @@ import ChangePasswordDialog from './ChangePasswordDialog';
 // menu teal + breadcrumb + footer 3 cột. Nhận diện như portal.
 // ============================================================
 export const SCHOOL = {
-  name: 'TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI TP. HỒ CHÍ MINH',
-  short: 'UTH',
+  name: 'TRƯỜNG ĐẠI HỌC GIAO THÔNG VẬN TẢI TP. HCM',
+  short: 'ĐH GTVT HCM',
+  portal: 'Portal UTH',
   system: 'Cổng thông tin Đào tạo theo hệ thống tín chỉ',
   logo: '/images/logo_full.png',
   email: 'phongdaotao@uth.edu.vn',
@@ -76,7 +77,8 @@ export default function PortalLayout({ children }) {
         <Container maxWidth="lg" sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Stack direction="row" spacing={1} alignItems="center" fontWeight={600}>
             <Box component="img" src={SCHOOL.logo} alt="logo" sx={{ height: 18 }} />
-            <span>{SCHOOL.name} — {SCHOOL.system}</span>
+            <Box component="span" sx={{ color: '#fff', fontWeight: 800, letterSpacing: .3 }}>{SCHOOL.portal}</Box>
+            <Box component="span" sx={{ opacity: .75 }}>· {SCHOOL.short} · {SCHOOL.system}</Box>
           </Stack>
           <Stack direction="row" spacing={2.5} alignItems="center" sx={{ display: { xs: 'none', md: 'flex' } }}>
             <Clock />
@@ -185,7 +187,7 @@ export default function PortalLayout({ children }) {
           </Box>
         </Container>
         <Box sx={{ borderTop: '1px solid rgba(255,255,255,.15)', py: 1.5, textAlign: 'center', fontSize: 12.5, color: '#a9cccc' }}>
-          © {new Date().getFullYear()} {SCHOOL.short} — {SCHOOL.system}. Bản demo đồ án môn học (dữ liệu mẫu) · Nhóm 5 — Đề tài 6 · v2.0 (React)
+          © {new Date().getFullYear()} {SCHOOL.portal} · {SCHOOL.name}. Bản demo đồ án môn học (dữ liệu mẫu) · Nhóm 5 — Đề tài 6 · v2.0 (React)
         </Box>
       </Box>
 

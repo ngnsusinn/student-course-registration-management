@@ -6,11 +6,13 @@ import {
 } from '@mui/material';
 import SearchIcon from '@mui/icons-material/Search';
 import AddIcon from '@mui/icons-material/Add';
+import FileDownloadIcon from '@mui/icons-material/FileDownload';
 import { toast } from 'react-toastify';
 import api, { errMessage } from '../../api/client';
 import { SectionCard } from '../../components/SectionCard';
 import ConfirmDialog from '../../components/ConfirmDialog';
 import { fmtNgay } from '../../utils/format';
+import { xuatExcel } from '../../utils/export';
 
 // ============================================================
 // QUAN LY SINH VIEN (PĐT) — tim/loc + them/sua/xoa/chuyen lop
@@ -78,12 +80,24 @@ export default function QuanLySinhVien() {
   return (
     <Box>
       <SectionCard title="Quản lý sinh viên"
-        action={<Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => { setMode('add'); setForm({ ...EMPTY }); }}>Thêm sinh viên</Button>}>
+        action={
+          <Stack direction="row" spacing={1}>
+            <Button size="small" variant="outlined" startIcon={<FileDownloadIcon />}
+              onClick={() => xuatExcel('Danh-sach-sinh-vien', [
+                { header: 'Mã SV', key: 'MaSV' }, { header: 'Họ và tên', key: 'HoTen' },
+                { header: 'Ngày sinh', value: (r) => fmtNgay(r.NgaySinh) },
+                { header: 'Giới tính', value: (r) => (Number(r.GioiTinh) === 1 ? 'Nam' : 'Nữ') },
+                { header: 'Email', key: 'Email' }, { header: 'Số điện thoại', key: 'SoDienThoai' },
+                { header: 'Lớp SH', key: 'MaLopSH' }, { header: 'Trạng thái', key: 'TrangThaiHoc' },
+              ], rows)}>Xuất Excel</Button>
+            <Button size="small" variant="contained" startIcon={<AddIcon />} onClick={() => { setMode('add'); setForm({ ...EMPTY }); }}>Thêm sinh viên</Button>
+          </Stack>
+        }>
         <Stack direction="row" spacing={1.5} sx={{ mb: 2, flexWrap: 'wrap', useFlexGap: true }}>
-          <TextField size="small" placeholder="Tìm theo tên / mã SV..." value={tim} onChange={(e) => setTim(e.target.value)}
+          <TextField size="small" placeholder="🔍 Tìm theo tên / mã SV..." value={tim} onChange={(e) => setTim(e.target.value)}
             sx={{ minWidth: 260 }} InputProps={{ startAdornment: <InputAdornment position="start"><SearchIcon fontSize="small" /></InputAdornment> }} />
           <TextField select size="small" label="Lọc lớp SH" value={lop} onChange={(e) => setLop(e.target.value)} sx={{ minWidth: 220 }}>
-            <MenuItem value="">Tất cả lớp</MenuItem>
+            <MenuItem value="">Tất cả</MenuItem>
             {lops.map(l => <MenuItem key={l.MaLopSH} value={l.MaLopSH}>{l.MaLopSH} — {l.TenLopSH}</MenuItem>)}
           </TextField>
         </Stack>
@@ -93,8 +107,8 @@ export default function QuanLySinhVien() {
             <Table size="small">
               <TableHead>
                 <TableRow>
-                  <TableCell>Mã SV</TableCell><TableCell>Họ tên</TableCell><TableCell>Ngày sinh</TableCell>
-                  <TableCell>Giới tính</TableCell><TableCell>Email</TableCell><TableCell>SĐT</TableCell>
+                  <TableCell>Mã SV</TableCell><TableCell>Họ và tên</TableCell><TableCell>Ngày sinh</TableCell>
+                  <TableCell>Giới tính</TableCell><TableCell>Email</TableCell><TableCell>Số điện thoại</TableCell>
                   <TableCell>Lớp SH</TableCell><TableCell>Trạng thái</TableCell><TableCell align="right">Thao tác</TableCell>
                 </TableRow>
               </TableHead>
