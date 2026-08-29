@@ -64,7 +64,7 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 │  FRONTEND (frontend/) — React 18 SPA (giống stack portal thật)   │
 │  Vite · Material UI (MUI 5) · Redux Toolkit · React Router v6   │
 │  axios · react-toastify · Montserrat/Roboto · teal #008689      │
-│  19 màn hình theo 3 vai trò · OTP 2 bước · JWT localStorage     │
+│  19 màn hình theo 3 vai trò · Đăng nhập JWT · localStorage      │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  REST API (JSON) + Bearer Token
 ┌───────────────────────────────▼─────────────────────────────────┐
@@ -169,7 +169,7 @@ student-course-registration-management/
         │                          #   ProtectedRoute, SectionCard, StatusBadges,
         │                          #   ConfirmDialog, ChangePasswordDialog
         └── pages/
-            ├── Login.jsx          #   2 bước: mật khẩu → OTP 6 số
+            ├── Login.jsx          #   Đăng nhập 1 bước (tài khoản + mật khẩu)
             ├── Dashboard.jsx      #   Theo vai trò (SV/GV/PĐT) + trigger sinh nhật
             ├── sv/                #   Đăng ký · TKB · Danh sách · Hủy · Bảng điểm · Học phí
             ├── gv/                #   Lớp của tôi · Nhập điểm · TKB
@@ -376,7 +376,7 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 | Nhóm | Route React | Vai trò |
 |---|---|---|
-| Chung | `/login` (2 bước + OTP) · `/` (dashboard theo vai trò) | Tất cả |
+| Chung | `/login` (đăng nhập) · `/` (dashboard theo vai trò) | Tất cả |
 | Đăng ký | `/dang-ky` · `/thoi-khoa-bieu` · `/dang-ky-cua-toi` · `/huy-dang-ky` | SV |
 | Điểm & Học phí | `/bang-diem` · `/hoc-phi` | SV |
 | GV | `/lop-cua-toi` · `/nhap-diem` · `/thoi-khoa-bieu-gv` | GV |
@@ -386,12 +386,10 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 `store/authSlice.js` (Redux Toolkit) · `ProtectedRoute` theo `MaVaiTro` · `theme.js` (design system teal) ·
 `react-toastify` cho thông báo · `ConfirmDialog` thay `window.confirm` · modal **Đổi mật khẩu** toàn cục.
 
-**Đăng nhập kiểu portal (2 bước):**
-1. `POST /api/auth/otp/gui` — kiểm tra tài khoản/mật khẩu → sinh OTP 6 số (hạn 120s).
-   Portal thật gửi OTP về email trường + reCAPTCHA; bản demo hiển thị mã ngay trên UI (`otpDemo`).
-2. `POST /api/auth/otp/xacthuc` — nhập đúng OTP → cấp JWT `{token, user}`.
-- `POST /api/auth/login` giữ nguyên cho test tự động/E2E.
+**Đăng nhập (1 bước):**
+- `POST /api/auth/login` — tài khoản + mật khẩu (SHA-256) → cấp JWT `{token, user}`; lưu `localStorage`, `ProtectedRoute` giữ phiên.
 - `GET /api/auth/hoso` — hồ sơ cá nhân (SV: họ tên, MSSV, ngày sinh, ngành, lớp SH, khoa…) phục vụ dashboard; trigger sinh nhật 🎂 trên dashboard theo `NgaySinh` thật.
+- _Ghi chú:_ portal thật dùng OTP 2 bước cho GV/PĐT (qua email trường + reCAPTCHA); bản demo này **tạm bỏ OTP**, đăng nhập trực tiếp bằng mật khẩu.
 
 ---
 
@@ -456,8 +454,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 | Phòng Đào Tạo | `admin` | `admin@123` | Toàn quyền quản trị |
 
 > 60 tài khoản SV (`sv001`–`sv060`), 15 tài khoản GV (`gv001`–`gv015`) đều dùng mật khẩu `matkhau@123` (SV060 bị khóa để minh họa).
-> Đăng nhập trên giao diện gồm 2 bước (mật khẩu → OTP) như portal thật; mã OTP demo hiển thị ngay trên màn hình.
-> Nếu chỉ cần vào nhanh, backend vẫn giữ `POST /api/auth/login` một bước cho script test.
+> Đăng nhập 1 bước qua `POST /api/auth/login` (tài khoản + mật khẩu → JWT). OTP 2 bước của portal thật hiện đã tạm bỏ.
 
 ---
 
@@ -495,7 +492,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 | `backend/scripts/test-api.js` | Luồng SV: login → LHP mở → tín chỉ → TKB → điểm → GPA → học phí | ✅ |
 | `backend/scripts/e2e-test.js` | **25 test E2E** qua 3 vai trò (auth, đăng ký, điểm, học phí, GV, admin, danh mục) | ✅ 25/25 PASS |
 | `backend/scripts/verify-db.js` | Kiểm tra nhanh đối tượng DB (sĩ số, điểm F, học phí, tài khoản, function, view) | ✅ |
-| OTP 2 bước | `/auth/otp/gui` → `/auth/otp/xacthuc` (đúng OTP cấp token; OTP sai/hết hạn bị chặn) | ✅ |
+| Đăng nhập 1 bước | `POST /auth/login` (sai mật khẩu → 401; tài khoản khóa → 403; đúng → cấp JWT) | ✅ |
 | `npm run build` (frontend) | Vite build React SPA — 19 route, không lỗi biên dịch | ✅ |
 | Trigger | Tự +1/−1 sĩ số khi đăng ký/hủy · tự tính điểm · chặn trùng lịch · chặn xóa ngành | ✅ đã kiểm thử |
 | Concurrency | `mysql/transactions/concurrency_test.sql` — 2 session tranh chỗ cuối (kịch bản 2 cửa sổ mysql client) | theo docs |
@@ -530,7 +527,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 - [x] Triển khai & chạy trên **MySQL remote** (`free02.123host.vn`)
 - [x] Backend **Node.js/Express** — REST + JWT, 7 nhóm route (~70 endpoint), phân quyền 3 vai trò
 - [x] **Viết lại frontend bằng React 18 + Vite + MUI + Redux Toolkit** — cùng công nghệ portal.ut.edu.vn, 19 màn hình, kết nối DB thật (không mock data)
-- [x] Đăng nhập **OTP 2 bước** giống portal thật (`/auth/otp/gui` → `/auth/otp/xacthuc`) + hồ sơ cá nhân `/auth/hoso`
+- [x] Đăng nhập **1 bước** (tài khoản + mật khẩu → JWT) + hồ sơ cá nhân `/auth/hoso` (OTP 2 bước portal thật tạm bỏ)
 - [x] Express phục vụ bản build `frontend/dist` (SPA fallback) — 1 tiến trình duy nhất
 - [x] SP đăng ký kiểm tra **5 ràng buộc** (mã 100–106) + Transaction chống Lost Update — đã kiểm thử
 - [x] Trigger tự tính điểm / cập nhật sĩ số / chặn trùng lịch / chặn xóa ngành / log mật khẩu — đã kiểm thử
