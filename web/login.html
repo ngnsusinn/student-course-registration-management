@@ -3,100 +3,216 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng nhập — Hệ thống đăng ký học phần tín chỉ</title>
-    <link rel="stylesheet" href="css/shared.css">
-    <style>
-        .login-wrap {
-            min-height: 100vh;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            background: linear-gradient(135deg, #0f2c4e 0%, #1a4a7a 100%);
-            padding: 20px;
-        }
-        .login-card {
-            width: 100%;
-            max-width: 420px;
-            background: #fff;
-            border-radius: 14px;
-            padding: 36px 32px;
-            box-shadow: 0 20px 60px rgba(0,0,0,.35);
-        }
-        .login-card__logo { font-size: 52px; text-align: center; margin-bottom: 6px; }
-        .login-card h1 { font-size: 20px; text-align: center; color: #0f2c4e; margin: 0 0 4px; }
-        .login-card__sub { text-align: center; color: #7a8aa0; font-size: 13px; margin-bottom: 24px; }
-        .form-group { margin-bottom: 16px; }
-        .form-group label { display: block; font-size: 13px; font-weight: 600; color: #33475b; margin-bottom: 6px; }
-        .login-card .input { width: 100%; }
-        .login-error { display: none; background: #fdecea; color: #c0392b; border: 1px solid #f5c6c0; border-radius: 8px; padding: 10px 12px; font-size: 13px; margin-bottom: 14px; }
-        .login-card .btn { width: 100%; padding: 12px; font-size: 15px; }
-        .demo-accounts { margin-top: 20px; border-top: 1px dashed #dde5ec; padding-top: 14px; font-size: 12px; color: #5d6f83; }
-        .demo-accounts table { width: 100%; border-collapse: collapse; margin-top: 8px; }
-        .demo-accounts td { padding: 4px 2px; border-bottom: 1px solid #eef2f6; }
-        .demo-accounts code { background: #eef3f8; padding: 2px 6px; border-radius: 4px; font-size: 11px; }
-    </style>
+    <title>Đăng nhập — Cổng thông tin Đào tạo tín chỉ — UTH</title>
+    <link rel="icon" type="image/png" href="/images/logo_spinner.png">
+    <link rel="stylesheet" href="/css/shared.css">
 </head>
 <body>
     <div class="login-wrap">
-        <div class="login-card">
-            <div class="login-card__logo">🎓</div>
-            <h1>Hệ thống Đăng ký học phần tín chỉ</h1>
-            <p class="login-card__sub">Đồ án Hệ Quản trị CSDL — Nhóm 5 · Đề tài 6</p>
-
-            <div class="login-error" id="login-error"></div>
-
-            <form id="login-form" autocomplete="off">
-                <div class="form-group">
-                    <label for="TenDangNhap">Tên đăng nhập</label>
-                    <input type="text" id="TenDangNhap" class="input" placeholder="VD: sv001, gv001, admin" required>
-                </div>
-                <div class="form-group">
-                    <label for="MatKhau">Mật khẩu</label>
-                    <input type="password" id="MatKhau" class="input" placeholder="••••••••" required>
-                </div>
-                <button type="submit" class="btn btn--primary" id="btn-login">Đăng nhập</button>
-            </form>
-
-            <div class="demo-accounts">
-                <strong>Tài khoản demo:</strong>
-                <table>
-                    <tr><td>📘 Sinh viên</td><td><code>sv001</code></td><td><code>matkhau@123</code></td></tr>
-                    <tr><td>👨‍🏫 Giảng viên</td><td><code>gv001</code></td><td><code>matkhau@123</code></td></tr>
-                    <tr><td>🏢 Phòng Đào Tạo</td><td><code>admin</code></td><td><code>admin@123</code></td></tr>
-                </table>
+        <div class="login-top">
+            <img src="/images/logo_full.png" alt="Logo Trường ĐH Giao thông vận tải TP.HCM">
+            <div class="login-top__names">
+                <span class="t1">Trường Đại học Giao thông vận tải TP. Hồ Chí Minh</span>
+                <span class="t2">Cổng thông tin Đào tạo theo hệ thống tín chỉ</span>
             </div>
         </div>
+
+        <div class="login-main">
+            <div class="login-card">
+                <!-- ================= BUOC 1: TAI KHOAN ================= -->
+                <div id="step-credentials">
+                    <h1>Đăng nhập hệ thống</h1>
+                    <p class="login-card__sub">Dành cho Sinh viên · Giảng viên · Phòng Đào tạo</p>
+                    <div class="login-error" id="login-error"></div>
+                    <form id="login-form" autocomplete="off">
+                        <div class="form-group">
+                            <label for="TenDangNhap">Mã sinh viên / Tài khoản</label>
+                            <input type="text" id="TenDangNhap" class="input" placeholder="VD: 054206008884, sv001, gv001, admin" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="MatKhau">Mật khẩu</label>
+                            <div class="pw-wrap">
+                                <input type="password" id="MatKhau" class="input" placeholder="••••••••" required>
+                                <button type="button" class="pw-eye" onclick="togglePw('MatKhau', this)" title="Hiện/ẩn mật khẩu">👁</button>
+                            </div>
+                        </div>
+                        <div class="login-links">
+                            <label style="font-size:13px;color:#5d7373;display:flex;gap:6px;align-items:center;cursor:pointer">
+                                <input type="checkbox" id="remember" checked> Ghi nhớ tài khoản
+                            </label>
+                            <a href="#" onclick="showToast('Vui lòng liên hệ Phòng Đào tạo để được cấp lại mật khẩu.','info');return false;">Quên mật khẩu?</a>
+                        </div>
+                        <button type="submit" class="btn btn--primary" id="btn-login">TIẾP TỤC — GỬI MÃ OTP</button>
+                    </form>
+                </div>
+
+                <!-- ================= BUOC 2: OTP ================= -->
+                <div id="step-otp" class="hidden">
+                    <h1>Xác thực OTP</h1>
+                    <p class="login-card__sub">Mã OTP gồm 6 chữ số đã được gửi tới email trường<br><span id="otp-email" class="text-muted"></span></p>
+                    <div class="login-error" id="otp-error"></div>
+                    <div class="demo-otp" id="demo-otp" style="display:none"></div>
+                    <div class="otp-row" id="otp-row">
+                        <input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1"><input inputmode="numeric" maxlength="1">
+                    </div>
+                    <div class="otp-timer">OTP sẽ hết hạn sau <b id="otp-countdown">02:00</b> · <a href="#" onclick="guiLaiOtp();return false;" style="color:var(--color-primary-dark)">Gửi lại mã</a></div>
+                    <button type="button" class="btn btn--primary" id="btn-verify" onclick="xacThucOtp()">XÁC NHẬN & ĐĂNG NHẬP</button>
+                    <div class="login-links" style="margin-top:14px;justify-content:center">
+                        <a href="#" onclick="quayLaiDangNhap();return false;">← Quay lại đăng nhập</a>
+                    </div>
+                </div>
+
+                <details class="demo-accounts">
+                    <summary>Tài khoản demo (dành cho giảng viên & người thử nghiệm)</summary>
+                    <table>
+                        <tr><td>📘 Sinh viên</td><td><code>sv001</code></td><td><code>matkhau@123</code></td></tr>
+                        <tr><td>👨‍🏫 Giảng viên</td><td><code>gv001</code></td><td><code>matkhau@123</code></td></tr>
+                        <tr><td>🏢 Phòng Đào Tạo</td><td><code>admin</code></td><td><code>admin@123</code></td></tr>
+                    </table>
+                </details>
+            </div>
+        </div>
+
+        <div class="login-foot">© 2026 Trường Đại học Giao thông vận tải TP. Hồ Chí Minh — Cổng thông tin Đào tạo tín chỉ (bản demo đồ án)</div>
     </div>
 
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="js/api.js"></script>
-    <script src="js/shared.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/shared.js"></script>
     <script>
-        // Neu da dang nhap -> vao trang chinh
-        if (api.isAuthed()) location.href = 'index.html';
+        if (api.isAuthed()) location.href = '/index.html';
 
+        let OTP_EXPIRES_AT = 0, OTP_TIMER = null;
+
+        function togglePw(id, btn) {
+            const el = document.getElementById(id);
+            el.type = el.type === 'password' ? 'text' : 'password';
+            btn.textContent = el.type === 'password' ? '👁' : '🙈';
+        }
+        function showErr(boxId, msg) {
+            const b = document.getElementById(boxId);
+            b.textContent = msg; b.style.display = 'block';
+        }
+        function hideErr(boxId) { document.getElementById(boxId).style.display = 'none'; }
+
+        // ---------- BUOC 1: gui OTP ----------
         document.getElementById('login-form').addEventListener('submit', async (e) => {
             e.preventDefault();
+            hideErr('login-error');
             const btn = document.getElementById('btn-login');
-            const errBox = document.getElementById('login-error');
-            errBox.style.display = 'none';
-            btn.disabled = true;
-            btn.textContent = 'Đang đăng nhập...';
+            btn.disabled = true; btn.textContent = 'Đang gửi mã OTP...';
             try {
-                const user = await api.login(
-                    document.getElementById('TenDangNhap').value.trim(),
-                    document.getElementById('MatKhau').value
-                );
-                showToast(`Chào mừng ${user.HoTen}!`, 'success');
-                setTimeout(() => { location.href = 'index.html'; }, 400);
+                const r = await api.post('/api/auth/otp/gui', {
+                    TenDangNhap: document.getElementById('TenDangNhap').value.trim(),
+                    MatKhau: document.getElementById('MatKhau').value,
+                });
+                document.getElementById('step-credentials').classList.add('hidden');
+                document.getElementById('step-otp').classList.remove('hidden');
+                document.getElementById('otp-email').textContent = r.emailMasked ? 'Đã gửi tới: ' + r.emailMasked : '';
+                const demo = document.getElementById('demo-otp');
+                if (r.otpDemo) {
+                    demo.style.display = 'block';
+                    demo.innerHTML = `🧪 Bản demo (không có email trường) — mã OTP của bạn: <b style="font-size:16px;letter-spacing:4px">${r.otpDemo}</b>`;
+                }
+                startCountdown(r.expiresInSeconds || 120);
+                document.querySelector('#otp-row input').focus();
+                showToast(r.message || 'Mã OTP đã được gửi!', 'success');
             } catch (err) {
-                errBox.textContent = err.message || 'Đăng nhập thất bại.';
-                errBox.style.display = 'block';
-                btn.disabled = false;
-                btn.textContent = 'Đăng nhập';
+                showErr('login-error', err.message || 'Đăng nhập thất bại.');
+            } finally {
+                btn.disabled = false; btn.textContent = 'TIẾP TỤC — GỬI MÃ OTP';
             }
         });
+
+        // ---------- BUOC 2: OTP inputs ----------
+        const otpInputs = [...document.querySelectorAll('#otp-row input')];
+        otpInputs.forEach((inp, i) => {
+            inp.addEventListener('input', () => {
+                inp.value = inp.value.replace(/\D/g, '').slice(0, 1);
+                if (inp.value && i < otpInputs.length - 1) otpInputs[i + 1].focus();
+                if (otpInputs.every(x => x.value)) xacThucOtp();
+            });
+            inp.addEventListener('keydown', (e) => {
+                if (e.key === 'Backspace' && !inp.value && i > 0) otpInputs[i - 1].focus();
+            });
+            inp.addEventListener('paste', (e) => {
+                e.preventDefault();
+                const digits = (e.clipboardData.getData('text') || '').replace(/\D/g, '').slice(0, 6).split('');
+                digits.forEach((d, k) => { if (otpInputs[k]) otpInputs[k].value = d; });
+                if (digits.length === 6) xacThucOtp();
+            });
+        });
+        function layOtp() { return otpInputs.map(x => x.value).join(''); }
+
+        function startCountdown(seconds) {
+            OTP_EXPIRES_AT = Date.now() + seconds * 1000;
+            clearInterval(OTP_TIMER);
+            const el = document.getElementById('otp-countdown');
+            OTP_TIMER = setInterval(() => {
+                const s = Math.max(0, Math.round((OTP_EXPIRES_AT - Date.now()) / 1000));
+                el.textContent = String(Math.floor(s / 60)).padStart(2, '0') + ':' + String(s % 60).padStart(2, '0');
+                if (s <= 0) clearInterval(OTP_TIMER);
+            }, 1000);
+        }
+
+        async function guiLaiOtp() {
+            hideErr('otp-error');
+            try {
+                const r = await api.post('/api/auth/otp/gui', {
+                    TenDangNhap: document.getElementById('TenDangNhap').value.trim(),
+                    MatKhau: document.getElementById('MatKhau').value,
+                });
+                if (r.otpDemo) {
+                    const demo = document.getElementById('demo-otp');
+                    demo.style.display = 'block';
+                    demo.innerHTML = `🧪 Bản demo — mã OTP mới: <b style="font-size:16px;letter-spacing:4px">${r.otpDemo}</b>`;
+                }
+                startCountdown(r.expiresInSeconds || 120);
+                showToast('Đã gửi lại mã OTP!', 'success');
+            } catch (err) {
+                showErr('otp-error', err.message || 'Gửi mã OTP thất bại!');
+            }
+        }
+
+        async function xacThucOtp() {
+            hideErr('otp-error');
+            const otp = layOtp();
+            if (otp.length !== 6) return showErr('otp-error', 'OTP là bắt buộc (6 chữ số).');
+            const btn = document.getElementById('btn-verify');
+            btn.disabled = true; btn.textContent = 'Đang xác thực...';
+            try {
+                const data = await api.post('/api/auth/otp/xacthuc', {
+                    TenDangNhap: document.getElementById('TenDangNhap').value.trim(),
+                    Otp: otp,
+                });
+                api.setSession(data.token, data.user);
+                showToast(`Chào mừng ${data.user.HoTen}!`, 'success');
+                setTimeout(() => { location.href = '/index.html'; }, 500);
+            } catch (err) {
+                showErr('otp-error', err.message || 'Xác thực OTP thất bại.');
+                btn.disabled = false; btn.textContent = 'XÁC NHẬN & ĐĂNG NHẬP';
+            }
+        }
+
+        function quayLaiDangNhap() {
+            clearInterval(OTP_TIMER);
+            document.getElementById('step-otp').classList.add('hidden');
+            document.getElementById('step-credentials').classList.remove('hidden');
+            otpInputs.forEach(x => x.value = '');
+            hideErr('otp-error');
+        }
+
+        // Ghi nho tai khoan
+        try {
+            const g = localStorage.getItem('dk_remember_tk');
+            if (g) document.getElementById('TenDangNhap').value = g;
+            document.getElementById('login-form').addEventListener('submit', () => {
+                const tk = document.getElementById('TenDangNhap').value.trim();
+                if (document.getElementById('remember').checked) localStorage.setItem('dk_remember_tk', tk);
+                else localStorage.removeItem('dk_remember_tk');
+            });
+        } catch {}
     </script>
 </body>
 </html>

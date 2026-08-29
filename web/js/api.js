@@ -55,10 +55,10 @@ const api = {
     try { data = text ? JSON.parse(text) : null; } catch { data = text; }
 
     if (res.status === 401) {
-      // Token het han -> dang xuat tu dong
+      // Token het han -> dang xuat tu dong (duong dan tuy doi, dung o moi thu muc)
       this.clearSession();
-      if (!location.pathname.endsWith('login.html')) {
-        location.href = 'login.html';
+      if (!location.pathname.endsWith('/login.html')) {
+        location.href = '/login.html';
       }
     }
     if (!res.ok) {
@@ -83,7 +83,7 @@ const api = {
   },
   logout() {
     this.clearSession();
-    location.href = 'login.html';
+    location.href = '/login.html';
   },
 };
 

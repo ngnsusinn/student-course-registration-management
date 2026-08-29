@@ -361,9 +361,14 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 ## 8. Frontend — 19 màn hình
 
+> 🎨 **Giao diện định hướng theo Portal UTH thật** (`portal.ut.edu.vn`): nhận diện thương
+> hiệu Trường ĐH Giao thông vận tải TP.HCM (logo, màu teal `#008689`, font Montserrat/Roboto),
+> topbar + header trắng + thanh menu teal + breadcrumb + footer 3 cột — dựng tập trung trong
+> `js/shared.js` + `css/shared.css` cho toàn bộ 19 màn hình.
+
 | Nhóm | Trang | Vai trò |
 |---|---|---|
-| Chung | `login.html` · `index.html` (dashboard) | Tất cả |
+| Chung | `login.html` (đăng nhập 2 bước + OTP) · `index.html` (dashboard) | Tất cả |
 | Đăng ký | `app/dangky_hocphan/dang-ky.html` · `thoi-khoa-bieu.html` · `danh-sach-dang-ky.html` · `huy-dang-ky.html` | SV |
 | Điểm | `app/diem/bang-diem.html` · `app/diem/nhap-diem-pdt.html` | SV · PĐT |
 | Học phí | `app/hocphi/hoc-phi-cua-toi.html` · `app/hocphi/quan-ly-hoc-phi.html` | SV · PĐT |
@@ -372,7 +377,14 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 | Học phần | `app/hocphan/mon-hoc-giang-vien.html` · `mo-lop-hoc-phan.html` | PĐT |
 | Admin | `app/admin/dashboard.html` · `app/admin/tai-khoan.html` | PĐT |
 
-**Cơ chế chung:** `js/api.js` (fetch + JWT, tự chuyển về login khi token hết hạn) · `js/shared.js` (toast, esc chống XSS, format tiền, menu + auth guard theo vai trò) · `css/shared.css` (design system: header/nav, card, table, badge, button, modal).
+**Cơ chế chung:** `js/api.js` (fetch + JWT, tự chuyển về login khi token hết hạn — đường dẫn tuyệt đối) · `js/shared.js` (layout portal, đồng hồ thời gian thực, toast, esc chống XSS, format tiền, menu + auth guard theo vai trò, **modal Đổi mật khẩu**) · `css/shared.css` (design system teal).
+
+**Đăng nhập kiểu portal (2 bước):**
+1. `POST /api/auth/otp/gui` — kiểm tra tài khoản/mật khẩu → sinh OTP 6 số (hạn 120s).
+   Portal thật gửi OTP về email trường + reCAPTCHA; bản demo hiển thị mã ngay trên UI (`otpDemo`).
+2. `POST /api/auth/otp/xacthuc` — nhập đúng OTP → cấp JWT `{token, user}`.
+- `POST /api/auth/login` giữ nguyên cho test tự động/E2E.
+- `GET /api/auth/hoso` — hồ sơ cá nhân (SV: họ tên, MSSV, ngày sinh, ngành, lớp SH, khoa…) phục vụ dashboard; trigger sinh nhật 🎂 trên dashboard theo `NgaySinh` thật.
 
 ---
 
@@ -427,6 +439,8 @@ Mở trình duyệt: **http://localhost:3000** → tự động vào trang đăn
 | Phòng Đào Tạo | `admin` | `admin@123` | Toàn quyền quản trị |
 
 > 60 tài khoản SV (`sv001`–`sv060`), 15 tài khoản GV (`gv001`–`gv015`) đều dùng mật khẩu `matkhau@123` (SV060 bị khóa để minh họa).
+> Đăng nhập trên giao diện gồm 2 bước (mật khẩu → OTP) như portal thật; mã OTP demo hiển thị ngay trên màn hình.
+> Nếu chỉ cần vào nhanh, backend vẫn giữ `POST /api/auth/login` một bước cho script test.
 
 ---
 

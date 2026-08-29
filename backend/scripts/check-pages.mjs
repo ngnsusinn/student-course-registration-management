@@ -22,9 +22,13 @@ for (const f of htmlFiles) {
   // Check referenced local assets exist
   const refs = [...content.matchAll(/(?:src|href)="([^"]+)"/g)].map(m => m[1]);
   for (const ref of refs) {
-    if (/^(https?:|#|javascript:)/.test(ref)) continue;
+    if (/^(https?:|#|javascript:|mailto:)/.test(ref)) continue;
     if (ref.includes('favicon')) continue;
-    const target = path.resolve(path.dirname(f), ref.split('?')[0].split('#')[0]);
+    const clean = ref.split('?')[0].split('#')[0];
+    // Duong dan tuy doi (/js/...) -> tinh goc la thu muc web/
+    const target = clean.startsWith('/')
+      ? path.join(WEB, clean)
+      : path.resolve(path.dirname(f), clean);
     if (!fs.existsSync(target)) {
       console.log(`❌ ${path.relative(WEB, f)} -> missing asset: ${ref}`);
       issues++;

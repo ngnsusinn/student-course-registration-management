@@ -3,10 +3,15 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang mẫu — Hệ thống đăng ký học phần tín chỉ</title>
+    <title>Trang mẫu — Cổng thông tin Đào tạo tín chỉ — UTH</title>
+    <link rel="icon" type="image/png" href="/images/logo_spinner.png">
     <link rel="stylesheet" href="../css/shared.css">
 </head>
 <body>
+    <!-- Layout (topbar + header logo trường + thanh menu + breadcrumb + footer)
+         do renderLayout() trong js/shared.js tự dựng — chỉ cần giữ nguyên
+         cấu trúc header/main/footer bên dưới. Duong dan asset co the tuong doi
+         (../css, ../../css) hoac tuy doi (/css, /js) — deu chay dung. -->
     <header class="app-header">
         <div class="app-header__brand">
             <span class="app-header__logo">🎓</span>
@@ -42,9 +47,7 @@
         </section>
     </main>
 
-    <footer class="app-footer">
-        <p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p>
-    </footer>
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5</p></footer>
     <div id="toast-container" class="toast-container"></div>
 
     <!-- Modal thêm/sửa -->

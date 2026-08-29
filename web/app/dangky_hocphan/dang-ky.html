@@ -3,7 +3,8 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Đăng ký học phần — Hệ thống đăng ký học phần tín chỉ</title>
+    <title>Đăng ký học phần — Cổng thông tin Đào tạo tín chỉ — UTH</title>
+    <link rel="icon" type="image/png" href="/images/logo_spinner.png">
     <link rel="stylesheet" href="../../css/shared.css">
 </head>
 <body>
@@ -18,15 +19,19 @@
 
     <main class="container">
         <!-- ================================================
-             MÀN HÌNH 1: CHỌN LỚP HỌC PHẦN (đăng ký mới)
-             - Giỏ đăng ký + kiểm tra ràng buộc realtime
+             MÀN HÌNH 1: HỌC PHẦN ĐANG CHỜ ĐĂNG KÝ
         ================================================= -->
         <section class="card">
             <div class="card__header">
-                <h2 class="card__title">1️⃣ Chọn lớp học phần</h2>
+                <h2 class="card__title">Học phần đang chờ đăng ký</h2>
                 <div id="dot-status" class="badge badge--success">Đợt đang mở</div>
             </div>
             <div class="toolbar">
+                <div class="pill-group" id="loai-hoc">
+                    <button class="pill pill--active" data-loai="HOC_MOI" onclick="chonLoaiHoc(this)">Học mới</button>
+                    <button class="pill" data-loai="HOC_LAI" onclick="chonLoaiHoc(this)">Học lại</button>
+                    <button class="pill" data-loai="CAI_THIEN" onclick="chonLoaiHoc(this)">Học cải thiện</button>
+                </div>
                 <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã lớp / môn học..." oninput="renderClassList()">
                 <select id="filter-khoi" class="input input--select" onchange="renderClassList()">
                     <option value="">Tất cả khối</option>
@@ -50,15 +55,15 @@
                 </thead>
                 <tbody id="class-list-body"></tbody>
             </table>
-            <p class="card__note" id="class-list-empty" style="display:none">Không có lớp nào phù hợp.</p>
+            <p class="card__note" id="class-list-empty" style="display:none">Không có dữ liệu</p>
         </section>
 
         <!-- ================================================
-             GIỎ ĐĂNG KÝ
+             HỌC PHẦN ĐÃ ĐĂNG KÝ TRONG HỌC KỲ NÀY
         ================================================= -->
         <section class="card">
             <div class="card__header">
-                <h2 class="card__title">🛒 Giỏ đăng ký của bạn</h2>
+                <h2 class="card__title">Học phần đã đăng ký trong học kỳ này</h2>
                 <span class="badge badge--info" id="registered-total"></span>
             </div>
             <table class="table">

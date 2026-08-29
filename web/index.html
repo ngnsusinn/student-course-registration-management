@@ -3,69 +3,131 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Trang chủ — Hệ thống đăng ký học phần tín chỉ</title>
-    <link rel="stylesheet" href="css/shared.css">
+    <title>Trang chủ — Cổng thông tin Đào tạo tín chỉ — UTH</title>
+    <link rel="icon" type="image/png" href="/images/logo_spinner.png">
+    <link rel="stylesheet" href="/css/shared.css">
 </head>
 <body>
     <header class="app-header">
         <div class="app-header__brand">
             <span class="app-header__logo">🎓</span>
-            <h1 class="app-header__title">Hệ thống Đăng ký học phần tín chỉ</h1>
+            <h1 class="app-header__title">Trang chủ</h1>
         </div>
         <nav class="app-nav" id="app-nav"></nav>
         <div class="app-header__user" id="app-user"></div>
     </header>
 
     <main class="container">
-        <section class="card">
-            <h2 class="card__title">Chào mừng đến với Hệ thống đăng ký học phần</h2>
-            <p class="card__subtitle">
-                Hệ thống quản lý đăng ký học phần tín chỉ — Môn: Hệ Quản trị Cơ sở dữ liệu.
-                Đồ án Nhóm 5, Đề tài 6. Kết nối MySQL remote (<code>free02.123host.vn</code>).
-            </p>
-            <div id="welcome-box"></div>
-            <div class="stat-grid" id="stat-grid"></div>
-        </section>
+        <div id="birthday-banner"></div>
 
-        <section class="card">
-            <div class="card__header">
-                <h2 class="card__title">Danh sách lớp học phần đang mở đăng ký</h2>
-                <span class="badge badge--success" id="dot-badge">Đang tải...</span>
+        <!-- ====================== SINH VIEN ====================== -->
+        <div id="sv-dashboard" class="hidden">
+            <div class="dash-grid">
+                <div>
+                    <section class="card">
+                        <div class="card__header">
+                            <h2 class="card__title">Thông tin sinh viên</h2>
+                            <span class="badge badge--info" id="sv-masv"></span>
+                        </div>
+                        <div class="info-list" id="sv-info"><p class="text-muted">Đang tải...</p></div>
+                        <p class="card__note">⚠️ Sinh viên vui lòng cập nhật thông tin cá nhân (Nơi sinh, CCCD, SĐT...) khi có thay đổi — liên hệ Phòng Đào tạo.</p>
+                    </section>
+
+                    <section class="card">
+                        <div class="card__header">
+                            <h2 class="card__title">Lịch học trong tuần</h2>
+                            <a class="btn btn--outline btn--sm" href="/app/dangky_hocphan/thoi-khoa-bieu.html">Xem cả học kỳ →</a>
+                        </div>
+                        <div class="week-grid" id="week-grid"></div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card__header">
+                            <h2 class="card__title">Học phần đang mở đăng ký</h2>
+                            <span class="badge badge--success" id="dot-badge">Đang tải...</span>
+                        </div>
+                        <div class="toolbar">
+                            <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã lớp / môn học..." oninput="renderClassList()">
+                            <select id="filter-khoi" class="input input--select" onchange="renderClassList()">
+                                <option value="">Tất cả khối</option>
+                                <option value="CNTT">Công nghệ thông tin</option>
+                                <option value="KTT">Kinh tế - Tài chính</option>
+                                <option value="XD">Xây dựng</option>
+                            </select>
+                        </div>
+                        <table class="table">
+                            <thead>
+                                <tr><th>Mã LHP</th><th>Môn học</th><th>TC</th><th>Sĩ số</th><th>Giảng viên</th><th>Thao tác</th></tr>
+                            </thead>
+                            <tbody id="class-list-body"></tbody>
+                        </table>
+                        <p class="card__note" id="class-list-empty" style="display:none">Không có lớp nào phù hợp.</p>
+                    </section>
+                </div>
+
+                <div>
+                    <section class="card">
+                        <div class="card__header"><h2 class="card__title">Kết quả học tập</h2></div>
+                        <div class="stat-grid" style="grid-template-columns:1fr 1fr" id="kqht-grid">
+                            <div class="stat"><div class="stat__value" id="kq-cpa">—</div><div class="stat__label">CPA tích lũy (hệ 4)</div></div>
+                            <div class="stat"><div class="stat__value" id="kq-tc">—</div><div class="stat__label">Tín chỉ tích lũy</div></div>
+                        </div>
+                        <p class="mt-2" id="kq-xeploai"></p>
+                        <div id="kq-canhbao"></div>
+                        <p class="card__note"><a href="/app/diem/bang-diem.html" style="color:var(--color-primary-dark)">Xem bảng điểm học tập →</a></p>
+                    </section>
+
+                    <section class="card">
+                        <div class="card__header"><h2 class="card__title">Thông báo / sự kiện</h2></div>
+                        <div id="notice-list"></div>
+                    </section>
+
+                    <section class="card">
+                        <div class="card__header"><h2 class="card__title">Tiện ích nhanh</h2></div>
+                        <div class="quick-tiles">
+                            <a class="quick-tile" href="/app/dangky_hocphan/dang-ky.html"><span class="qt-icon">📝</span><span class="qt-label">Đăng ký học phần</span></a>
+                            <a class="quick-tile" href="/app/dangky_hocphan/thoi-khoa-bieu.html"><span class="qt-icon">🗓️</span><span class="qt-label">Thời khóa biểu</span></a>
+                            <a class="quick-tile" href="/app/diem/bang-diem.html"><span class="qt-icon">🎓</span><span class="qt-label">Kết quả học tập</span></a>
+                            <a class="quick-tile" href="/app/hocphi/hoc-phi-cua-toi.html"><span class="qt-icon">💰</span><span class="qt-label">Học phí</span></a>
+                        </div>
+                    </section>
+                </div>
             </div>
-            <div class="toolbar">
-                <input type="search" id="search-input" class="input" placeholder="🔍 Tìm theo mã lớp / môn học..." oninput="renderClassList()">
-                <select id="filter-khoi" class="input input--select" onchange="renderClassList()">
-                    <option value="">Tất cả khối</option>
-                    <option value="CNTT">Công nghệ thông tin</option>
-                    <option value="KTT">Kinh tế - Tài chính</option>
-                    <option value="XD">Xây dựng</option>
-                </select>
-            </div>
-            <table class="table">
-                <thead>
-                    <tr>
-                        <th>Mã LHP</th>
-                        <th>Môn học</th>
-                        <th>Số TC</th>
-                        <th>Sĩ số</th>
-                        <th>Giảng viên</th>
-                        <th>Thao tác</th>
-                    </tr>
-                </thead>
-                <tbody id="class-list-body"></tbody>
-            </table>
-            <p class="card__note" id="class-list-empty" style="display:none">Không có lớp nào phù hợp.</p>
-        </section>
+        </div>
+
+        <!-- ====================== GV / PĐT ====================== -->
+        <div id="other-dashboard" class="hidden">
+            <section class="card">
+                <h2 class="card__title" id="other-title">Tổng quan</h2>
+                <div class="stat-grid" id="stat-grid"></div>
+            </section>
+            <section class="card">
+                <div class="card__header"><h2 class="card__title">Tiện ích nhanh</h2></div>
+                <div class="quick-tiles" id="other-tiles"></div>
+            </section>
+        </div>
+
+        <!-- ====================== CHUA DANG NHAP ====================== -->
+        <div id="guest-dashboard" class="hidden">
+            <section class="card">
+                <h2 class="card__title">Chào mừng đến với Cổng thông tin Đào tạo tín chỉ</h2>
+                <p class="card__subtitle">
+                    Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: hồ sơ sinh viên → mở lớp học phần →
+                    đăng ký → nhập điểm → GPA → học phí. Vui lòng <a href="/login.html" style="color:var(--color-primary-dark);font-weight:600">đăng nhập</a>
+                    để sử dụng các chức năng.
+                </p>
+                <div class="quick-tiles">
+                    <a class="quick-tile" href="/login.html"><span class="qt-icon">🔑</span><span class="qt-label">Đăng nhập</span></a>
+                </div>
+            </section>
+        </div>
     </main>
 
-    <footer class="app-footer">
-        <p>Đồ án Hệ Quản trị CSDL — Nhóm 5 · Module Đăng ký học phần (TV3)</p>
-    </footer>
-
+    <footer class="app-footer"><p>Đồ án Hệ Quản trị CSDL — Nhóm 5 · Module Đăng ký học phần (TV3)</p></footer>
     <div id="toast-container" class="toast-container"></div>
 
-    <script src="js/api.js"></script>
-    <script src="js/shared.js"></script>
+    <script src="/js/api.js"></script>
+    <script src="/js/shared.js"></script>
     <script>
         const DK_ERROR_MESSAGES = {
             100: 'Rất tiếc! Hiện tại ngoài thời hạn đăng ký học phần của học kỳ này.',
@@ -77,79 +139,120 @@
             106: 'Lớp học phần không tồn tại hoặc không ở trạng thái mở đăng ký.',
         };
 
-        let STATE = { hocKy: null, lopHocPhan: [], danhSach: [], tongTinChi: 0 };
+        let STATE = { hocKy: null, lopHocPhan: [], dangKySet: new Set() };
 
         async function loadAll() {
             const u = api.getUser();
             const role = u ? u.MaVaiTro : null;
-
-            // Welcome box
-            const wb = document.getElementById('welcome-box');
-            if (wb) {
-                if (!u) {
-                    wb.innerHTML = `<p class="card__note"><a href="login.html">Đăng nhập</a> để sử dụng các chức năng.</p>`;
-                } else {
-                    wb.innerHTML = `<p class="card__note">👤 <strong>${esc(u.HoTen)}</strong> — vai trò: <span class="badge badge--info">${esc(u.TenVaiTro || u.MaVaiTro)}</span></p>`;
-                }
+            if (!u) {
+                document.getElementById('guest-dashboard').classList.remove('hidden');
+                document.getElementById('dot-badge').textContent = 'Khách';
+                return;
             }
-
-            const grid = document.getElementById('stat-grid');
-            if (!grid) return;
-
-            if (role === 'SV') {
-                // Sinh viên: tín chỉ + lớp đã đăng ký + hạn đăng ký
-                try {
-                    const [hk, lopmo, ds] = await Promise.all([
-                        api.get('/api/dangky/hocky-hientai'),
-                        api.get('/api/dangky/lopmo'),
-                        api.get('/api/dangky/danhsach'),
-                    ]);
-                    STATE.hocKy = hk.hocKy;
-                    STATE.lopHocPhan = lopmo.lopHocPhan || [];
-                    STATE.danhSach = ds.danhSach || [];
-                    let tc = 0;
-                    try { const r = await api.get('/api/dangky/tongtinchi'); tc = Number(r.tongTinChi || 0); } catch {}
-                    STATE.tongTinChi = tc;
-                    const dangKySet = new Set(STATE.danhSach.filter(d => d.TrangThaiDangKy === 'DA_DANG_KY').map(d => d.MaLHP));
-
-                    grid.innerHTML = `
-                        <div class="stat"><div class="stat__value">${tc} TC</div><div class="stat__label">Tổng tín chỉ đã ĐK</div></div>
-                        <div class="stat"><div class="stat__value">${dangKySet.size} lớp</div><div class="stat__label">Số lớp đã ĐK</div></div>
-                        <div class="stat"><div class="stat__value">${hk.hocKy ? esc(hk.hocKy.DenNgay) : 'Đã đóng'}</div><div class="stat__label">Hạn đăng ký</div></div>
-                        <div class="stat"><div class="stat__value">${hk.hocKy ? 'Đang mở' : 'Đã đóng'}</div><div class="stat__label">Trạng thái đợt</div></div>
-                    `;
-                    document.getElementById('dot-badge').textContent = hk.hocKy ? `Đợt ${hk.hocKy.MaHocKy} đang mở` : 'Đợt đã đóng';
-                    renderClassList(dangKySet);
-                } catch (e) {
-                    grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`;
-                }
-            } else if (role === 'GV') {
-                try {
-                    const lop = await api.get('/api/giangvien/lopcuatoi');
-                    grid.innerHTML = `
-                        <div class="stat"><div class="stat__value">${lop.lop.length}</div><div class="stat__label">Lớp học phần phụ trách</div></div>
-                    `;
-                    document.getElementById('dot-badge').textContent = 'Giảng viên';
-                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
-            } else if (role === 'PĐT') {
-                try {
-                    const st = await api.get('/api/admin/thongke');
-                    grid.innerHTML = `
-                        <div class="stat"><div class="stat__value">${st.tongHop.SvDangHoc}</div><div class="stat__label">Sinh viên đang học</div></div>
-                        <div class="stat"><div class="stat__value">${st.tongHop.TongGiangVien}</div><div class="stat__label">Giảng viên</div></div>
-                        <div class="stat"><div class="stat__value">${st.tongHop.TongLopHocPhan}</div><div class="stat__label">Lớp học phần</div></div>
-                        <div class="stat"><div class="stat__value">${st.tongHop.LopDangMo}</div><div class="stat__label">Lớp đang mở ĐK</div></div>
-                        <div class="stat"><div class="stat__value">${st.tongHop.TongDangKyHieuLuc}</div><div class="stat__label">Lượt ĐK hiệu lực</div></div>
-                        <div class="stat"><div class="stat__value">${st.tongHop.TongTaiKhoan}</div><div class="stat__label">Tài khoản</div></div>
-                    `;
-                    document.getElementById('dot-badge').textContent = 'Phòng Đào Tạo';
-                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
-            } else {
-                grid.innerHTML = `<p class="card__note"><a href="login.html">Đăng nhập</a> để xem thống kê.</p>`;
-            }
+            if (role === 'SV') { document.getElementById('sv-dashboard').classList.remove('hidden'); await loadSV(u); }
+            else { document.getElementById('other-dashboard').classList.remove('hidden'); await loadOther(role); }
         }
 
-        function renderClassList(dangKySet) {
+        // ====================== SV ======================
+        async function loadSV(u) {
+            // Ho so + thong tin ca nhan
+            try {
+                const { hoSo } = await api.get('/api/auth/hoso');
+                if (hoSo) {
+                    document.getElementById('sv-masv').textContent = 'MSSV: ' + hoSo.MaSV;
+                    document.getElementById('sv-info').innerHTML = [
+                        ['Họ tên:', hoSo.HoTen],
+                        ['Ngày sinh:', hoSo.NgaySinh],
+                        ['Giới tính:', Number(hoSo.GioiTinh) === 1 ? 'Nam' : 'Nữ'],
+                        ['Lớp SH:', `${hoSo.TenLopSH} (${hoSo.MaLopSH})`],
+                        ['Ngành:', hoSo.TenNganh],
+                        ['Khoa:', hoSo.TenKhoa],
+                        ['Khóa học:', hoSo.NienKhoa],
+                        ['Email:', hoSo.Email],
+                        ['Điện thoại:', hoSo.SoDienThoai || '—'],
+                        ['Nơi sinh:', hoSo.QueQuan || 'Chưa cập nhật'],
+                    ].map(([k, v]) => `<div class="row"><span class="k">${esc(k)}</span><span class="v">${esc(v ?? '—')}</span></div>`).join('');
+                    // Banner sinh nhat (mau theo portal)
+                    const ns = new Date(hoSo.NgaySinh);
+                    const now = new Date();
+                    if (!isNaN(ns) && ns.getDate() === now.getDate() && ns.getMonth() === now.getMonth()) {
+                        document.getElementById('birthday-banner').innerHTML =
+                            `<div class="birthday-banner">🎂🎉 Chúc mừng sinh nhật <strong>${esc(hoSo.HoTen)}</strong>! Nhà trường chúc bạn một ngày thật vui vẻ! 🎈</div>`;
+                    }
+                }
+            } catch (e) { /* giu nguyen cho trong */ }
+
+            // Dot dang ky + lop mo + danh sach
+            try {
+                const [hk, lopmo, ds] = await Promise.all([
+                    api.get('/api/dangky/hocky-hientai'),
+                    api.get('/api/dangky/lopmo'),
+                    api.get('/api/dangky/danhsach'),
+                ]);
+                STATE.hocKy = hk.hocKy;
+                STATE.lopHocPhan = lopmo.lopHocPhan || [];
+                STATE.dangKySet = new Set((ds.danhSach || []).filter(d => d.TrangThaiDangKy === 'DA_DANG_KY').map(d => d.MaLHP));
+                const badge = document.getElementById('dot-badge');
+                badge.textContent = hk.hocKy ? `Đợt ${hk.hocKy.MaHocKy} đang mở — hạn ${hk.hocKy.DenNgay}` : 'Đợt đã đóng';
+                badge.className = hk.hocKy ? 'badge badge--success' : 'badge badge--error';
+                renderClassList();
+
+                // Thong bao tu dot dang ky
+                const notices = [];
+                if (hk.hocKy) {
+                    notices.push({ t: `Đợt đăng ký học phần ${hk.hocKy.TenHocKy} ${hk.hocKy.NamHoc} đang mở`, s: `Thời gian: ${hk.hocKy.TuNgay} → ${hk.hocKy.DenNgay}. Sinh viên chủ động đăng ký đúng hạn.` });
+                    notices.push({ t: 'Hủy đăng ký chỉ thực hiện được trong thời gian quy định', s: 'Ngoài hạn, mọi điều chỉnh phải qua Phòng Đào tạo.' });
+                } else {
+                    notices.push({ t: 'Đợt đăng ký học phần đã đóng', s: 'Theo dõi thông báo đợt kế tiếp trên cổng thông tin.' });
+                }
+                notices.push({ t: 'Học phí học kỳ', s: 'Xem chi tiết và tình trạng nộp tại mục Học phí. Nợ học phí sẽ bị tạm ĐK kỳ sau.' });
+                document.getElementById('notice-list').innerHTML = notices.map(n =>
+                    `<div class="notice-item"><span class="dot"></span><div><strong>${esc(n.t)}</strong><small>${esc(n.s)}</small></div></div>`).join('');
+            } catch (e) {
+                document.getElementById('dot-badge').textContent = e.message;
+            }
+
+            // Lich hoc trong tuan
+            try {
+                const tkb = await api.get('/api/dangky/thoikhoabieu');
+                renderWeekGrid(tkb.thoiKhoaBieu || []);
+            } catch { renderWeekGrid([]); }
+
+            // Ket qua hoc tap (CPA)
+            try {
+                const { cpa } = await api.get('/api/ketqua/cpa');
+                if (cpa) {
+                    document.getElementById('kq-cpa').textContent = Number(cpa.CPA_TichLuy || 0).toFixed(2);
+                    document.getElementById('kq-tc').textContent = cpa.TongTinChiTichLuy ?? 0;
+                    document.getElementById('kq-xeploai').innerHTML =
+                        `Xếp loại tích lũy: <span class="badge badge--info">${esc(cpa.XepLoaiTichLuy || '—')}</span>`;
+                    if (cpa.TrangThaiCanhBaoHocVu && cpa.TrangThaiCanhBaoHocVu !== 'Bình thường') {
+                        document.getElementById('kq-canhbao').innerHTML =
+                            `<div class="alert alert--warning mt-1">⚠️ Cảnh báo học vụ: ${esc(cpa.TrangThaiCanhBaoHocVu)}</div>`;
+                    }
+                }
+            } catch { /* chua co diem */ }
+        }
+
+        function renderWeekGrid(list) {
+            const days = [2, 3, 4, 5, 6, 7, 8];
+            const byDay = {};
+            for (const c of list) (byDay[c.Thu] = byDay[c.Thu] || []).push(c);
+            document.getElementById('week-grid').innerHTML = days.map(d => {
+                const items = (byDay[d] || []).sort((a, b) => a.TietBatDau - b.TietBatDau);
+                return `<div class="week-day">
+                    <div class="week-day__head">${thuName(d).replace('Thứ ', 'T')}</div>
+                    ${items.length ? items.map(c => `
+                        <div class="week-day__item">
+                            <b>${esc(c.TenMonHoc)}</b>
+                            <span>Tiết ${c.TietBatDau}–${Number(c.TietBatDau) + Number(c.SoTiet) - 1} · ${esc(c.TenPhong || '')}</span>
+                            <span>${esc(c.HoTenGV || '')}</span>
+                        </div>`).join('') : '<div class="week-day__empty">Rỗng</div>'}
+                </div>`;
+            }).join('');
+        }
+
+        function renderClassList() {
             const search = (document.getElementById('search-input')?.value || '').toLowerCase();
             const filterKhoi = document.getElementById('filter-khoi')?.value || '';
             const filtered = STATE.lopHocPhan.filter(c => {
@@ -163,7 +266,7 @@
             const empty = document.getElementById('class-list-empty');
             if (!tbody) return;
             tbody.innerHTML = filtered.map(c => {
-                const daDangKy = dangKySet.has(c.MaLHP);
+                const daDangKy = STATE.dangKySet.has(c.MaLHP);
                 const hetCho = Number(c.SiSoHienTai) >= Number(c.SiSoToiDa);
                 const dangKyBtn = daDangKy
                     ? `<span class="badge badge--success">Đã đăng ký</span>`
@@ -186,10 +289,46 @@
             try {
                 const r = await api.post('/api/dangky', { MaLHP });
                 showToast(`✅ ${r.message}`, 'success');
-                await loadAll();
+                await loadSV(api.getUser());
             } catch (e) {
                 const msg = (e.data && e.data.ketQua && DK_ERROR_MESSAGES[e.data.ketQua]) || e.message;
                 showToast(msg, 'error');
+            }
+        }
+
+        // ====================== GV / PĐT ======================
+        async function loadOther(role) {
+            const grid = document.getElementById('stat-grid');
+            const tiles = document.getElementById('other-tiles');
+            if (role === 'GV') {
+                document.getElementById('other-title').textContent = 'Tổng quan giảng viên';
+                try {
+                    const lop = await api.get('/api/giangvien/lopcuatoi');
+                    grid.innerHTML = `
+                        <div class="stat"><div class="stat__value">${lop.lop.length}</div><div class="stat__label">Lớp học phần phụ trách</div></div>`;
+                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
+                tiles.innerHTML = `
+                    <a class="quick-tile" href="/app/giangvien/lop-cua-toi.html"><span class="qt-icon">👨‍🏫</span><span class="qt-label">Lớp của tôi</span></a>
+                    <a class="quick-tile" href="/app/giangvien/nhap-diem.html"><span class="qt-icon">✏️</span><span class="qt-label">Nhập điểm</span></a>
+                    <a class="quick-tile" href="/app/giangvien/thoi-khoa-bieu-gv.html"><span class="qt-icon">🗓️</span><span class="qt-label">Thời khóa biểu</span></a>`;
+            } else {
+                document.getElementById('other-title').textContent = 'Bảng điều hành — Phòng Đào tạo';
+                try {
+                    const st = await api.get('/api/admin/thongke');
+                    grid.innerHTML = `
+                        <div class="stat"><div class="stat__value">${st.tongHop.SvDangHoc}</div><div class="stat__label">Sinh viên đang học</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongGiangVien}</div><div class="stat__label">Giảng viên</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongLopHocPhan}</div><div class="stat__label">Lớp học phần</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.LopDangMo}</div><div class="stat__label">Lớp đang mở ĐK</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongDangKyHieuLuc}</div><div class="stat__label">Lượt ĐK hiệu lực</div></div>
+                        <div class="stat"><div class="stat__value">${st.tongHop.TongTaiKhoan}</div><div class="stat__label">Tài khoản</div></div>`;
+                } catch (e) { grid.innerHTML = `<p class="card__note">${esc(e.message)}</p>`; }
+                tiles.innerHTML = `
+                    <a class="quick-tile" href="/app/admin/dashboard.html"><span class="qt-icon">📊</span><span class="qt-label">Bảng điều hành</span></a>
+                    <a class="quick-tile" href="/app/danhmuc/sinh-vien.html"><span class="qt-icon">👥</span><span class="qt-label">Quản lý SV</span></a>
+                    <a class="quick-tile" href="/app/hocphan/mo-lop-hoc-phan.html"><span class="qt-icon">➕</span><span class="qt-label">Mở LHP</span></a>
+                    <a class="quick-tile" href="/app/hocphi/quan-ly-hoc-phi.html"><span class="qt-icon">💰</span><span class="qt-label">Học phí</span></a>
+                    <a class="quick-tile" href="/app/admin/tai-khoan.html"><span class="qt-icon">🔑</span><span class="qt-label">Tài khoản</span></a>`;
             }
         }
 

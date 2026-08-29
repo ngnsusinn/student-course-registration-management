@@ -42,12 +42,21 @@ async function loadState() {
   } catch { STATE.tongTinChi = 0; }
 }
 
+// ---------- Loai dang ky (Hoc moi / Hoc lai / Hoc cai thien) — theo portal ----------
+let LOAI_HOC = 'HOC_MOI';
+const LOAI_HOC_LABEL = { HOC_MOI: 'Học mới', HOC_LAI: 'Học lại', CAI_THIEN: 'Học cải thiện' };
+function chonLoaiHoc(btn) {
+  document.querySelectorAll('#loai-hoc .pill').forEach(p => p.classList.remove('pill--active'));
+  btn.classList.add('pill--active');
+  LOAI_HOC = btn.dataset.loai || 'HOC_MOI';
+}
+
 // ---------- Dang ky ----------
 async function dangKy(MaLHP) {
   if (!requireAuth('SV')) return;
   try {
-    const r = await api.post('/api/dangky', { MaLHP, MaxTinChi: STATE.maxTinChi });
-    showToast(`✅ ${r.message} — ${MaLHP}`, 'success');
+    const r = await api.post('/api/dangky', { MaLHP, MaxTinChi: STATE.maxTinChi, GhiChu: LOAI_HOC_LABEL[LOAI_HOC] });
+    showToast(`✅ ${r.message} — ${MaLHP} (${LOAI_HOC_LABEL[LOAI_HOC]})`, 'success');
     await refresh();
   } catch (e) {
     if (e.data && e.data.ketQua && DK_ERROR_MESSAGES[e.data.ketQua]) {
