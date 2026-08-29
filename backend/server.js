@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PORT } from './src/config.js';
@@ -36,11 +37,27 @@ app.use('/api/hocphi', hocphiRoutes);
 app.use('/api/giangvien', giangvienRoutes);
 app.use('/api/admin', adminRoutes);
 
-// Phục vụ frontend (thu mục web/) — đặt TRƯỚC catch-all 404
-const webDir = path.resolve(__dirname, '..', 'web');
-app.use(express.static(webDir));
+// Phuc vu frontend:
+//  - Uu tien React SPA build (frontend/dist — stack mới giống portal.ut.edu.vn)
+//  - Fallback: static multi-page cu (web/) neu chua build
+const __dirname2 = __dirname;
+const distDir = path.resolve(__dirname2, '..', 'frontend', 'dist');
+const legacyDir = path.resolve(__dirname2, '..', 'web');
+const servingDist = fs.existsSync(path.join(distDir, 'index.html'));
+const feDir = servingDist ? distDir : legacyDir;
+app.use(express.static(feDir));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Không tìm thấy API.' }));
+
+// SPA fallback (React history router): GET khong phai /api -> index.html
+if (servingDist) {
+  app.use((req, res, next) => {
+    if (req.method === 'GET' && !req.path.startsWith('/api')) {
+      return res.sendFile(path.join(distDir, 'index.html'));
+    }
+    next();
+  });
+}
 
 app.use((err, req, res, next) => {
   console.error(err);

@@ -1,7 +1,7 @@
 # 🎓 Hệ thống Quản lý Sinh viên Đăng ký Học phần Tín chỉ
 
 > **Đề tài 6 — Môn: Hệ Quản trị Cơ sở dữ liệu** | Nhóm 5 thành viên
-> **Nền tảng:** MySQL (remote hosting) · Node.js/Express · HTML/CSS/JavaScript thuần
+> **Nền tảng:** MySQL (remote hosting) · Node.js/Express · **React 18 + Vite + MUI (Material Design)** — cùng công nghệ với portal.ut.edu.vn
 
 Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ sơ sinh viên → mở lớp học phần → đăng ký → nhập điểm → tính GPA → học phí**, được xây dựng theo đúng quy trình môn học (phân tích → ERD → chuẩn hóa 3NF → DDL → truy vấn/View → Stored Procedure/Function/Trigger → Index → Transaction/Concurrency → giao diện).
 
@@ -20,7 +20,7 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 - [5. Nghiệp vụ Đăng ký học phần & 5 ràng buộc](#5-nghiệp-vụ-đăng-ký-học-phần--5-ràng-buộc)
 - [6. Các đối tượng Database](#6-các-đối-tượng-database)
 - [7. Backend API](#7-backend-api)
-- [8. Frontend — 19 màn hình](#8-frontend--19-màn-hình)
+- [8. Frontend — React SPA, 19 màn hình](#8-frontend--react-spa-19-màn-hình)
 - [9. Yêu cầu môi trường & Cài đặt](#9-yêu-cầu-môi-trường--cài-đặt)
 - [10. Hướng dẫn sử dụng theo vai trò](#10-hướng-dẫn-sử-dụng-theo-vai-trò)
 - [11. Kiểm thử](#11-kiểm-thử)
@@ -61,9 +61,10 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  FRONTEND (web/) — HTML + CSS + JavaScript thuần                │
-│  Đăng nhập · Dashboard · 19 màn hình theo 3 vai trò (SV/GV/PĐT) │
-│  js/api.js: API client (fetch + JWT + localStorage)             │
+│  FRONTEND (frontend/) — React 18 SPA (giống stack portal thật)   │
+│  Vite · Material UI (MUI 5) · Redux Toolkit · React Router v6   │
+│  axios · react-toastify · Montserrat/Roboto · teal #008689      │
+│  19 màn hình theo 3 vai trò · OTP 2 bước · JWT localStorage     │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  REST API (JSON) + Bearer Token
 ┌───────────────────────────────▼─────────────────────────────────┐
@@ -71,6 +72,7 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 │  server.js · src/config.js · src/db.js (pool) · middleware/auth │
 │  Routes: auth · danhmuc · dangky · ketqua · hocphi · giangvien ·│
 │          admin  (70+ endpoint, phân quyền theo MaVaiTro)        │
+│  + phục vụ bản build frontend/dist (SPA fallback)               │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  mysql2 (utf8mb4)
 ┌───────────────────────────────▼─────────────────────────────────┐
@@ -136,7 +138,7 @@ student-course-registration-management/
 │   └── security/                  #   Phân quyền 3 vai trò
 │
 ├── backend/                       # ⚙️ Node.js + Express + mysql2
-│   ├── server.js                  #   Entry point (API + phục vụ luôn web/)
+│   ├── server.js                  #   Entry point (API + phục vụ frontend/dist)
 │   ├── .env                       #   Cấu hình DB (không commit lên Git)
 │   ├── package.json
 │   ├── src/
@@ -149,24 +151,30 @@ student-course-registration-management/
 │       ├── init-db.js             #   Khởi tạo toàn bộ DB từ mysql/
 │       ├── verify-db.js           #   Kiểm tra nhanh DB
 │       ├── test-api.js            #   Test API cơ bản
-│       ├── e2e-test.js            #   25 test E2E (3 vai trò)
-│       └── check-pages.mjs        #   Rà soát asset HTML
+│       └── e2e-test.js            #   25 test E2E (3 vai trò)
 │
-└── web/                           # 🖥️ Frontend (HTML/JS thuần)
-    ├── login.html                 #   Đăng nhập
-    ├── index.html                 #   Dashboard theo vai trò
-    ├── css/shared.css             #   Design system chung
-    ├── js/api.js                  #   API client (fetch + JWT)
-    ├── js/shared.js               #   Hàm chung + menu theo vai trò
-    ├── js/dangky.js               #   Logic đăng ký (SV)
-    └── app/
-        ├── dangky_hocphan/        #   SV: đăng ký, TKB, danh sách, hủy
-        ├── diem/                  #   SV: bảng điểm · PĐT: điểm & cảnh báo
-        ├── hocphi/                #   SV: học phí · PĐT: quản lý học phí
-        ├── giangvien/             #   GV: lớp, nhập điểm, TKB
-        ├── danhmuc/               #   PĐT: SV, Khoa·Ngành·Lớp, CTĐT
-        ├── hocphan/               #   PĐT: Môn học·GV·Phòng, Mở LHP
-        └── admin/                 #   PĐT: Dashboard, Tài khoản
+└── frontend/                      # 🖥️ React 18 SPA (Vite + MUI — stack portal UTH)
+    ├── vite.config.js             #   Dev proxy /api → :3000
+    ├── index.html                 #   Google Fonts (Montserrat/Roboto) + favicon
+    ├── public/images/             #   Logo trường, nền đăng nhập (asset thật UTH)
+    └── src/
+        ├── main.jsx               #   Provider + Router + ThemeProvider + Toast
+        ├── App.jsx                #   19 route + ProtectedRoute theo vai trò
+        ├── theme.js               #   Design system teal #008689 (MUI createTheme)
+        ├── api/client.js          #   axios + Bearer JWT + interceptor 401
+        ├── store/authSlice.js     #   Redux Toolkit: phiên đăng nhập
+        ├── config/menu.jsx        #   Menu + breadcrumb 3 vai trò
+        ├── utils/format.js        #   Tiền VND, thứ, trạng thái, mã lỗi SP
+        ├── components/            #   PortalLayout (topbar/header/menu/footer),
+        │                          #   ProtectedRoute, SectionCard, StatusBadges,
+        │                          #   ConfirmDialog, ChangePasswordDialog
+        └── pages/
+            ├── Login.jsx          #   2 bước: mật khẩu → OTP 6 số
+            ├── Dashboard.jsx      #   Theo vai trò (SV/GV/PĐT) + trigger sinh nhật
+            ├── sv/                #   Đăng ký · TKB · Danh sách · Hủy · Bảng điểm · Học phí
+            ├── gv/                #   Lớp của tôi · Nhập điểm · TKB
+            └── pdt/               #   SV · Khoa/Ngành/Lớp · Môn học · Mở LHP ·
+                                   #   Cảnh báo · Học phí · Tài khoản
 ```
 
 ---
@@ -359,25 +367,24 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 ---
 
-## 8. Frontend — 19 màn hình
+## 8. Frontend — React SPA, 19 màn hình
 
-> 🎨 **Giao diện định hướng theo Portal UTH thật** (`portal.ut.edu.vn`): nhận diện thương
-> hiệu Trường ĐH Giao thông vận tải TP.HCM (logo, màu teal `#008689`, font Montserrat/Roboto),
-> topbar + header trắng + thanh menu teal + breadcrumb + footer 3 cột — dựng tập trung trong
-> `js/shared.js` + `css/shared.css` cho toàn bộ 19 màn hình.
+> 🎨 **Cùng công nghệ với portal.ut.edu.vn**: React 18 + Vite + Material UI (MUI 5) + Redux Toolkit +
+> React Router v6 + axios + react-toastify. Nhận diện thương hiệu Trường ĐH Giao thông vận tải TP.HCM
+> (logo, teal `#008689`, font Montserrat/Roboto) — topbar + header trắng + thanh menu teal + breadcrumb +
+> footer 3 cột, dựng trong `components/PortalLayout.jsx` cho toàn bộ 19 màn hình.
 
-| Nhóm | Trang | Vai trò |
+| Nhóm | Route React | Vai trò |
 |---|---|---|
-| Chung | `login.html` (đăng nhập 2 bước + OTP) · `index.html` (dashboard) | Tất cả |
-| Đăng ký | `app/dangky_hocphan/dang-ky.html` · `thoi-khoa-bieu.html` · `danh-sach-dang-ky.html` · `huy-dang-ky.html` | SV |
-| Điểm | `app/diem/bang-diem.html` · `app/diem/nhap-diem-pdt.html` | SV · PĐT |
-| Học phí | `app/hocphi/hoc-phi-cua-toi.html` · `app/hocphi/quan-ly-hoc-phi.html` | SV · PĐT |
-| GV | `app/giangvien/lop-cua-toi.html` · `nhap-diem.html` · `thoi-khoa-bieu-gv.html` | GV |
-| Danh mục | `app/danhmuc/sinh-vien.html` · `khoa-nganh-lop.html` | PĐT |
-| Học phần | `app/hocphan/mon-hoc-giang-vien.html` · `mo-lop-hoc-phan.html` | PĐT |
-| Admin | `app/admin/dashboard.html` · `app/admin/tai-khoan.html` | PĐT |
+| Chung | `/login` (2 bước + OTP) · `/` (dashboard theo vai trò) | Tất cả |
+| Đăng ký | `/dang-ky` · `/thoi-khoa-bieu` · `/dang-ky-cua-toi` · `/huy-dang-ky` | SV |
+| Điểm & Học phí | `/bang-diem` · `/hoc-phi` | SV |
+| GV | `/lop-cua-toi` · `/nhap-diem` · `/thoi-khoa-bieu-gv` | GV |
+| PĐT | `/quan-ly/sinh-vien` · `/quan-ly/khoa-nganh-lop` · `/quan-ly/mon-hoc` · `/quan-ly/mo-lhp` · `/quan-ly/diem-canh-bao` · `/quan-ly/hoc-phi` · `/quan-ly/tai-khoan` | PĐT |
 
-**Cơ chế chung:** `js/api.js` (fetch + JWT, tự chuyển về login khi token hết hạn — đường dẫn tuyệt đối) · `js/shared.js` (layout portal, đồng hồ thời gian thực, toast, esc chống XSS, format tiền, menu + auth guard theo vai trò, **modal Đổi mật khẩu**) · `css/shared.css` (design system teal).
+**Cơ chế chung:** `api/client.js` (axios + Bearer JWT, interceptor tự đá về `/login` khi 401) ·
+`store/authSlice.js` (Redux Toolkit) · `ProtectedRoute` theo `MaVaiTro` · `theme.js` (design system teal) ·
+`react-toastify` cho thông báo · `ConfirmDialog` thay `window.confirm` · modal **Đổi mật khẩu** toàn cục.
 
 **Đăng nhập kiểu portal (2 bước):**
 1. `POST /api/auth/otp/gui` — kiểm tra tài khoản/mật khẩu → sinh OTP 6 số (hạn 120s).
@@ -422,13 +429,23 @@ Hoặc chạy lần lượt các file trong `mysql/` theo thứ tự ghi trong `
 
 ### Bước 3 — Chạy ứng dụng
 
+**Cách 1 — Production (1 lệnh, giống deploy thật):**
+
 ```bash
-cd backend
-npm start                      # hoặc: npm run dev (tự động reload)
+cd frontend && npm install && npm run build     # build React → frontend/dist
+cd ../backend && npm install && npm start       # Express phục vụ API + frontend/dist
 ```
 
-Mở trình duyệt: **http://localhost:3000** → tự động vào trang đăng nhập.
-(Backend Express phục vụ luôn cả frontend `web/` nên chỉ cần 1 lệnh.)
+Mở trình duyệt: **http://localhost:3000** → SPA React (mọi route không phải `/api` tự fallback `index.html`).
+
+**Cách 2 — Development (hot reload React):**
+
+```bash
+cd backend  && npm run dev        # terminal 1 — API :3000
+cd frontend && npm run dev        # terminal 2 — Vite :5173 (proxy /api → :3000)
+```
+
+Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy bản build gần nhất.
 
 ### Tài khoản demo
 
@@ -478,7 +495,8 @@ Mở trình duyệt: **http://localhost:3000** → tự động vào trang đăn
 | `backend/scripts/test-api.js` | Luồng SV: login → LHP mở → tín chỉ → TKB → điểm → GPA → học phí | ✅ |
 | `backend/scripts/e2e-test.js` | **25 test E2E** qua 3 vai trò (auth, đăng ký, điểm, học phí, GV, admin, danh mục) | ✅ 25/25 PASS |
 | `backend/scripts/verify-db.js` | Kiểm tra nhanh đối tượng DB (sĩ số, điểm F, học phí, tài khoản, function, view) | ✅ |
-| `backend/scripts/check-pages.mjs` | Rà soát 20 file HTML: asset đủ, không còn tham chiếu mock | ✅ 0 lỗi |
+| OTP 2 bước | `/auth/otp/gui` → `/auth/otp/xacthuc` (đúng OTP cấp token; OTP sai/hết hạn bị chặn) | ✅ |
+| `npm run build` (frontend) | Vite build React SPA — 19 route, không lỗi biên dịch | ✅ |
 | Trigger | Tự +1/−1 sĩ số khi đăng ký/hủy · tự tính điểm · chặn trùng lịch · chặn xóa ngành | ✅ đã kiểm thử |
 | Concurrency | `mysql/transactions/concurrency_test.sql` — 2 session tranh chỗ cuối (kịch bản 2 cửa sổ mysql client) | theo docs |
 
@@ -511,10 +529,12 @@ Mở trình duyệt: **http://localhost:3000** → tự động vào trang đăn
 - [x] Chuyển **toàn bộ T-SQL → MySQL** (DDL, data, 9 FN, 12 SP, 9 Trigger, 10 View, Index, Transaction, Query, Security)
 - [x] Triển khai & chạy trên **MySQL remote** (`free02.123host.vn`)
 - [x] Backend **Node.js/Express** — REST + JWT, 7 nhóm route (~70 endpoint), phân quyền 3 vai trò
-- [x] Frontend kết nối **DB thật** — 19 màn hình, không mock data
+- [x] **Viết lại frontend bằng React 18 + Vite + MUI + Redux Toolkit** — cùng công nghệ portal.ut.edu.vn, 19 màn hình, kết nối DB thật (không mock data)
+- [x] Đăng nhập **OTP 2 bước** giống portal thật (`/auth/otp/gui` → `/auth/otp/xacthuc`) + hồ sơ cá nhân `/auth/hoso`
+- [x] Express phục vụ bản build `frontend/dist` (SPA fallback) — 1 tiến trình duy nhất
 - [x] SP đăng ký kiểm tra **5 ràng buộc** (mã 100–106) + Transaction chống Lost Update — đã kiểm thử
 - [x] Trigger tự tính điểm / cập nhật sĩ số / chặn trùng lịch / chặn xóa ngành / log mật khẩu — đã kiểm thử
-- [x] E2E: 25/25 PASS, 19 màn hình + template, sĩ số nhất quán sau đăng ký–hủy
+- [x] E2E: 25/25 PASS, sĩ số nhất quán sau đăng ký–hủy
 
 ---
 

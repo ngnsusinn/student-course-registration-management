@@ -32,13 +32,12 @@ student-course-registration-management/
 │   ├── transactions/              # BEGIN TRAN / COMMIT / ROLLBACK + test
 │   ├── security/                  # GRANT / REVOKE
 │   └── backup/                    # BACKUP / RESTORE
-├── web/
-│   ├── app/                       # Mã nguồn ứng dụng
-│   │   ├── dangky_hocphan/        # [TV3] Màn hình đăng ký học phần
-│   │   └── shared/                # [TV3] Template UI chung cho cả nhóm
-│   ├── css/                       # Stylesheet dùng chung
-│   ├── js/                        # JavaScript dùng chung
-│   └── index.html                 # Trang chủ / landing
+├── frontend/                      # React 18 SPA (Vite + MUI — stack portal UTH)
+│   └── src/
+│       ├── pages/                 # Màn hình theo vai trò: sv/ · gv/ · pdt/
+│       ├── components/            # PortalLayout, ProtectedRoute, dialog…
+│       ├── api/client.js          # axios + JWT
+│       └── theme.js               # Design system teal
 ├── report/                        # Báo cáo Word tổng hợp (.docx)
 ├── slides/                        # Slide thuyết trình (.pptx)
 └── README.md
@@ -143,4 +142,4 @@ feature/<module>-<mo_ta>
 | 74 | Test 2 session | `sql/transactions/concurrency_test.sql` + `docs/concurrency_demo/` |
 | — | Deadlock (bổ sung) | `docs/deadlock_analysis.md` |
 | — | Khởi tạo DB | `sql/init_database.sql` |
-| — | Giao diện (Web) | `web/` (4 màn hình + template chung) |
+| — | Giao diện (Web) | `frontend/` (React 18 SPA — 19 màn hình, Vite + MUI) |
