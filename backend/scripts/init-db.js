@@ -33,7 +33,10 @@ const FILES = [
   'views/diem_ketqua_views.sql',
   'views/hocphi_views.sql',
   'views/danh_muc_hoso_sv_views.sql',
+  'views/web_views.sql',
   'indexes/all_indexes.sql',
+  'procedures/web_procedures.sql',
+  'procedures/web_procedures_2.sql',
 ];
 
 // Tach cac cau lenh SQL co hon tro trong chuoi, comment va DELIMITER

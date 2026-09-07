@@ -1,18 +1,15 @@
+// ============================================================
+// server.js — Entry point (MVC: ROUTE/CONTROLLER/MODEL nằm trong src/)
+// Chỉ làm 3 việc: dựng Express app, mount /api (routes/index.js),
+// phục vụ bản build frontend (VIEW) với SPA fallback.
+// ============================================================
 import express from 'express';
 import cors from 'cors';
 import fs from 'node:fs';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { PORT } from './src/config.js';
-import { pool } from './src/db.js';
-
-import authRoutes from './src/routes/auth.js';
-import danhmucRoutes from './src/routes/danhmuc.js';
-import dangkyRoutes from './src/routes/dangky.js';
-import ketquaRoutes from './src/routes/ketqua.js';
-import hocphiRoutes from './src/routes/hocphi.js';
-import giangvienRoutes from './src/routes/giangvien.js';
-import adminRoutes from './src/routes/admin.js';
+import apiRoutes from './src/routes/index.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const app = express();
@@ -20,36 +17,22 @@ const app = express();
 app.use(cors());
 app.use(express.json());
 
-app.get('/api/health', async (req, res) => {
-  try {
-    const [rows] = await pool.query('SELECT 1 AS ok');
-    res.json({ status: 'ok', db: rows[0].ok === 1 ? 'connected' : 'error' });
-  } catch (e) {
-    res.status(500).json({ status: 'error', message: e.message });
-  }
-});
+// Toàn bộ REST API (auth · danhmuc · dangky · ketqua · hocphi ·
+// giangvien · admin · concurrency · health) — xem src/routes/index.js
+app.use('/api', apiRoutes);
 
-app.use('/api/auth', authRoutes);
-app.use('/api/danhmuc', danhmucRoutes);
-app.use('/api/dangky', dangkyRoutes);
-app.use('/api/ketqua', ketquaRoutes);
-app.use('/api/hocphi', hocphiRoutes);
-app.use('/api/giangvien', giangvienRoutes);
-app.use('/api/admin', adminRoutes);
-
-// Phuc vu frontend:
-//  - Uu tien React SPA build (frontend/dist — stack mới giống portal.ut.edu.vn)
-//  - Fallback: static multi-page cu (web/) neu chua build
-const __dirname2 = __dirname;
-const distDir = path.resolve(__dirname2, '..', 'frontend', 'dist');
-const legacyDir = path.resolve(__dirname2, '..', 'web');
+// Phục vụ frontend (View):
+//  - Ưu tiên React SPA build (frontend/dist — stack mới giống portal.ut.edu.vn)
+//  - Fallback: static multi-page cũ (web/) nếu chưa build
+const distDir = path.resolve(__dirname, '..', 'frontend', 'dist');
+const legacyDir = path.resolve(__dirname, '..', 'web');
 const servingDist = fs.existsSync(path.join(distDir, 'index.html'));
 const feDir = servingDist ? distDir : legacyDir;
 app.use(express.static(feDir));
 
 app.use('/api', (req, res) => res.status(404).json({ error: 'Không tìm thấy API.' }));
 
-// SPA fallback (React history router): GET khong phai /api -> index.html
+// SPA fallback (React history router): GET không phải /api -> index.html
 if (servingDist) {
   app.use((req, res, next) => {
     if (req.method === 'GET' && !req.path.startsWith('/api')) {

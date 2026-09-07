@@ -9,38 +9,52 @@
 
 ## I. TỔNG QUAN CẤU TRÚC THƯ MỤC GIT
 
+> 📌 **Cập nhật (tái cấu trúc MVC):** `backend/src` được chia thành 4 lớp **routes → controllers → models (+ services)**;
+> toàn bộ tài liệu `docs/` được phân loại theo chủ đề; bộ script gốc `sql/` (T-SQL SQL Server) **đã gỡ bỏ** — chỉ giữ bản
+> **MySQL** trong `mysql/` (nguồn duy nhất, đang chạy trên hosting).
+
 ```
 student-course-registration-management/
-├── docs/                          # Tài liệu thiết kế & báo cáo phân tích
-│   ├── analysis_*.md              # Đặc tả nghiệp vụ từng module
-│   ├── erd_*.md                   # Sơ đồ ERD từng module (mermaid)
-│   ├── normalization_*.md         # Chứng minh chuẩn hóa 3NF
-│   ├── isolation_level_analysis.md # [TV3] Phân tích mức cô lập (Chương 5)
-│   ├── index_benchmark.md         # [TV3] Báo cáo đo hiệu năng Index (Chương 3)
-│   ├── deadlock_analysis.md       # [TV3] Phân tích Deadlock toàn hệ thống
-│   └── concurrency_demo/          # Ảnh/video minh chứng test 2 session
-├── sql/                           # Toàn bộ script SQL Server (T-SQL)
-│   ├── init_database.sql          # [TV3] Script tổng: CREATE DB → DDL → DATA
-│   ├── ddl/                       # Script tạo bảng (CREATE TABLE)
-│   │   ├── 00_*.sql               # Bảng nền (danh mục)
-│   │   └── 10_dangky_hocphan_ddl.sql
-│   ├── data/                      # Dữ liệu mẫu (INSERT)
-│   ├── queries/                   # Truy vấn & View (SELECT / CREATE VIEW)
-│   ├── procedures/                # Stored Procedure & Function
-│   ├── triggers/                  # Trigger
-│   ├── indexes/                   # CREATE INDEX + câu lệnh đo hiệu năng
-│   ├── transactions/              # BEGIN TRAN / COMMIT / ROLLBACK + test
-│   ├── security/                  # GRANT / REVOKE
-│   └── backup/                    # BACKUP / RESTORE
-├── frontend/                      # React 18 SPA (Vite + MUI — stack portal UTH)
-│   └── src/
-│       ├── pages/                 # Màn hình theo vai trò: sv/ · gv/ · pdt/
-│       ├── components/            # PortalLayout, ProtectedRoute, dialog…
-│       ├── api/client.js          # axios + JWT
-│       └── theme.js               # Design system teal
-├── report/                        # Báo cáo Word tổng hợp (.docx)
-├── slides/                        # Slide thuyết trình (.pptx)
-└── README.md
+├── docs/                          # 📚 Tài liệu — phân loại theo chủ đề
+│   ├── README.md                  #   Mục lục tài liệu
+│   ├── conventions.md             #   Quy ước đặt tên & cấu trúc (file này)
+│   ├── analysis/                  #   Đặc tả & phân tích nghiệp vụ 5 module (analysis_*.md)
+│   ├── erd/                       #   Sơ đồ ERD từng module (mermaid) + So_Do_ERD.docx
+│   ├── normalization/             #   Chứng minh chuẩn hóa 3NF từng module
+│   ├── concurrency/               #   Giao tác · mức cô lập · deadlock · demo 4 lỗi
+│   │   └── media/                 #   Ảnh/video minh chứng test 2 session
+│   ├── performance/               #   Đo hiệu năng Index (index_benchmark.md)
+│   ├── testing/                   #   Kiểm thử tích hợp (trigger_integration_test.md)
+│   ├── planning/                  #   Backlog 7 tuần · bảng phân công nhóm
+│   └── reference/                 #   Giáo trình & tài liệu tham khảo
+│
+├── mysql/                         # 🐬 Bản script MySQL (nguồn duy nhất — đang chạy)
+│   ├── init_database.sql          #   Thứ tự chạy từng file (DDL → DATA → FN/SP/Trigger...)
+│   ├── ddl/ · data/               #   CREATE TABLE (18 bảng) + dữ liệu mẫu
+│   ├── functions/ · procedures/   #   Function & Stored Procedure
+│   ├── triggers/ · views/         #   Trigger & View
+│   ├── indexes/ · queries/        #   Index + truy vấn mẫu
+│   ├── transactions/              #   Transaction & concurrency
+│   └── security/                  #   Phân quyền 3 vai trò
+│
+├── backend/                       # ⚙️ Node.js + Express (MVC — REST API)
+│   ├── server.js                  #   Entry: mount /api + phục vụ frontend/dist (VIEW)
+│   ├── src/
+│   │   ├── routes/                #   LỚP ROUTE — chỉ ánh xạ URL → controller
+│   │   ├── controllers/           #   LỚP CONTROLLER — xử lý request/response, mã lỗi SP
+│   │   ├── models/                #   LỚP MODEL — chỉ gọi VIEW/PROCEDURE qua db.js
+│   │   ├── services/              #   Nghiệp vụ đặc thù (anomalyRunner.js — demo concurrency)
+│   │   ├── middleware/auth.js     #   JWT sign/verify + requireRole
+│   │   ├── db.js                  #   mysql2 pool + helper sp()/spMulti()/spOut()
+│   │   └── config.js              #   Cấu hình DB pool, JWT, PORT
+│   └── scripts/                   #   init-db · verify-db · test-api · e2e-test · audit…
+│
+└── frontend/                      # 🖥️ React 18 SPA (Vite + MUI) — VIEW của MVC
+    └── src/
+        ├── pages/                 #   Màn hình theo vai trò: sv/ · gv/ · pdt/
+        ├── components/            #   PortalLayout, ProtectedRoute, dialog…
+        ├── api/client.js          #   axios + JWT
+        └── theme.js               #   Design system teal
 ```
 
 ---
@@ -84,11 +98,12 @@ student-course-registration-management/
 
 ---
 
-## III. QUY ƯỚC CODE T-SQL
+## III. QUY ƯỚC CODE SQL (MySQL)
 
-1. **Bắt buộc kết thúc mỗi batch bằng `GO`** (khi chạy qua SSMS / sqlcmd).
-2. Mỗi đối tượng (SP / Function / Trigger) được **bọc trong `IF OBJECT_ID(...) IS NOT NULL DROP ...`** để script chạy lặp lại được (idempotent).
-3. **Dùng `TRY...CATCH`** trong Transaction, `ROLLBACK` đầy đủ trong `CATCH`, không quên `COMMIT` trong `TRY`.
+1. **Mỗi đối tượng (SP / Function / Trigger) được bọc trong `DROP ... IF EXISTS`** để script chạy lặp lại được (idempotent).
+2. **Dùng `START TRANSACTION`/`COMMIT`/`ROLLBACK`** trong SP có nghiệp vụ nhiều bước; `ROLLBACK` đầy đủ trong `DECLARE EXIT HANDLER FOR SQLEXCEPTION`.
+3. **Tầng web chỉ gọi View/Procedure/Function** (không raw query) — qua helper `sp()`/`spMulti()`/`spOut()` trong `backend/src/db.js`.
+   Ngoại lệ có chủ đích duy nhất: `backend/src/services/anomalyRunner.js` (demo 4 lỗi concurrency phải chạy session SQL thô để "tắt phòng chống").
 4. **Comment tiếng Việt không dấu hoặc có dấu** tùy màn hình, ghi rõ module + Issue number tương ứng ở header mỗi file.
 5. Header file chuẩn:
 
@@ -127,19 +142,22 @@ feature/<module>-<mo_ta>
 
 ## V. BẢNG ĐỐI CHIẾU ISSUE ↔ FILE BÀN GIAO (TV3)
 
+> Đường dẫn đã cập nhật theo cấu trúc mới: bản SQL Server cũ `sql/` đã thay bằng `mysql/`;
+> tài liệu nằm trong các thư mục chủ đề của `docs/`.
+
 | # | Issue | File bàn giao |
 |---|---|---|
-| 17 | Chuẩn hóa 3NF | `docs/normalization_dangky_hocphan.md` |
-| 18 | Viết DDL | `sql/ddl/10_dangky_hocphan_ddl.sql` |
-| 19 | Dữ liệu mẫu | `sql/data/dangky_hocphan_data.sql` |
-| 49 | Truy vấn & View | `sql/queries/dangky_hocphan_queries.sql` |
-| 50 | SP DangKyHocPhan | `sql/procedures/SP_DangKyHocPhan.sql` |
-| 51 | SP HuyDangKy + Function | `sql/procedures/FN_KiemTra_DangKy.sql` + `sql/procedures/SP_HuyDangKy.sql` |
-| 61 | Trigger sĩ số | `sql/triggers/TRG_DANGKYHOCPHAN_SiSo.sql` + `docs/trigger_integration_test.md` |
-| 62 | Index + đo hiệu năng | `sql/indexes/dangky_hocphan_indexes.sql` + `docs/index_benchmark.md` |
-| 72 | Transaction đăng ký | `sql/transactions/dangky_hocphan_tran.sql` |
-| 73 | Mức cô lập | `docs/isolation_level_analysis.md` |
-| 74 | Test 2 session | `sql/transactions/concurrency_test.sql` + `docs/concurrency_demo/` |
-| — | Deadlock (bổ sung) | `docs/deadlock_analysis.md` |
-| — | Khởi tạo DB | `sql/init_database.sql` |
-| — | Giao diện (Web) | `frontend/` (React 18 SPA — 19 màn hình, Vite + MUI) |
+| 17 | Chuẩn hóa 3NF | `docs/normalization/normalization_dangky_hocphan.md` |
+| 18 | Viết DDL | `mysql/ddl/10_dangky_hocphan_ddl.sql` |
+| 19 | Dữ liệu mẫu | `mysql/data/dangky_hocphan_data.sql` |
+| 49 | Truy vấn & View | `mysql/queries/dangky_hocphan_queries.sql` |
+| 50 | SP DangKyHocPhan | `mysql/procedures/SP_DangKyHocPhan.sql` |
+| 51 | SP HuyDangKy + Function | `mysql/functions/FN_KiemTra_DangKy.sql` + `mysql/procedures/SP_HuyDangKy.sql` |
+| 61 | Trigger sĩ số | `mysql/triggers/TRG_DANGKYHOCPHAN_SiSo.sql` + `docs/testing/trigger_integration_test.md` |
+| 62 | Index + đo hiệu năng | `mysql/indexes/all_indexes.sql` + `docs/performance/index_benchmark.md` |
+| 72 | Transaction đăng ký | `mysql/transactions/dangky_hocphan_tran.sql` |
+| 73 | Mức cô lập | `docs/concurrency/isolation_level_analysis.md` |
+| 74 | Test 2 session | `mysql/transactions/concurrency_test.sql` + `docs/concurrency/media/` |
+| — | Deadlock (bổ sung) | `docs/concurrency/deadlock_analysis.md` |
+| — | Khởi tạo DB | `mysql/init_database.sql` |
+| — | Giao diện (Web) | `frontend/` (React 18 SPA — 20 màn hình, Vite + MUI) |

@@ -61,24 +61,27 @@ Hệ thống quản lý toàn bộ vòng đời đào tạo tín chỉ: **hồ s
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│  FRONTEND (frontend/) — React 18 SPA (giống stack portal thật)   │
-│  Vite · Material UI (MUI 5) · Redux Toolkit · React Router v6   │
-│  axios · react-toastify · Montserrat/Roboto · teal #008689      │
-│  20 màn hình theo 3 vai trò · Đăng nhập JWT · localStorage      │
+│  FRONTEND (frontend/) — VIEW của MVC · React 18 SPA              │
+│  (giống stack portal thật): Vite · MUI 5 · Redux Toolkit ·       │
+│  React Router v6 · axios · react-toastify · teal #008689         │
+│  20 màn hình theo 3 vai trò · Đăng nhập JWT · localStorage       │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  REST API (JSON) + Bearer Token
 ┌───────────────────────────────▼─────────────────────────────────┐
-│  BACKEND (backend/) — Node.js + Express + mysql2                │
-│  server.js · src/config.js · src/db.js (pool) · middleware/auth │
-│  Routes: auth · danhmuc · dangky · ketqua · hocphi · giangvien ·│
-│          admin  (70+ endpoint, phân quyền theo MaVaiTro)        │
-│  + phục vụ bản build frontend/dist (SPA fallback)               │
+│  BACKEND (backend/) — Node.js + Express + mysql2 (MVC)           │
+│  server.js (entry) → routes/ (URL) → controllers/ (request/      │
+│  response, mã lỗi SP) → models/ (chỉ CALL VIEW/PROCEDURE qua     │
+│  db.js: sp/spMulti/spOut) · services/anomalyRunner.js (demo 4    │
+│  lỗi concurrency — ngoại lệ raw SQL có chủ đích)                 │
+│  8 nhóm route: auth · danhmuc · dangky · ketqua · hocphi ·       │
+│  giangvien · admin · concurrency (~70 endpoint, phân quyền)      │
+│  + phục vụ bản build frontend/dist (SPA fallback)                │
 └───────────────────────────────┬─────────────────────────────────┘
                                 │  mysql2 (utf8mb4)
 ┌───────────────────────────────▼─────────────────────────────────┐
-│  DATABASE — MySQL 5.7/8.0 (free02.123host.vn)                   │
-│  18 bảng · 12 SP · 9 Function · 9 Trigger · 10 View · Index     │
-│  Bảng nguồn: mysql/ (bản dịch từ sql/ T-SQL)                    │
+│  DATABASE (mysql/) — MODEL dữ liệu · MySQL 5.7/8.0 (remote)      │
+│  18 bảng · 12 SP · 9 Function · 9 Trigger · 10 View · Index      │
+│  (bản SQL Server cũ sql/ đã được loại bỏ khỏi repo)              │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
@@ -102,29 +105,20 @@ SV chọn LHP ──▶ SP_DangKyHocPhan (START TRANSACTION)
 ```
 student-course-registration-management/
 │
-├── docs/                          # 📚 Tài liệu thiết kế & phân tích (5 module)
-│   ├── analysis_*.md              #   Đặc tả nghiệp vụ từng module
-│   ├── erd_*.md                   #   ERD từng module (mermaid)
-│   ├── normalization_*.md         #   Chứng minh chuẩn hóa 3NF
-│   ├── isolation_level_analysis.md#   Mức cô lập & khóa (Chương 5)
-│   ├── deadlock_analysis.md       #   Phân tích deadlock (Chương 5)
-│   ├── index_benchmark.md         #   Đo hiệu năng Index (Chương 3)
-│   ├── concurrency_demo/          #   Kịch bản test 2 session
-│   ├── Backlog_7_Tuan.md          #   Backlog theo tuần
-│   ├── Phan_Cong_Nhiem_Vu_De_Tai_6.md
-│   └── Giao_Trinh_He_Quan_Tri_*.txt  # Giáo trình tham khảo
+├── docs/                          # 📚 TÀI LIỆU — tách riêng khỏi source code
+│   ├── README.md                  #   Mục lục tài liệu
+│   ├── conventions.md             #   Quy ước đặt tên & cấu trúc thư mục
+│   ├── analysis/                  #   Đặc tả & phân tích nghiệp vụ 5 module
+│   ├── erd/                       #   ERD từng module (mermaid) + So_Do_ERD.docx
+│   ├── normalization/             #   Chứng minh chuẩn hóa 3NF từng module
+│   ├── concurrency/               #   Cô lập · deadlock · demo 4 lỗi · kịch bản
+│   │   └── media/                 #   Ảnh/video minh chứng test 2 session
+│   ├── performance/               #   Đo hiệu năng Index
+│   ├── testing/                   #   Kiểm thử tích hợp Trigger
+│   ├── planning/                  #   Backlog 7 tuần · phân công nhóm
+│   └── reference/                 #   Giáo trình tham khảo
 │
-├── sql/                           # 🐘 Bản gốc T-SQL (SQL Server)
-│   ├── init_database.sql          #   Script tổng: CREATE DB → DDL → DATA
-│   ├── ddl/ · data/               #   CREATE TABLE (18 bảng) + dữ liệu mẫu
-│   ├── queries/                   #   Truy vấn & View
-│   ├── procedures/ · functions/   #   SP & Function
-│   ├── triggers/ · indexes/       #   Trigger & Index + đo hiệu năng
-│   ├── transactions/              #   Transaction & concurrency
-│   ├── security/                  #   GRANT/REVOKE 3 vai trò
-│   └── ban_thao/                  #   Bản thảo ban đầu (lưu trữ, không chạy)
-│
-├── mysql/                         # ⭐ Bản dịch MySQL (chạy được trên hosting)
+├── mysql/                         # 🐬 Bản script MySQL — nguồn duy nhất (đang chạy)
 │   ├── init_database.sql          #   Hướng dẫn thứ tự chạy từng file
 │   ├── ddl/                       #   18 bảng (5 file, theo thứ tự phụ thuộc)
 │   ├── data/                      #   Dữ liệu mẫu (60 SV, 5 học kỳ, 794 lượt ĐK)
@@ -137,23 +131,32 @@ student-course-registration-management/
 │   ├── queries/                   #   Truy vấn mẫu từng module
 │   └── security/                  #   Phân quyền 3 vai trò
 │
-├── backend/                       # ⚙️ Node.js + Express + mysql2
-│   ├── server.js                  #   Entry point (API + phục vụ frontend/dist)
+├── backend/                       # ⚙️ API Node.js + Express — cấu trúc MVC
+│   ├── server.js                  #   Entry: mount /api + phục vụ frontend/dist
 │   ├── .env                       #   Cấu hình DB (không commit lên Git)
 │   ├── package.json
-│   ├── src/
-│   │   ├── config.js              #   Cấu hình DB pool, JWT, PORT
-│   │   ├── db.js                  #   mysql2 pool + query helper
-│   │   ├── middleware/auth.js     #   JWT sign/verify + requireRole
-│   │   └── routes/                #   auth · danhmuc · dangky · ketqua ·
-│   │                              #   hocphi · giangvien · admin
+│   └── src/
+│       ├── config.js              #   Cấu hình DB pool, JWT, PORT
+│       ├── db.js                  #   mysql2 pool + helper sp/spMulti/spOut
+│       ├── middleware/auth.js     #   JWT sign/verify + requireRole
+│       ├── routes/                #   🅡 ROUTE — chỉ ánh xạ URL → controller
+│       │   ├── index.js           #     gom 8 nhóm route + /api/health
+│       │   └── auth · danhmuc · dangky · ketqua · hocphi ·
+│       │       giangvien · admin · concurrency
+│       ├── controllers/           #   🅒 CONTROLLER — request/response + mã lỗi SP
+│       │   └── *.controller.js (9 file, 1/nhóm route + system)
+│       ├── models/                #   🅜 MODEL — chỉ CALL VIEW/PROCEDURE qua db.js
+│       │   └── *.model.js (8 file, theo module nghiệp vụ)
+│       └── services/              #   Nghiệp vụ đặc thù
+│           └── anomalyRunner.js   #     Demo 4 lỗi concurrency (2 session thật)
 │   └── scripts/
 │       ├── init-db.js             #   Khởi tạo toàn bộ DB từ mysql/
 │       ├── verify-db.js           #   Kiểm tra nhanh DB
 │       ├── test-api.js            #   Test API cơ bản
-│       └── e2e-test.js            #   25 test E2E (3 vai trò)
+│       ├── e2e-test.js            #   25 test E2E (3 vai trò)
+│       └── audit-no-raw-query.mjs #   Audit "không raw query" toàn bộ src
 │
-└── frontend/                      # 🖥️ React 18 SPA (Vite + MUI — stack portal UTH)
+└── frontend/                      # 🖥️ VIEW của MVC — React 18 SPA (Vite + MUI)
     ├── vite.config.js             #   Dev proxy /api → :3000
     ├── index.html                 #   Google Fonts (Montserrat/Roboto) + favicon
     ├── public/images/             #   Logo trường, nền đăng nhập (asset thật UTH)
@@ -165,16 +168,15 @@ student-course-registration-management/
         ├── store/authSlice.js     #   Redux Toolkit: phiên đăng nhập
         ├── config/menu.jsx        #   Menu + breadcrumb 3 vai trò
         ├── utils/format.js        #   Tiền VND, thứ, trạng thái, mã lỗi SP
-        ├── components/            #   PortalLayout (topbar/header/menu/footer),
-        │                          #   ProtectedRoute, SectionCard, StatusBadges,
-        │                          #   ConfirmDialog, ChangePasswordDialog
+        ├── components/            #   PortalLayout, ProtectedRoute, SectionCard,
+        │                          #   StatusBadges, ConfirmDialog, ChangePasswordDialog
         └── pages/
             ├── Login.jsx          #   Đăng nhập 1 bước (tài khoản + mật khẩu)
             ├── Dashboard.jsx      #   Theo vai trò (SV/GV/PĐT) + trigger sinh nhật
             ├── sv/                #   Đăng ký · TKB · Danh sách · Hủy · Bảng điểm · Học phí
             ├── gv/                #   Lớp của tôi · Nhập điểm · TKB
             └── pdt/               #   SV · Khoa/Ngành/Lớp · Môn học · Mở LHP ·
-                                   #   Cảnh báo · Học phí · Tài khoản
+                                   #   Cảnh báo · Học phí · Tài khoản · Concurrency
 ```
 
 ---
@@ -190,7 +192,7 @@ student-course-registration-management/
 | **5. Học phí, Tài khoản** | TV5 | `HOCPHI`, `TAIKHOAN`, `VAITRO` | Tính/thu học phí, tài khoản đăng nhập 3 vai trò |
 
 > Bảng `NHATKY_DOIMATKHAU` được bổ sung để Trigger log đổi mật khẩu ghi nhận lịch sử.
-> Toàn bộ DDL: `mysql/ddl/` (MySQL) · `sql/ddl/` (T-SQL gốc).
+> Toàn bộ DDL hiện hành: `mysql/ddl/` (MySQL — bản T-SQL SQL Server cũ đã gỡ bỏ).
 
 **Quan hệ khóa ngoại chính:**
 
@@ -227,11 +229,15 @@ SP `SP_DangKyHocPhan` đóng gói **toàn bộ 5 bước kiểm tra + ghi nhận
 **Transaction / Concurrency** (`mysql/transactions/`):
 - `dangky_hocphan_tran.sql` — demo Atomicity + chống Lost Update + rollback
 - `concurrency_test.sql` — kịch bản **2 session** đăng ký đồng thời chỗ cuối
+- **`demo_4_anomaly.sql`** — ⭐ 3 SP phục vụ demo **4 lỗi concurrency** (Chương 5): `SP_DangKyHocPhan_ChuaFix` (thủ tục ban đầu **chưa fix lỗi** — thiếu `FOR UPDATE`), `SP_ChuanBi_Demo_4Anomaly`, `SP_DangKyHocPhan_NangCao`
+- **`demo_4_anomaly_2cua_so.sql`** — ⭐ kịch bản thủ công **2 cửa sổ** cho từng lỗi: Lost Update · Dirty Read · Unrepeatable Read · Phantom Read (kèm lệnh "tắt" phòng chống: `SET SESSION TRANSACTION ISOLATION LEVEL ...`)
 - `danh_muc_hoso_sv_concurrency.sql` — cập nhật hồ sơ SV chống xung đột
 - `diem_ketqua_tran.sql` — nhập điểm hàng loạt (rollback nếu 1 dòng lỗi)
 - `hocphan_giangvien_molophocphan_transactions.sql` — mở LHP + xếp lịch
 - `thu_hoc_phi_transaction.sql`, `phan_tich_concurrency_hoc_phi.sql` — thu/đóng học phí an toàn
 - `them_sv_gan_lop_tran.sql` — thêm SV + gán lớp (Atomicity)
+
+> 🧪 **Báo cáo kiểm chứng 4 lỗi concurrency (chạy thật trên MySQL remote, 10/10 PASS):** `docs/concurrency/concurrency_anomaly_demo.md` — bao gồm trạng thái phòng chống mặc định của MySQL (REPEATABLE-READ), cách "tắt" để gây lỗi, cơ chế từng lỗi và nội dung gợi ý cho slide. Script tự động: `node backend/scripts/test-anomaly-live.mjs` · Web demo: menu **Concurrency Lab** (PĐT).
 
 ---
 
@@ -243,7 +249,8 @@ SP `SP_DangKyHocPhan` đóng gói **toàn bộ 5 bước kiểm tra + ghi nhận
 
 | SP | Module | Chức năng |
 |---|---|---|
-| `SP_DangKyHocPhan` | TV3 ⭐ | Đăng ký học phần — 5 bước kiểm tra + ghi nhận (Transaction + FOR UPDATE) |
+| `SP_DangKyHocPhan` | TV3 ⭐ | Đăng ký học phần — 5 bước kiểm tra + ghi nhận (Transaction + FOR UPDATE; **tự retry khi gặp deadlock 1213** → phiên thua luôn nhận mã 105 rõ ràng) |
+| `SP_DangKyHocPhan_ChuaFix` | TV3 ⭐ demo | **Bản gốc chưa fix lỗi** (thiếu `FOR UPDATE`) — dùng để demo Lost Update; xem `mysql/transactions/demo_4_anomaly.sql` |
 | `SP_HuyDangKy` | TV3 | Hủy đăng ký trong hạn (mã 200–202) |
 | `SP_ThemSinhVien_Moi` | TV1 | Thêm SV + kiểm tra lớp/trùng mã + **tự tạo tài khoản** |
 | `SP_ChuyenLop_Nganh` | TV1 | Chuyển lớp cho SV (mã 403/404/405) |
@@ -276,7 +283,7 @@ SP `SP_DangKyHocPhan` đóng gói **toàn bộ 5 bước kiểm tra + ghi nhận
 
 ### 6.5 Index
 
-Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaGV, Thu, TietBatDau)`; non-clustered trên `MaSV`/`MaLHP` (đăng ký), `HoTen`+`MaLopSH` (tra SV), `MaSV` (điểm, học phí), unique `TenDangNhap` (đăng nhập). Xem `mysql/indexes/all_indexes.sql` + `docs/index_benchmark.md`.
+Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaGV, Thu, TietBatDau)`; non-clustered trên `MaSV`/`MaLHP` (đăng ký), `HoTen`+`MaLopSH` (tra SV), `MaSV` (điểm, học phí), unique `TenDangNhap` (đăng nhập). Xem `mysql/indexes/all_indexes.sql` + `docs/performance/index_benchmark.md`.
 
 ### 6.6 Phân quyền
 
@@ -361,6 +368,14 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 | POST | `/admin/taikhoan/sinhvien` · `/giangvien` | Tạo tài khoản tự động |
 | GET | `/admin/nhatky-doimatkhau` | Nhật ký đổi mật khẩu |
 | POST | `/admin/molophocphan` | Mở LHP + xếp lịch → `SP_MoLopHocPhan` |
+
+### 7.8 Concurrency Lab (PĐT — demo 4 lỗi Chương 5)
+
+| Method | Endpoint | Mô tả |
+|---|---|---|
+| GET | `/concurrency/trangthai` | Trạng thái DB (version, isolation level, sĩ số LHP demo, SP demo đã tạo) |
+| POST | `/concurrency/chuanbi` | Đưa LHP514 về "còn đúng 1 chỗ" (`SP_ChuanBi_Demo_4Anomaly`) |
+| POST | `/concurrency/demo/:ten` | Chạy 1 pha demo 2-session thật: `rr-chan` · `lost-update` · `dirty-read` · `unrepeatable-read` · `phantom-read` · `sp-fix` — trả về dòng thời gian từng bước |
 | POST | `/admin/themsinhvien` | Thêm SV + tự tạo tài khoản → `SP_ThemSinhVien_Moi` |
 
 > **Mã lỗi kinh doanh** (trả kèm HTTP 400): Đăng ký `100–106`, Hủy `200–202`, Thu học phí `301–304`, Thêm SV `401–402`, Chuyển lớp `403–405`.
@@ -385,7 +400,7 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 | Đăng ký | `/dang-ky` · `/thoi-khoa-bieu` · `/dang-ky-cua-toi` · `/huy-dang-ky` | SV |
 | Điểm & Học phí | `/bang-diem` · `/hoc-phi` | SV |
 | GV | `/lop-cua-toi` · `/nhap-diem` · `/thoi-khoa-bieu-gv` | GV |
-| PĐT | `/quan-ly/sinh-vien` · `/quan-ly/khoa-nganh-lop` · `/quan-ly/mon-hoc` · `/quan-ly/mo-lhp` · `/quan-ly/diem-canh-bao` · `/quan-ly/hoc-phi` · `/quan-ly/tai-khoan` | PĐT |
+| PĐT | `/quan-ly/sinh-vien` · `/quan-ly/khoa-nganh-lop` · `/quan-ly/mon-hoc` · `/quan-ly/mo-lhp` · `/quan-ly/diem-canh-bao` · `/quan-ly/hoc-phi` · `/quan-ly/tai-khoan` · `/quan-ly/concurrency` (Concurrency Lab) | PĐT |
 
 **Cơ chế chung:** `api/client.js` (axios + Bearer JWT, interceptor tự đá về `/login` khi 401) ·
 `store/authSlice.js` (Redux Toolkit) · `ProtectedRoute` theo `MaVaiTro` · `theme.js` (design system teal) ·
@@ -488,6 +503,7 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 6. **Điểm & Cảnh báo** → danh sách SV cảnh báo học vụ, thống kê môn.
 7. **Học phí** → tính học phí, thu tiền, báo cáo.
 8. **Tài khoản** → tạo tài khoản SV/GV, khóa/mở khóa, nhật ký đổi mật khẩu.
+9. **Concurrency Lab** → chạy trực tiếp 6 kịch bản demo 4 lỗi điều khiển cạnh tranh (Lost Update · Dirty Read · Unrepeatable Read · Phantom Read) với 2 phiên kết nối thật, xem dòng thời gian từng bước và kết luận PASS ngay trên màn hình.
 
 ---
 
@@ -498,6 +514,9 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 | `backend/scripts/test-api.js` | Luồng SV: login → LHP mở → tín chỉ → TKB → điểm → GPA → học phí | ✅ |
 | `backend/scripts/e2e-test.js` | **25 test E2E** qua 3 vai trò (auth, đăng ký, điểm, học phí, GV, admin, danh mục) | ✅ 25/25 PASS |
 | `backend/scripts/verify-db.js` | Kiểm tra nhanh đối tượng DB (sĩ số, điểm F, học phí, tài khoản, function, view) | ✅ |
+| **`backend/scripts/test-anomaly-live.mjs`** | **Demo & kiểm chứng 4 lỗi concurrency** (Lost Update · Dirty Read · Unrepeatable Read · Phantom Read) — 2 session thật trên MySQL, tự "tắt" phòng chống bằng isolation level + thủ tục chưa fix | ✅ **10/10 PASS** |
+| **`backend/scripts/test-concurrency-api.mjs`** | E2E API Concurrency Lab (login admin → 6 pha demo qua `/api/concurrency/*`) | ✅ 6/6 PASS |
+| **`backend/scripts/audit-no-raw-query.mjs`** | **Audit "không raw query" v2 — 2 lớp**: (1) quét tĩnh toàn bộ `backend/src` (30 file routes/controllers/models), mọi SQL phải là `CALL SP`/`SET @`/`SELECT @`; (2) đối chiếu 75 SP được gọi trong code với `SHOW PROCEDURE STATUS` trên DB thật | ✅ **29/30 file sạch** (duy nhất `services/anomalyRunner.js` — demo 4 lỗi — giữ SQL thô có chủ đích) · **75/75 SP tồn tại** |
 | Đăng nhập 1 bước | `POST /auth/login` (sai mật khẩu → 401; tài khoản khóa → 403; đúng → cấp JWT) | ✅ |
 | `npm run build` (frontend) | Vite build React SPA — 20 route, không lỗi biên dịch | ✅ |
 | Trigger | Tự +1/−1 sĩ số khi đăng ký/hủy · tự tính điểm · chặn trùng lịch · chặn xóa ngành | ✅ đã kiểm thử |
@@ -509,19 +528,21 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 
 | Tài liệu | Nội dung |
 |---|---|
-| `docs/analysis_dangky_hocphan.md` | Đặc tả 5 ràng buộc + lưu đồ xử lý đăng ký |
-| `docs/erd_dangky_hocphan.md` | ERD bảng trung tâm `DANGKYHOCPHAN` |
-| `docs/erd_diem_ketqua.md` · `erd_hocphi_taikhoan.md` · `erd_hocphan_giangvien_molophocphan.md` | ERD các module |
-| `docs/normalization_*.md` (5 file) | Chứng minh chuẩn hóa 3NF từng module |
-| `docs/Ho_So_Sinh_Vien.md` | Đặc tả dữ liệu module danh mục & hồ sơ SV |
-| `docs/isolation_level_analysis.md` | Vì sao READ COMMITTED chưa đủ → chọn khóa phù hợp |
-| `docs/deadlock_analysis.md` | Deadlock & phòng tránh (Chương 5) |
-| `docs/index_benchmark.md` | Đo hiệu năng trước/sau Index (Chương 3) |
-| `docs/trigger_integration_test.md` | Test chuỗi trigger toàn hệ thống |
-| `docs/concurrency_diem_ketqua.md` | Phân tích concurrency nhập điểm |
-| `docs/Backlog_7_Tuan.md` · `Phan_Cong_Nhiem_Vu_De_Tai_6.md` | Kế hoạch & phân công nhóm |
-| `docs/So_Do_ERD.docx` | Sơ đồ ERD tổng thể (Word) |
-| `docs/Giao_Trinh_He_Quan_Tri_Co_So_Du_Lieu_Full.txt` | Giáo trình tham khảo |
+| `docs/analysis/analysis_dangky_hocphan.md` | Đặc tả 5 ràng buộc + lưu đồ xử lý đăng ký |
+| `docs/erd/erd_dangky_hocphan.md` | ERD bảng trung tâm `DANGKYHOCPHAN` |
+| `docs/erd/erd_diem_ketqua.md` · `docs/erd/erd_hocphi_taikhoan.md` · `docs/erd/erd_hocphan_giangvien_molophocphan.md` | ERD các module |
+| `docs/normalization/` (5 file `normalization_*.md`) | Chứng minh chuẩn hóa 3NF từng module |
+| `docs/analysis/Ho_So_Sinh_Vien.md` | Đặc tả dữ liệu module danh mục & hồ sơ SV |
+| `docs/concurrency/isolation_level_analysis.md` | Vì sao READ COMMITTED chưa đủ → chọn khóa phù hợp |
+| **`docs/concurrency/concurrency_anomaly_demo.md`** | ⭐ **Báo cáo demo 4 lỗi concurrency**: trạng thái phòng chống của MySQL, cách "tắt" để gây lỗi, cơ chế từng lỗi, kịch bản slide |
+| **`docs/concurrency/kich_ban_demo_thao_tac_that.md`** | ⭐ **Kịch bản demo THAO TÁC THẬT trước lớp**: 2 trình duyệt đăng ký cùng lúc + 2 cửa sổ MySQL gõ lệnh tay từng bước (5 màn), bảng dàn bài 1 trang, xử lý sự cố, câu hỏi GV hay hỏi |
+| `docs/concurrency/deadlock_analysis.md` | Deadlock & phòng tránh (Chương 5) |
+| `docs/performance/index_benchmark.md` | Đo hiệu năng trước/sau Index (Chương 3) |
+| `docs/testing/trigger_integration_test.md` | Test chuỗi trigger toàn hệ thống |
+| `docs/concurrency/concurrency_diem_ketqua.md` | Phân tích concurrency nhập điểm |
+| `docs/planning/Backlog_7_Tuan.md` · `docs/planning/Phan_Cong_Nhiem_Vu_De_Tai_6.md` | Kế hoạch & phân công nhóm |
+| `docs/erd/So_Do_ERD.docx` | Sơ đồ ERD tổng thể (Word) |
+| `docs/reference/Giao_Trinh_He_Quan_Tri_Co_So_Du_Lieu_Full.txt` | Giáo trình tham khảo |
 
 ---
 
@@ -529,14 +550,17 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 
 - [x] Phân tích nghiệp vụ + ERD + chuẩn hóa 3NF cho cả 5 module (docs)
 - [x] DDL 18 bảng + dữ liệu mẫu (60 SV, 15 GV, 48 môn, 46 LHP, 794 lượt đăng ký)
-- [x] Chuyển **toàn bộ T-SQL → MySQL** (DDL, data, 9 FN, 12 SP, 9 Trigger, 10 View, Index, Transaction, Query, Security)
+- [x] Chuyển **toàn bộ T-SQL → MySQL** (DDL, data, 9 FN, 12+66 SP, 9 Trigger, 12 View, Index, Transaction, Query, Security)
 - [x] Triển khai & chạy trên **MySQL remote** (`free02.123host.vn`)
-- [x] Backend **Node.js/Express** — REST + JWT, 7 nhóm route (~70 endpoint), phân quyền 3 vai trò
+- [x] Backend **Node.js/Express theo chuẩn MVC** — REST + JWT, 8 nhóm route (~70 endpoint) qua `routes → controllers → models` (+ `services/anomalyRunner.js`), phân quyền 3 vai trò
+- [x] Dọn dẹp & sắp xếp repo: **backend chia 4 lớp MVC** (`routes/` · `controllers/` · `models/` · `services/`); **tài liệu tách riêng** trong `docs/` theo chủ đề (analysis/erd/normalization/concurrency/performance/testing/planning/reference); gỡ bộ script T-SQL cũ `sql/` — chỉ giữ bản MySQL `mysql/`
 - [x] **Viết lại frontend bằng React 18 + Vite + MUI + Redux Toolkit** — cùng công nghệ portal.ut.edu.vn, 20 màn hình, kết nối DB thật (không mock data)
 - [x] Đăng nhập **1 bước** (tài khoản + mật khẩu → JWT) + hồ sơ cá nhân `/auth/hoso` (OTP 2 bước portal thật tạm bỏ)
 - [x] Express phục vụ bản build `frontend/dist` (SPA fallback) — 1 tiến trình duy nhất
 - [x] SP đăng ký kiểm tra **5 ràng buộc** (mã 100–106) + Transaction chống Lost Update — đã kiểm thử
+- [x] **Demo 4 lỗi concurrency (Lost Update · Dirty Read · Unrepeatable Read · Phantom Read) — đã chạy thật trên MySQL remote, 10/10 PASS**; MySQL mặc định (REPEATABLE-READ) chặn 3/4, Lost Update chặn bằng `FOR UPDATE`; có thủ tục "chưa fix lỗi" + kịch bản 2 cửa sổ + Concurrency Lab trên web
 - [x] Trigger tự tính điểm / cập nhật sĩ số / chặn trùng lịch / chặn xóa ngành / log mật khẩu — đã kiểm thử
+- [x] **Tầng web 100% View/Procedure/Function — không raw query**: 8 nhóm route chỉ gọi `CALL SP_*` (66 SP mới cho web + helper `sp/spOut/spMulti` trong `db.js`); kiểm chứng bằng `node scripts/audit-no-raw-query.mjs` → **29/30 file sạch** trong `src/`; duy nhất `services/anomalyRunner.js` (module demo 4 lỗi) giữ SQL thô **có chủ đích** vì demo phải tự "tắt phòng chống"
 - [x] E2E: 25/25 PASS, sĩ số nhất quán sau đăng ký–hủy
 
 ---
@@ -546,3 +570,4 @@ Truy cập **http://localhost:5173** để sửa UI nóng; :3000 vẫn chạy b�
 - **Charset:** database đặt `utf8mb4_unicode_ci` (đã đổi từ mặc định latin1 của hosting) để lưu đúng tiếng Việt trong SP/Trigger/View.
 - **T-SQL → MySQL:** `UPDLOCK+HOLDLOCK` → `SELECT ... FOR UPDATE`; `GETDATE()` → `NOW()`; `GO` → tách statement (script runner `init-db.js` tự xử lý DELIMITER); `NVARCHAR` → `VARCHAR` (utf8mb4).
 - **Phân quyền:** trên MySQL 5.7 shared hosting không có `CREATE ROLE`, nên GRANT mẫu đi kèm và quyền thực thi nằm ở middleware JWT của backend.
+- **Tầng web chỉ gọi SP:** mọi route đi qua 3 helper trong `backend/src/db.js` — `sp()` (1 result set), `spMulti()` (nhiều result set), `spOut()` (SP có tham số OUT `@KetQua`, tự thêm `SELECT @KetQua` và chạy cùng connection). Định nghĩa SP: `mysql/procedures/web_procedures.sql` + `web_procedures_2.sql`; view: `mysql/views/web_views.sql`. Ngoại lệ có chủ đích: `backend/src/services/anomalyRunner.js` (demo 4 lỗi phải chạy session SQL thô để "tắt phòng chống" theo slide).

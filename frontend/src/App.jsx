@@ -26,6 +26,7 @@ import MoLopHocPhan from './pages/pdt/MoLopHocPhan';
 import DiemCanhBao from './pages/pdt/DiemCanhBao';
 import QuanLyHocPhi from './pages/pdt/QuanLyHocPhi';
 import TaiKhoan from './pages/pdt/TaiKhoan';
+import ConcurrencyDemo from './pages/pdt/ConcurrencyDemo';
 
 const SV = ['SV'];
 const GV = ['GV'];
@@ -58,6 +59,7 @@ export default function App() {
       <Route path="/quan-ly/diem-canh-bao" element={<ProtectedRoute roles={PDT}><PortalLayout><DiemCanhBao /></PortalLayout></ProtectedRoute>} />
       <Route path="/quan-ly/hoc-phi" element={<ProtectedRoute roles={PDT}><PortalLayout><QuanLyHocPhi /></PortalLayout></ProtectedRoute>} />
       <Route path="/quan-ly/tai-khoan" element={<ProtectedRoute roles={PDT}><PortalLayout><TaiKhoan /></PortalLayout></ProtectedRoute>} />
+      <Route path="/quan-ly/concurrency" element={<ProtectedRoute roles={PDT}><PortalLayout><ConcurrencyDemo /></PortalLayout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );
