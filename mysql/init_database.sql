@@ -1,7 +1,7 @@
 -- ==========================================================
 -- Ten file : mysql/init_database.sql
 -- Mo ta    : Kich ban khoi tao TOAN BO he thong tren MySQL
---            (ban thay the sql/init_database.sql cua SQL Server).
+--            (ban SQL Server cu sql/init_database.sql da goi khoi repo khi tai cau truc).
 --            Database roacqgfa_dbms da ton tai tren hosting
 --            (khong duoc quyen CREATE/DROP DATABASE).
 -- Cach chay :
@@ -39,6 +39,11 @@
 --  26. views/danh_muc_hoso_sv_views.sql
 --  27. indexes/all_indexes.sql
 --  28. security/phan_quyen_3_vai_tro.sql (tuy chon)
+--  29. transactions/demo_4_anomaly.sql (tuy chon — SP demo 4 loi concurrency:
+--      SP_DangKyHocPhan_ChuaFix, SP_ChuanBi_Demo_4Anomaly, SP_DangKyHocPhan_NangCao)
+--  30. views/web_views.sql (view phuc vu tang web)
+--  31. procedures/web_procedures.sql (SP doc/ghi cho tang web — khong raw query)
+--  32. procedures/web_procedures_2.sql (SP CRUD danh muc + ho tro dang ky)
 -- ==========================================================
 
 USE roacqgfa_dbms;

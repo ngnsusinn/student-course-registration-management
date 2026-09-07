@@ -32,5 +32,5 @@ report/*.docx
 slides/*.pptx
 
 # Concurrency demo media (large files)
-docs/concurrency_demo/*.mp4
-docs/concurrency_demo/*.png
+docs/concurrency/media/*.mp4
+docs/concurrency/media/*.png

@@ -115,7 +115,7 @@ SELECT 'Giai phap da ap dung trong SP: SELECT ... FOR UPDATE.' AS GiaiPhap;
 --     Phien 1: dang ky LHP501 roi LHP502
 --     Phien 2: dang ky LHP502 roi LHP501  (nguoc thu tu -> deadlock)
 --   MySQL chon 1 nan nhan (loi 1213), phien kia thanh cong.
---   Xem chi tiet docs/deadlock_analysis.md.
+--   Xem chi tiet docs/concurrency/deadlock_analysis.md.
 -- ==========================================================
 SELECT '=== [Issue #74] PHAN F: Deadlock demo (tham khao deadlock_analysis.md) ===' AS GhiChu;
 
