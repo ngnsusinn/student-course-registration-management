@@ -1,9 +1,14 @@
-# 🎬 KỊCH BẢN DEMO THAO TÁC THẬT — 4 LỖI ĐIỀU KHIỂN CẠNH TRANH
+# 🎬 KỊCH BẢN DEMO THAO TÁC THẬT — 4 LỖI ĐIỀU KHIỂN CẠNH TRANH + DEADLOCK
 
 > **Demo bằng tay trước lớp**: 2 trình duyệt (2 sinh viên đăng ký cùng lúc trên web thật)
-> + 2 cửa sổ MySQL (gõ lệnh thật từng bước). **Không dùng trang Concurrency Lab tự động.**
+> + 2 cửa sổ MySQL (gõ lệnh thật từng bước). **Toàn bộ demo dùng giao diện nghiệp vụ THẬT của người dùng**
+> (trang *Đăng ký lớp học phần*, *Hủy đăng ký HP*) — **trong ứng dụng không có màn hình demo nào**.
 >
-> Thời lượng: ~15–20 phút · Số người: 1 thuyết trình + 1 phụ "cửa sổ B" (hoặc tự làm một mình 2 màn hình)
+> Thời lượng: ~15–25 phút · Số người: 1 thuyết trình + 1 phụ "cửa sổ B" (hoặc tự làm một mình 2 màn hình)
+>
+> 📌 **Màn 1–5:** 4 lỗi điều khiển cạnh tranh (Lost Update · Dirty Read · Unrepeatable Read · Phantom Read).
+> 📌 **Màn 6 (mới):** **DEADLOCK** — HQTCSDL hỗ trợ gì · tắt phòng chống để thấy **TREO** · lỗi thật đảo thứ tự khóa · ngăn ngừa bằng thứ tự khóa nhất quán · demo ở **góc độ người dùng**.
+> Chi tiết đầy đủ về deadlock: [`deadlock_demo.md`](deadlock_demo.md) · phân tích & lựa chọn: [`deadlock_analysis.md`](deadlock_analysis.md).
 
 ---
 
@@ -289,6 +294,82 @@ SELECT MaLHP, SiSoHienTai, SiSoToiDa FROM LOPHOCPHAN WHERE MaLHP IN ('LHP514','L
 
 ---
 
+# MÀN 6 — DEADLOCK (2 cửa sổ SQL + 2 trình duyệt) 🔒
+
+> **Tài liệu đầy đủ:** `docs/concurrency/deadlock_demo.md` · **Script SQL đầy đủ:** `docs/concurrency/script_demo_sql.md` (PHẦN B)
+> **Câu chuyện:** 2 sinh viên cùng đăng ký **2 lớp** nhưng **chọn thứ tự ngược nhau** → vòng tròn chờ khóa.
+
+**Chuẩn bị (CỬA SỔ A):**
+```sql
+CALL SP_ChuanBi_Demo_Deadlock('LHP514,LHP506');
+SELECT @@innodb_deadlock_detect, @@innodb_lock_wait_timeout;   -- ON | 50
+```
+
+### 6.1 — Góc độ HQTCSDL (2 cửa sổ SQL): HQTCSDL **tự** phát hiện & rollback nạn nhân
+
+| CỬA SỔ A | CỬA SỔ B |
+|---|---|
+| `SET SESSION innodb_lock_wait_timeout = 20;`<br>`CALL SP_Demo_KhoaTheoThuTu('SV030','LHP514,LHP506','THEO_YEU_CAU',3,@kq1);` | *(chạy trong 3 giây A đang ngủ)*<br>`SET SESSION innodb_lock_wait_timeout = 20;`<br>`CALL SP_Demo_KhoaTheoThuTu('SV041','LHP506,LHP514','THEO_YEU_CAU',3,@kq2);` |
+| `SELECT @kq1;` → **1213** | `SELECT @kq2;` → **0** |
+
+> **Nói gì:** *“InnoDB dựng **đồ thị chờ**, thấy **chu trình**, tự chọn một giao dịch làm **nạn nhân**, rollback nó (lỗi **1213**) và cho giao dịch kia đi tiếp — nên hệ thống **không treo vĩnh viễn**, nhưng **phiên thua mất toàn bộ công việc**.”*
+
+### 6.2 — **TẮT** cơ chế phòng chống để demo → **TREO, không thao tác được gì nữa**
+
+```sql
+-- Trên MySQL local/root (hosting của nhóm KHÔNG có quyền SUPER):
+SET GLOBAL innodb_deadlock_detect = OFF;   -- chạy lại 6.1: KHÔNG còn 1213, cả 2 phiên treo tới hết
+SET GLOBAL innodb_deadlock_detect = ON;    -- ⚠️ BẬT LẠI NGAY
+```
+Trên hosting nhóm bị chặn (**ERROR 1227** — cần `SUPER`) ⇒ dùng **phương án thay thế**: dựng vòng tròn **khóa DÒNG ↔ khóa ỨNG DỤNG (`GET_LOCK`)** — **không bộ phận nào nhìn thấy đủ vòng tròn** ⇒ **không ai bị rollback**, cả 2 phiên treo; `SHOW FULL PROCESSLIST` hiện `User lock` / `statistics`. *(Chi tiết từng bước: `deadlock_demo.md` mục 3.4.)*
+
+### 6.3 — **Bật lại / dùng cách khác để phòng chống** — khóa theo **thứ tự nhất quán**
+
+```sql
+-- CẢ 2 CỬA SỔ: đổi 'THEO_YEU_CAU' -> 'SAP_XEP'  (CON TRO tự sắp MaLHP tăng dần)
+CALL SP_Demo_KhoaTheoThuTu('SV030','LHP514,LHP506','SAP_XEP',3,@kq1);
+CALL SP_Demo_KhoaTheoThuTu('SV041','LHP506,LHP514','SAP_XEP',3,@kq2);
+SELECT @kq1, @kq2;   -- 0 và 0 — KHÔNG còn deadlock
+```
+
+### 6.4 — **Lỗi thật của hệ thống** (đảo thứ tự khóa ĐĂNG KÝ ↔ HỦY)
+
+```sql
+CALL SP_ChuanBi_Demo_Deadlock('LHP514,LHP506');
+-- CỬA SỔ A:
+CALL SP_Demo_PhienGiaoDich('DANG_KY_CHUA_FIX','SV030','LHP514',3,@kq1);
+-- CỬA SỔ B:
+CALL SP_Demo_PhienGiaoDich('HUY_CHUA_FIX','SV030','LHP514',3,@kq2);
+SELECT @kq1, @kq2;   -- một phiên = 1213  ⇒ đây là BUG THẬT trong source
+-- Chạy lại với '..._DA_FIX' ⇒ không còn 1213 (SP_HuyDangKy đã được sửa)
+```
+
+### 6.5 — Góc độ NGƯỜI DÙNG (2 trình duyệt — điểm cao hơn) ⭐
+
+> **Không có màn hình demo.** Dùng đúng trang **Đăng ký lớp học phần** của sinh viên.
+> Lỗi xuất hiện vì **phiên bản thủ tục đang triển khai trong DB có lỗi** (giống hệt cách nhóm demo Lost Update
+> bằng `SP_DangKyHocPhan_ChuaFix`).
+
+**Bước 0 — triển khai bản CÓ LỖI (CỬA SỔ A):**
+```sql
+CALL SP_ChuanBi_Demo_Deadlock('LHP514,LHP506');
+```
+```bash
+cd backend && node scripts/apply-sql.js ../mysql/transactions/demo_deadlock_chuafix.sql
+```
+
+1. Browser A: `sv030 / matkhau@123` → **Đăng ký lớp học phần**. Browser B: `sv041 / matkhau@123` → cùng trang.
+2. **Màn a (deadlock xảy ra):** ở bảng *“Học phần đang chờ đăng ký”*, A tick **LHP514 rồi LHP506**, B tick **LHP506 rồi LHP514** *(cố ý ngược)*; hô “3–2–1–ĐĂNG KÝ” và cả hai bấm **“Đăng ký 2 lớp đã chọn”** → một SV nhận **toast đỏ “Xung đột khóa (deadlock 1213)…”** + dải *“Giao dịch bị hủy (mã 1213)”*.
+3. **Màn b (đã phòng chống):** khôi phục bản đã fix rồi **làm y hệt** (giao diện không đổi gì):
+```bash
+node scripts/apply-sql.js ../mysql/procedures/SP_DangKyNhieuHocPhan.sql
+```
+→ **không còn 1213** (chỉ còn lỗi nghiệp vụ bình thường như mã 102 — *chưa hoàn thành môn tiên quyết*).
+
+**Dọn dẹp:** `CALL SP_ChuanBi_Demo_Deadlock('LHP514,LHP506');` (và chắc chắn đã khôi phục `procedures/SP_DangKyNhieuHocPhan.sql`)
+
+---
+
 # 📌 TÓM TẮT DÀN BÀN (in 1 trang mang theo)
 
 | Màn | Lỗi | Thao tác thật | Lệnh "tắt phòng chống" | Kết quả phải thấy |
@@ -298,11 +379,15 @@ SELECT MaLHP, SiSoHienTai, SiSoToiDa FROM LOPHOCPHAN WHERE MaLHP IN ('LHP514','L
 | 3 | Dirty Read | B UPDATE chưa commit, A đọc | `SET SESSION ... READ UNCOMMITTED` | A thấy 16 → sau rollback còn 15 |
 | 4 | Unrepeatable Read | B UPDATE có commit giữa 2 lần đọc của A | `SET SESSION ... READ COMMITTED` | cùng giao tác: 15 rồi 16 |
 | 5 | Phantom Read | B INSERT có commit giữa 2 lần đếm của A | `SET SESSION ... READ COMMITTED` | COUNT 15 rồi 16 |
+| **6a** | **Deadlock — HQTCSDL tự xử** | 2 cửa sổ `SP_Demo_KhoaTheoThuTu` khóa **ngược thứ tự** | *(không — dùng mặc định `innodb_deadlock_detect = ON`)* | 1 phiên **1213**, phiên kia **0**; sĩ số không đổi |
+| **6b** | **Deadlock — TREO, không thao tác được** | vòng tròn **khóa dòng ↔ `GET_LOCK`** | `SET GLOBAL innodb_deadlock_detect = OFF` *(hosting chặn 1227 → dùng phương án này)* | cả 2 phiên **treo**; `PROCESSLIST`: `User lock` / `statistics`; sau timeout: **1205** + `GET_LOCK` trả 0 |
+| **6c** | **Lỗi thật: đảo thứ tự khóa** | `DANG_KY_CHUA_FIX` vs `HUY_CHUA_FIX` | *(đây là bug, không phải "tắt")* | một phiên **1213** |
+| **6d** | **Ngăn ngừa / Chấp nhận** | khôi phục bản SP đã fix (con trỏ sắp `MaLHP` tăng dần); hoặc retry `1213` | — | **0 deadlock**; và retry làm giao dịch thành công |
+| **6e** | **Deadlock — góc độ người dùng** | 2 trình duyệt tick 2 lớp **ngược thứ tự** rồi bấm **“Đăng ký 2 lớp đã chọn”** | triển khai bản SP có lỗi (`demo_deadlock_chuafix.sql`) | 1 SV nhận **toast deadlock 1213**; khôi phục bản đã fix ⇒ hết |
 
 **Thông điệp kết:** *"MySQL 5.7 mặc định (REPEATABLE-READ) đã chặn sẵn Màn 3, 4, 5. Màn 2 bị hở vì
 thiếu khóa lưu quan — và Màn 1 chứng minh thủ tục `SP_DangKyHocPhan` của nhóm đã vá bằng
-`SELECT ... FOR UPDATE`, kết hợp transaction trong thủ tục. Web chỉ gọi thủ tục — mọi phòng
-chống nằm gọn trong database."*
+`SELECT ... FOR UPDATE`, kết hợp transaction trong thủ tục. **Màn 6 khép lại Chương 5:** HQTCSDL **phát hiện & dọn hậu quả** deadlock (1213/1205) nhưng **không phòng chống** và **có điểm mù**; nhóm **phòng chống bằng khóa theo thứ tự nhất quán (con trỏ)** và **chấp nhận + retry** cho phần tranh chấp còn lại. Web chỉ gọi thủ tục — mọi phòng chống nằm gọn trong database."*
 
 ---
 
@@ -316,6 +401,10 @@ chống nằm gọn trong database."*
 | Màn 1: báo lỗi "chưa hoàn thành môn tiên quyết" | nhầm sang LHP khác | **chỉ dùng LHP506** cho demo web |
 | Web báo "ngoài thời hạn đăng ký" | học kỳ demo chưa mở | kiểm tra: `SELECT * FROM HOCKY WHERE TrangThaiDot='MO';` (HK1-2025 đang mở đến 2027) |
 | Sai mật khẩu sv030/sv041 | — | mật khẩu chung SV: `matkhau@123` |
+| Màn 6: `SET GLOBAL innodb_deadlock_detect = OFF` báo **ERROR 1227** | hosting chia sẻ không có quyền `SUPER` | **Bình thường** — dùng ngay **phương án thay thế** ở mục 6.2 (vòng tròn `GET_LOCK` ↔ khóa dòng) để vẫn thấy hiện tượng **treo** |
+| Màn 6: cả 2 phiên SQL đều trả `0`, không có `1213` | 2 cửa sổ chưa thật sự chạy **chồng thời gian** (cửa sổ 1 đã COMMIT trước khi cửa sổ 2 khóa) | tăng `pDoTreGiay` lên 3–5 giây và chạy cửa sổ 2 **trong lúc** cửa sổ 1 đang ngủ |
+| Màn 6: chờ mãi không thấy 1205 | `innodb_lock_wait_timeout` còn 50 s | đặt `SET SESSION innodb_lock_wait_timeout = 8;` ở **cả 2** cửa sổ trước khi chạy |
+| Màn 6: web báo **102/103/105** thay vì deadlock | giao dịch đi qua bước khóa bình thường rồi mới tới kiểm tra nghiệp vụ | deadlock nằm ở **bước khóa**; muốn thấy `1213` phải bấm **thật sự cùng lúc** và chọn **ngược thứ tự** |
 | Chưa kết nối được MySQL | hosting chặn IP lạ | kết nối thử từ nhà **trước** buổi demo; nếu lớp chặn port 3306, dùng 2 tab phpMyAdmin của hosting thay 2 cửa sổ mysql client (mỗi tab = 1 session) |
 
 # ❓ CÂU HỎI GIẢNG VIÊN HAY HỎI

@@ -43,6 +43,7 @@ export async function nhapDiem(req, res) {
 }
 
 // POST /api/giangvien/nhapdiem-hangloat { MaLHP, DanhSachDiem: [...] }
+// → 1 lệnh CALL SP_GV_NhapDiemHangLoat (giao tác + con trỏ nằm trong DB, lỗi 1 dòng ⇒ rollback cả lô)
 export async function nhapDiemHangLoat(req, res) {
   const maGV = req.user.MaGV;
   const { MaLHP, DanhSachDiem = [] } = req.body || {};

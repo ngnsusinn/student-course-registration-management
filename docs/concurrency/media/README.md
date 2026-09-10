@@ -3,8 +3,10 @@
 > Thư mục này lưu **ảnh/video** chứng minh kịch bản test 2 session đăng ký đồng thời vào lớp học phần sắp hết chỗ.
 
 > 📌 **Cập nhật repo (tái cấu trúc MVC):** bộ script gốc `sql/` (SQL Server) đã được gỡ bỏ — toàn bộ kịch bản demo hiện hành chạy trên **MySQL**:
-> kịch bản 2 cửa sổ `mysql/transactions/concurrency_test.sql`, 4 lỗi concurrency `mysql/transactions/demo_4_anomaly_2cua_so.sql`,
-> demo tự động `backend/scripts/test-anomaly-live.mjs` + Concurrency Lab trên web. Tài liệu: `docs/concurrency/`.
+> **toàn bộ script demo SQL nằm trong** [`../script_demo_sql.md`](../script_demo_sql.md) (4 lỗi concurrency + deadlock),
+> kịch bản 2 cửa sổ `mysql/transactions/concurrency_test.sql`, và
+> demo **bằng thao tác thật trên web** (trang *Đăng ký lớp học phần* / *Hủy đăng ký HP*). ⚠️ Ứng dụng **không có màn hình demo nào**.
+> Tài liệu: `docs/concurrency/` — xem thêm [`../deadlock_demo.md`](../deadlock_demo.md).
 
 ## Nội dung cần minh chứng (bắt buộc)
 
@@ -17,6 +19,18 @@
 | 5 | `05_phien_2_bi_tu_choi.png` | Phiên 2 nhận mã lỗi **105** (lớp đã đầy) |
 | 6 | `06_siso_cuoi.png` | Kiểm tra cuối: LHP501 = **25/25**, không vượt SiSoToiDa, SV002 không có bản ghi |
 | 7 | `07_lost_update_demo.png` *(tùy chọn)* | Nếu chạy PHẦN E, chụp ảnh cho thấy sĩ số vượt 25 khi không dùng khóa |
+
+### Minh chứng DEADLOCK (Chương 5)
+
+| STT | Màn hình | Nội dung chứng minh | Cách tạo |
+|---|---|---|---|
+| D1 | `D1_bien_he_thong.png` | `SELECT @@innodb_deadlock_detect, @@innodb_lock_wait_timeout, @@transaction_isolation` → `ON · 50 · REPEATABLE-READ` | `script_demo_sql.md` PHẦN B.0 |
+| D2 | `D2_loi_1213.png` | Một cửa sổ hiện **ERROR 1213 (40001): Deadlock found when trying to get lock** — HQTCSDL tự chọn nạn nhân & rollback | PHẦN 1 |
+| D3 | `D3_khong_tat_duoc.png` | `SET GLOBAL innodb_deadlock_detect = OFF` → **ERROR 1227 (42000): Access denied … SUPER privilege(s)** | PHẦN 2A |
+| D4 | `D4_treo_khong_thao_tac.png` ⭐ | Cả 2 cửa sổ **quay, không trả kết quả** + `SHOW FULL PROCESSLIST` cho thấy `STATE = User lock` và `STATE = statistics` | PHẦN 2B |
+| D5 | `D5_da_fix_thu_tu_khoa.png` | Khôi phục bản đã fix → chạy lại thao tác → **cả 2 đều 0**, không còn 1213 | PHẦN 3.2 / 4.5 |
+| D6 | `D6_web_deadlock.png` ⭐ | **Góc độ người dùng**: 2 trình duyệt tick 2 lớp **ngược thứ tự** rồi bấm **“Đăng ký 2 lớp đã chọn”** → một SV hiện toast đỏ **“Xung đột khóa (deadlock 1213)…”** | `docs/concurrency/deadlock_demo.md` mục 5.2 |
+| D7 | `D7_web_da_phong_chong.png` | Cùng 2 trình duyệt, **khôi phục bản SP đã fix** (`procedures/SP_DangKyNhieuHocPhan.sql`) → **không còn toast 1213** | `docs/concurrency/deadlock_demo.md` mục 5.3 |
 
 ## Hướng dẫn chụp minh chứng (2 cửa sổ mysql client / Workbench)
 
@@ -49,4 +63,5 @@
 - [ ] Ảnh `01..06` đã lưu đủ
 - [ ] Trạng thái cuối `SiSoHienTai = SiSoToiDa = 25`
 - [ ] Mã lỗi Phiên 2 = 105 (không phải 0)
-- [ ] (Tùy chọn) Ảnh/ video demo Lost Update + Deadlock
+- [ ] Ảnh deadlock `D1..D7` đã lưu đủ (D2 = lỗi `1213`, D4 = **treo** + PROCESSLIST, D6 = **góc độ người dùng**)
+- [ ] (Tùy chọn) Video demo Lost Update + Deadlock

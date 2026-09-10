@@ -4,6 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import mysql from 'mysql2/promise';
+import { DB_CONFIG } from '../src/config.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 // Neu truyen file cu the qua argv -> ap dung file do; nguoc lai ap dung demo_4_anomaly.sql
@@ -59,10 +60,16 @@ function splitStatements(sql) {
   return statements;
 }
 
+// Dùng CHUNG cấu hình với backend (src/config.js) để chạy được ngay cả khi
+// chưa tạo backend/.env — tránh lỗi kết nhầm localhost.
 const conn = await mysql.createConnection({
-  host: process.env.DB_HOST, user: process.env.DB_USER,
-  password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-  charset: 'utf8mb4_unicode_ci', connectTimeout: 30000,
+  host: DB_CONFIG.host,
+  user: DB_CONFIG.user,
+  password: DB_CONFIG.password,
+  database: DB_CONFIG.database,
+  charset: DB_CONFIG.charset,
+  dateStrings: true,
+  connectTimeout: 30000,
 });
 
 const sql = fs.readFileSync(SQL_FILE, 'utf8');

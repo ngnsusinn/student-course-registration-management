@@ -2,7 +2,7 @@
 // models/giangvien.model.js — chức năng Giảng viên
 // Tầng MODEL (MVC): chỉ giao tiếp DB qua PROCEDURE.
 // ============================================================
-import { sp, getConnection } from '../db.js';
+import { sp } from '../db.js';
 
 // Danh sách lớp GV phụ trách theo học kỳ.
 export async function lopCuaToi(maGV, maHocKy) {
@@ -28,23 +28,16 @@ export async function nhapDiem(maGV, maSV, maLHP, diemChuyenCan, diemGiuaKy, die
   ]);
 }
 
-// Nhập điểm hàng loạt: từng SV bằng SP trong 1 giao tác (rollback nếu 1 dòng lỗi).
+// Nhập điểm hàng loạt cho cả lớp trong MỘT GIAO TÁC.
+// ★ Giao tác nằm HOÀN TOÀN trong DB (SP_GV_NhapDiemHangLoat): tầng web chỉ
+//   mã hoá danh sách điểm thành chuỗi 'MaSV:CC:GK:CK;...' rồi gọi 1 lệnh CALL.
+//   Bất kỳ dòng nào sai ⇒ SP ROLLBACK cả lô (nguyên tử thật sự).
 export async function nhapDiemHangLoat(maGV, maLHP, danhSachDiem) {
-  const conn = await getConnection();
-  try {
-    await conn.beginTransaction();
-    for (const d of danhSachDiem) {
-      if (!d.MaSV) continue;
-      await conn.query('CALL SP_GV_NHAP_DIEM(?, ?, ?, ?, ?, ?)', [
-        maGV, d.MaSV, maLHP,
-        d.DiemChuyenCan ?? null, d.DiemGiuaKy ?? null, d.DiemCuoiKy ?? null,
-      ]);
-    }
-    await conn.commit();
-  } catch (e) {
-    await conn.rollback();
-    throw e;
-  } finally {
-    conn.release();
-  }
+  const diem = (v) => (v === null || v === undefined || v === '' ? '' : String(Number(v)));
+  const chuoi = (Array.isArray(danhSachDiem) ? danhSachDiem : [])
+    .filter((d) => d && d.MaSV)
+    .map((d) => [d.MaSV, diem(d.DiemChuyenCan), diem(d.DiemGiuaKy), diem(d.DiemCuoiKy)].join(':'))
+    .join(';');
+
+  return sp('CALL SP_GV_NhapDiemHangLoat(?, ?, ?)', [maGV, maLHP, chuoi]);
 }

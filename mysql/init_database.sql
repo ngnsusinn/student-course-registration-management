@@ -44,6 +44,16 @@
 --  30. views/web_views.sql (view phuc vu tang web)
 --  31. procedures/web_procedures.sql (SP doc/ghi cho tang web — khong raw query)
 --  32. procedures/web_procedures_2.sql (SP CRUD danh muc + ho tro dang ky)
+--  33. transactions/demo_deadlock.sql (tuy chon — 3 SP demo DEADLOCK dung CON TRO:
+--      SP_Demo_KhoaTheoThuTu, SP_Demo_PhienGiaoDich, SP_ChuanBi_Demo_Deadlock)
+--  34. procedures/SP_DangKyNhieuHocPhan.sql (dang ky NHIEU hoc phan trong 1 giao dich
+--      — CON TRO khoa theo MaLHP tang dan; tinh nang that tren trang Dang ky lop hoc phan)
+--  35. procedures/web_procedures_3.sql (2 SP GIAO TAC — transaction nam trong DB:
+--      SP_ThemMonHocVaTienQuyet, SP_GV_NhapDiemHangLoat)
+--
+-- ⚠️  DEMO DEADLOCK BANG THAO TAC THAT: chay them
+--      transactions/demo_deadlock_chuafix.sql  (ban CO LOI: khoa theo thu tu tick chon)
+--      ... demo xong thi chay lai procedures/SP_DangKyNhieuHocPhan.sql de khoi phuc.
 -- ==========================================================
 
 USE roacqgfa_dbms;

@@ -136,7 +136,7 @@ export async function xoaLop(req, res) {
 
 // ==================== MONHOC ====================
 
-// POST — thêm môn + danh sách môn tiên quyết trong 1 giao tác (tại MODEL)
+// POST — thêm môn + danh sách môn tiên quyết trong 1 giao tác (giao tác nằm trong SP_ThemMonHocVaTienQuyet)
 export async function themMonHoc(req, res) {
   const { MaMonHoc, TenMonHoc, SoTinChi, SoTietLyThuyet = 0, SoTietThucHanh = 0, MaKhoa, TienQuyet = [] } = req.body || {};
   if (!MaMonHoc || !TenMonHoc || !SoTinChi || !MaKhoa) return res.status(400).json({ error: 'Thiếu dữ liệu môn học.' });

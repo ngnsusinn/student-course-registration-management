@@ -11,7 +11,7 @@
 | [`analysis/`](analysis/) | Đặc tả & phân tích nghiệp vụ từng module (5 module) — `analysis_*.md`, `Ho_So_Sinh_Vien.md`, `module5-analysis.md` |
 | [`erd/`](erd/) | Thiết kế ERD từng module (mermaid) + `So_Do_ERD.docx` (sơ đồ tổng thể) |
 | [`normalization/`](normalization/) | Chứng minh chuẩn hóa **3NF** cho từng module |
-| [`concurrency/`](concurrency/) | Giao tác & điều khiển cạnh tranh: mức cô lập, deadlock, **demo 4 lỗi concurrency**, kịch bản demo thật; `media/` lưu ảnh/video minh chứng |
+| [`concurrency/`](concurrency/) | Giao tác & điều khiển cạnh tranh: mức cô lập, **deadlock (phân tích + báo cáo demo)**, **demo 4 lỗi concurrency**, kịch bản demo thật; **`script_demo_sql.md` = toàn bộ script SQL demo chạy trực tiếp trên DB**; `media/` lưu ảnh/video minh chứng |
 | [`performance/`](performance/) | Đo hiệu năng Index (`index_benchmark.md`) |
 | [`testing/`](testing/) | Kiểm thử tích hợp Trigger toàn hệ thống |
 | [`planning/`](planning/) | Kế hoạch nhóm: Backlog 7 tuần · bảng phân công nhiệm vụ |

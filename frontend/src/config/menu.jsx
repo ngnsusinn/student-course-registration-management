@@ -15,7 +15,6 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
-import ScienceIcon from '@mui/icons-material/Science';
 
 // ============================================================
 // Menu theo vai tro — duong dan React Router
@@ -46,7 +45,6 @@ export const MENUS = {
     { to: '/quan-ly/diem-canh-bao', label: 'Điểm & Cảnh báo học vụ', icon: TrendingUpIcon, roles: ['PĐT'] },
     { to: '/quan-ly/hoc-phi', label: 'Quản lý học phí', icon: PaymentsIcon, roles: ['PĐT'] },
     { to: '/quan-ly/tai-khoan', label: 'Tài khoản & Phân quyền', icon: KeyIcon, roles: ['PĐT'] },
-    { to: '/quan-ly/concurrency', label: 'Concurrency Lab (demo 4 lỗi)', icon: ScienceIcon, roles: ['PĐT'] },
   ],
 };
 
@@ -72,5 +70,4 @@ export const CRUMB_LABELS = {
   '/quan-ly/diem-canh-bao': 'Điểm & Cảnh báo học vụ',
   '/quan-ly/hoc-phi': 'Quản lý học phí',
   '/quan-ly/tai-khoan': 'Tài khoản & Phân quyền',
-  '/quan-ly/concurrency': 'Concurrency Lab — demo 4 lỗi',
 };

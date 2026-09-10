@@ -2,7 +2,7 @@
 // models/danhmuc.model.js — Danh mục & Hồ sơ sinh viên (Module 1)
 // Tầng MODEL (MVC): chỉ giao tiếp DB qua PROCEDURE.
 // ============================================================
-import { sp, spOut, getConnection } from '../db.js';
+import { sp, spOut } from '../db.js';
 
 // ==================== Đọc danh mục ====================
 
@@ -76,22 +76,18 @@ export async function xoaLop(maLopSH) {
 // ==================== MONHOC ====================
 
 // Thêm môn học + danh sách môn tiên quyết trong 1 giao tác.
-export async function themMonHocVaTienQuyet({ MaMonHoc, TenMonHoc, SoTinChi, SoTietLyThuyet, SoTietThucHanh, MaKhoa, TienQuyet }) {
-  const conn = await getConnection();
-  try {
-    await conn.beginTransaction();
-    await conn.query('CALL SP_ThemMonHoc(?, ?, ?, ?, ?, ?)',
-      [MaMonHoc, TenMonHoc, Number(SoTinChi), Number(SoTietLyThuyet), Number(SoTietThucHanh), MaKhoa]);
-    for (const tq of TienQuyet) {
-      await conn.query('CALL SP_ThemTienQuyet(?, ?)', [MaMonHoc, tq]);
-    }
-    await conn.commit();
-  } catch (e) {
-    await conn.rollback();
-    throw e;
-  } finally {
-    conn.release();
-  }
+// ★ Giao tác nằm HOÀN TOÀN trong DB (SP_ThemMonHocVaTienQuyet) — tầng web
+//   chỉ gọi 1 lệnh CALL, không tự mở transaction.
+export async function themMonHocVaTienQuyet({
+  MaMonHoc, TenMonHoc, SoTinChi, SoTietLyThuyet, SoTietThucHanh, MaKhoa, TienQuyet = [],
+}) {
+  const dsTienQuyet = (Array.isArray(TienQuyet) ? TienQuyet : [])
+    .map((x) => String(x || '').trim()).filter(Boolean).join(',');
+
+  return sp('CALL SP_ThemMonHocVaTienQuyet(?, ?, ?, ?, ?, ?, ?)', [
+    MaMonHoc, TenMonHoc, Number(SoTinChi), Number(SoTietLyThuyet),
+    Number(SoTietThucHanh), MaKhoa, dsTienQuyet,
+  ]);
 }
 
 export async function suaMonHoc(maMonHoc, { TenMonHoc, SoTinChi, SoTietLyThuyet, SoTietThucHanh, MaKhoa }) {

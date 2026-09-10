@@ -13,7 +13,6 @@ import ketquaRoutes from './ketqua.js';
 import hocphiRoutes from './hocphi.js';
 import giangvienRoutes from './giangvien.js';
 import adminRoutes from './admin.js';
-import concurrencyRoutes from './concurrency.js';
 
 const router = Router();
 
@@ -27,6 +26,5 @@ router.use('/ketqua', ketquaRoutes);
 router.use('/hocphi', hocphiRoutes);
 router.use('/giangvien', giangvienRoutes);
 router.use('/admin', adminRoutes);
-router.use('/concurrency', concurrencyRoutes);
 
 export default router;

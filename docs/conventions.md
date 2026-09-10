@@ -43,9 +43,8 @@ student-course-registration-management/
 │   │   ├── routes/                #   LỚP ROUTE — chỉ ánh xạ URL → controller
 │   │   ├── controllers/           #   LỚP CONTROLLER — xử lý request/response, mã lỗi SP
 │   │   ├── models/                #   LỚP MODEL — chỉ gọi VIEW/PROCEDURE qua db.js
-│   │   ├── services/              #   Nghiệp vụ đặc thù (anomalyRunner.js — demo concurrency)
 │   │   ├── middleware/auth.js     #   JWT sign/verify + requireRole
-│   │   ├── db.js                  #   mysql2 pool + helper sp()/spMulti()/spOut()
+│   │   ├── db.js                  #   pool NỘI BỘ (không export) + helper sp()/spMulti()/spOut()
 │   │   └── config.js              #   Cấu hình DB pool, JWT, PORT
 │   └── scripts/                   #   init-db · verify-db · test-api · e2e-test · audit…
 │
@@ -102,8 +101,10 @@ student-course-registration-management/
 
 1. **Mỗi đối tượng (SP / Function / Trigger) được bọc trong `DROP ... IF EXISTS`** để script chạy lặp lại được (idempotent).
 2. **Dùng `START TRANSACTION`/`COMMIT`/`ROLLBACK`** trong SP có nghiệp vụ nhiều bước; `ROLLBACK` đầy đủ trong `DECLARE EXIT HANDLER FOR SQLEXCEPTION`.
-3. **Tầng web chỉ gọi View/Procedure/Function** (không raw query) — qua helper `sp()`/`spMulti()`/`spOut()` trong `backend/src/db.js`.
-   Ngoại lệ có chủ đích duy nhất: `backend/src/services/anomalyRunner.js` (demo 4 lỗi concurrency phải chạy session SQL thô để "tắt phòng chống").
+3. **Tầng web chỉ gọi View/Procedure/Function** (không raw query) — qua helper `sp()`/`spMulti()`/`spOut()`/`spOutFull()` trong `backend/src/db.js`.
+   `db.js` **không export pool/getConnection** ⇒ tầng web không có cách nào chạy SQL thô.
+   **Mọi giao tác (`START TRANSACTION`/`COMMIT`/`ROLLBACK`) nằm trong Stored Procedure.**
+   Kiểm chứng tự động: `node scripts/audit-no-raw-query.mjs` (3 lớp: không raw query · SP tồn tại · không tự mở giao tác).
 4. **Comment tiếng Việt không dấu hoặc có dấu** tùy màn hình, ghi rõ module + Issue number tương ứng ở header mỗi file.
 5. Header file chuẩn:
 
@@ -160,4 +161,4 @@ feature/<module>-<mo_ta>
 | 74 | Test 2 session | `mysql/transactions/concurrency_test.sql` + `docs/concurrency/media/` |
 | — | Deadlock (bổ sung) | `docs/concurrency/deadlock_analysis.md` |
 | — | Khởi tạo DB | `mysql/init_database.sql` |
-| — | Giao diện (Web) | `frontend/` (React 18 SPA — 20 màn hình, Vite + MUI) |
+| — | Giao diện (Web) | `frontend/` (React 18 SPA — 19 màn hình, Vite + MUI) |
