@@ -16,6 +16,10 @@ router.get('/lopmo', authenticate, requireRole('SV'), asyncHandler(dangkyControl
 // POST /api/dangky — { MaLHP, GhiChu } → SP_DangKyHocPhan
 router.post('/', authenticate, requireRole('SV'), asyncHandler(dangkyController.dangKy));
 
+// POST /api/dangky/nhieu — { DanhSachLHP: [...] } → SP_DangKyNhieuHocPhan
+// (đăng ký nhiều lớp trong 1 giao dịch — tính năng thật trên trang Đăng ký lớp học phần)
+router.post('/nhieu', authenticate, requireRole('SV'), asyncHandler(dangkyController.dangKyNhieu));
+
 // POST /api/dangky/huy — { MaLHP } → SP_HuyDangKy
 router.post('/huy', authenticate, requireRole('SV'), asyncHandler(dangkyController.huyDangKy));
 

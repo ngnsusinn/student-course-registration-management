@@ -51,6 +51,12 @@ export const DK_ERRORS = {
   106: 'Lớp học phần không tồn tại hoặc không ở trạng thái mở đăng ký.',
   500: 'Lỗi hệ thống khi xử lý đăng ký.',
 };
+
+// Lỗi KHÓA của HQTCSDL (Chương 5 — deadlock) trả về từ SP_DangKyNhieuHocPhan.
+export const KHOA_ERRORS = {
+  1213: 'Xung đột khóa (DEADLOCK 1213): hệ quản trị CSDL đã hủy giao dịch của bạn để giải phóng deadlock. Vui lòng bấm đăng ký lại.',
+  1205: 'Chờ khóa quá lâu (TIMEOUT 1205): một giao dịch khác đang giữ khóa. Vui lòng thử lại.',
+};
 export const HUY_ERRORS = {
   200: 'Rất tiếc! Hiện tại ngoài thời hạn hủy đăng ký học phần.',
   201: 'Không tìm thấy bản ghi đăng ký học phần.',

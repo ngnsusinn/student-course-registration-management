@@ -2,7 +2,7 @@
 // models/dangky.model.js — Đăng ký học phần (Module trung tâm)
 // Tầng MODEL (MVC): chỉ giao tiếp DB qua PROCEDURE.
 // ============================================================
-import { sp, spOut } from '../db.js';
+import { sp, spOut, spOutFull } from '../db.js';
 
 // Đợt đăng ký đang mở (SP_HocKyHienTai) — null nếu không có.
 export async function hocKyHienTai() {
@@ -28,6 +28,14 @@ export async function layLHP(maLHP) {
 // Gọi SP_HuyDangKy — hủy trong hạn (0 = thành công, 200–202 = lỗi).
 export async function huyDangKy(maSV, maLHP) {
   return spOut('CALL SP_HuyDangKy(?, ?, @KetQua)', [maSV, maLHP]);
+}
+
+// Đăng ký NHIỀU học phần trong MỘT giao dịch (CON TRO khóa lần lượt từng dòng sĩ số
+// THEO THỨ TỰ MaLHP TĂNG DẦN — khóa theo thứ tự nhất quán nên không thể deadlock).
+// Trả về { ketQua, dong } — dong là dòng tổng kết SP SELECT ra (kết quả từng lớp).
+export async function dangKyNhieu(maSV, danhSachLHP, maxTinChi, ghiChu) {
+  return spOutFull('CALL SP_DangKyNhieuHocPhan(?, ?, ?, ?, @KetQua)',
+    [maSV, danhSachLHP, maxTinChi, ghiChu]);
 }
 
 // Danh sách đăng ký của SV theo học kỳ (View chi tiết).

@@ -25,9 +25,8 @@
 --
 -- CACH DEMO (2 cua so mysql client / Workbench ket noi rieng):
 --   Phan 0: chay file nay 1 lan de tao 3 SP (ca 2 cua so deu dung duoc).
---   Phan 1..4: mo ta step-by-step trong docs/concurrency/concurrency_anomaly_demo.md
---   Script tu dong (khuyen nghi khi thuyet trinh):
---     node backend/scripts/test-anomaly-live.mjs
+--   Phan A.1..A.5: script SQL day du (copy-paste) tai
+--       docs/concurrency/script_demo_sql.md   (PHAN A)
 -- ==========================================================
 
 -- ==========================================================

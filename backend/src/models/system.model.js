@@ -2,10 +2,10 @@
 // models/system.model.js — truy xuất dữ liệu hệ thống
 // Tầng MODEL (MVC): chỉ giao tiếp DB qua PROCEDURE/VIEW.
 // ============================================================
-import { pool } from '../db.js';
+import { sp } from '../db.js';
 
-// Gọi SP_HealthCheck để kiểm tra kết nối DB.
+// Gọi SP_HealthCheck để kiểm tra kết nối DB (chỉ CALL, không raw query).
 export async function healthCheck() {
-  const [rows] = await pool.query('CALL SP_HealthCheck()');
-  return rows[0]?.[0]?.ok === 1;
+  const rows = await sp('CALL SP_HealthCheck()');
+  return rows[0]?.ok === 1;
 }

@@ -1,13 +1,15 @@
 // ============================================================
-// audit-no-raw-query.mjs  (v2 — RECHECK toàn dự án)
-// Kiểm chứng yêu cầu: "dưới code web CHỈ dùng thủ tục/view/function".
+// audit-no-raw-query.mjs  (v3 — KHÔNG còn ngoại lệ)
+// Kiểm chứng yêu cầu:
+//   "Toàn bộ giao tác thực hiện ở DB; code web CHỈ gọi thủ tục, KHÔNG raw query."
 //
 // 3 lớp kiểm tra:
 //   1. QUÉT TĨNH toàn bộ backend/src: mọi string literal giống SQL
-//      phải là CALL <SP> (cho phép SET @var — cơ chế OUT param).
+//      phải là CALL <SP> (cho phép SET @var / SELECT @var — cơ chế OUT param).
 //   2. ĐỐI CHIẾU DB: trích danh sách SP được CALL trong backend/src,
 //      gọi SHOW PROCEDURE STATUS và báo SP nào CHƯA tồn tại.
-//   3. GHI CHÚ module demo (services/anomalyRunner.js) — ngoại lệ có chủ đích.
+//   3. KIỂM TRA GIAO TÁC: backend/src KHÔNG được chứa beginTransaction /
+//      conn.commit / conn.rollback / START TRANSACTION (giao tác phải nằm trong SP).
 //
 // Chạy: node scripts/audit-no-raw-query.mjs   (exit 1 nếu fail)
 // ============================================================
@@ -16,6 +18,7 @@ import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import 'dotenv/config';
 import mysql from 'mysql2/promise';
+import { DB_CONFIG } from '../src/config.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const srcDir = join(__dirname, '..', 'src');
@@ -55,10 +58,6 @@ const spCallRe = /\bCALL\s+([A-Za-z_][A-Za-z0-9_]*)/gi;
 for (const file of jsFiles) {
   const src = readFileSync(file, 'utf8');
   const rel = file.replace(srcDir + '\\', '').replace(/\\/g, '/');
-  // Ngoại lệ có chủ đích: services/anomalyRunner.js (module demo 4 lỗi
-  // phải chạy session SQL thô để "tắt phòng chống" — xem README ghi chú).
-  const isDemo = rel.endsWith('anomalyRunner.js');
-
   const lines = src.split('\n');
 
   // Gom danh sách SP được gọi (bỏ comment để tránh false positive)
@@ -76,10 +75,6 @@ for (const file of jsFiles) {
     }
   });
 
-  if (isDemo) {
-    console.log(`ℹ️  ${rel} — module DEMO 4 lỗi (ngoại lệ CÓ CHỦ ĐÍCH: demo phải chạy session thô để "tắt phòng chống"); ${bad.length} phát hiện SQL thô.`);
-    continue;
-  }
   if (bad.length) {
     errors += bad.length;
     console.log(`❌ ${rel} — ${bad.length} raw query:`);
@@ -94,8 +89,8 @@ console.log(`\nLỚP 2 — Đối chiếu ${calledSPs.size} SP được gọi tr
 let dbOk = true;
 try {
   const c = await mysql.createConnection({
-    host: process.env.DB_HOST, user: process.env.DB_USER,
-    password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
+    host: DB_CONFIG.host, user: DB_CONFIG.user,
+    password: DB_CONFIG.password, database: DB_CONFIG.database,
   });
   const [rows] = await c.query('SHOW PROCEDURE STATUS WHERE Db = DATABASE()');
   const dbSPs = new Set(rows.map((r) => r.Name.toUpperCase()));
@@ -114,9 +109,29 @@ try {
   console.log('❌ Không đối chiếu được DB:', e.message);
 }
 
+// ---------- LỚP 3: giao tác phải nằm trong DB, không ở tầng web ----------
+console.log('\nLỚP 3 — Kiểm tra giao tác (START TRANSACTION/COMMIT/ROLLBACK) trong backend/src...');
+const TX_RE = /\bbeginTransaction\b|\bSTART\s+TRANSACTION\b|\bCOMMIT\b|\bROLLBACK\b/;
+const txBad = [];
+for (const file of jsFiles) {
+  // bỏ comment // và /* */ trước khi quét
+  const code = readFileSync(file, 'utf8')
+    .replace(/\/\*[\s\S]*?\*\//g, ' ')
+    .split('\n').map((l) => l.replace(/\/\/.*$/, '')).join('\n');
+  const rel = file.replace(srcDir + '\\', '').replace(/\\/g, '/');
+  if (TX_RE.test(code)) txBad.push(rel);
+}
+if (txBad.length) {
+  errors += txBad.length;
+  console.log(`❌ ${txBad.length} file tự mở/điều khiển giao tác ở tầng web (phải đưa vào Stored Procedure):`);
+  txBad.forEach((f) => console.log(`    - ${f}`));
+} else {
+  console.log(`✅ Cả ${jsFiles.length} file trong backend/src KHÔNG tự mở giao tác — 100% giao tác nằm trong Stored Procedure.`);
+}
+
 // ---------- Kết luận ----------
 const pass = errors === 0 && dbOk;
 console.log(pass
-  ? '\n[PASS] Toàn bộ tầng web KHÔNG có raw query — 100% View/Procedure/Function, và mọi SP được gọi đều tồn tại. ✅'
-  : `\n[FAIL] ${errors} raw query / thiếu SP. ❌`);
+  ? '\n[PASS] Tầng web: KHÔNG raw query · mọi SP được gọi đều tồn tại · MỌI GIAO TÁC nằm trong DB. ✅'
+  : `\n[FAIL] ${errors} vi phạm (raw query / giao tác ở tầng web) hoặc thiếu SP. ❌`);
 process.exit(pass ? 0 : 1);

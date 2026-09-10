@@ -16,7 +16,7 @@
 | 4 | **Phantom Read** (Đọc bóng ma) | ❌ Chỉ nhắc lý thuyết trong `isolation_level_analysis.md` | ✅ Demo chạy thật bằng cách **tắt phòng chống**: `READ COMMITTED` |
 | 5 | Kiểm tra MySQL **đã phòng chống gì** | Chưa kiểm chứng bằng chạy thật | ✅ Chứng minh: mặc định **REPEATABLE-READ** chặn 3/4 lỗi (Dirty, Unrepeatable, Phantom); Lost Update chặn bằng `FOR UPDATE` trong SP + retry 1213 |
 
-**Kết quả chạy tự động cuối cùng: 10/10 PASS** (`node backend/scripts/test-anomaly-live.mjs`).
+**Toàn bộ script SQL để tự tay chạy lại: [`script_demo_sql.md`](script_demo_sql.md) — PHẦN A.**
 
 ---
 
@@ -145,7 +145,7 @@ SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
 
 ---
 
-## 4. KẾT QUẢ CHẠY TỰ ĐỘNG THỰC TẾ (trích log `test-anomaly-live.mjs`)
+## 4. KẾT QUẢ ĐO THẬT (ghi lại từ các lần chạy 2 cửa sổ)
 
 ```
 MySQL 5.7.41-cll-lve — Isolation mặc định: REPEATABLE-READ
@@ -182,16 +182,17 @@ TỔNG KẾT: 10/10 PASS
 ### 5.1 Chuẩn bị (chạy 1 lần)
 ```bash
 cd backend
-node scripts/apply-demo-anomaly.js          # tạo 3 SP demo lên DB remote
-node scripts/test-anomaly-live.mjs          # chạy demo tự động toàn bộ (khuyến nghị khi thuyết trình)
+node scripts/apply-sql.js ../mysql/transactions/demo_4_anomaly.sql   # tạo 3 SP demo lên DB remote
 ```
 
 ### 5.2 Demo thủ công 2 cửa sổ (đúng phương pháp slide)
-- File: `mysql/transactions/demo_4_anomaly_2cua_so.sql` — mở 2 cửa sổ kết nối, làm theo từng PHẦN A→E; mỗi phần có khối lệnh cho **CỬA SỐ 1** và **CỬA SỐ 2**, dùng `DO SLEEP(n)` để "phóng to" cửa sổ khóa cho bên kia chạy.
+- File: [`docs/concurrency/script_demo_sql.md`](script_demo_sql.md) — **PHẦN A**: mở 2 cửa sổ kết nối, làm theo từng mục A.1→A.5; mỗi mục có khối lệnh cho **[CỬA SỔ 1]** và **[CỬA SỔ 2]**, dùng `DO SLEEP(n)` để "phóng to" cửa sổ khóa cho bên kia chạy.
 
-### 5.3 Demo qua giao diện web (cộng điểm)
-- Đăng nhập **admin** (PĐT) → menu **Concurrency Lab** (trang `/quan-ly/concurrency`).
-- API tương ứng: `GET /api/concurrency/trangthai`, `POST /api/concurrency/chuanbi`, `POST /api/concurrency/demo/:ten` (xem `backend/src/routes/concurrency.js`) — chạy **cùng các pha** như script tự động và trả về **dòng thời gian từng bước của 2 phiên** để trình chiếu.
+### 5.3 Demo qua giao diện web THẬT (cộng điểm)
+- **Thao tác thật trên web:** 2 trình duyệt đăng nhập `sv030` / `sv041` → trang **Đăng ký lớp học phần**,
+  cùng bấm *Đăng ký* suất cuối (xem `docs/concurrency/kich_ban_demo_thao_tac_that.md`).
+  ⚠️ **Ứng dụng không có màn hình demo nào.**
+- Ứng dụng **không có API/màn hình demo nào** — mọi kịch bản lỗi chạy bằng SQL trực tiếp trên DB (xem `script_demo_sql.md`).
 
 ---
 
@@ -217,7 +218,7 @@ node scripts/test-anomaly-live.mjs          # chạy demo tự động toàn b�
 - Trigger sĩ số tự ±1; SP **tự retry** khi gặp deadlock 1213 (InnoDB chọn nạn nhân → rollback an toàn → thử lại → nhận 105 rõ ràng).
 - Kết quả: 2 phiên giành chỗ cuối → **đúng 1 phiên thắng**, sĩ số không bao giờ vượt.
 
-**Slide 6 — Số liệu thực đo:** bảng PASS/FAIL (mục 4) + ảnh chụp web demo.
+**Slide 6 — Số liệu thực đo:** bảng PASS/FAIL (mục 4) + ảnh chụp thao tác thật trên web (2 trình duyệt).
 
 ---
 
@@ -226,10 +227,11 @@ node scripts/test-anomaly-live.mjs          # chạy demo tự động toàn b�
 | File | Vai trò |
 |---|---|
 | `mysql/transactions/demo_4_anomaly.sql` | 3 SP: **ChuaFix** (thủ tục ban đầu lỗi), **ChuanBi**, **NangCao** |
-| `mysql/transactions/demo_4_anomaly_2cua_so.sql` | Kịch bản thủ công 2 cửa sổ cho từng lỗi |
-| `backend/scripts/apply-demo-anomaly.js` | Áp SP demo (hoặc file SQL bất kỳ) lên DB |
-| `backend/scripts/test-anomaly-live.mjs` | Demo tự động 6 pha, in từng bước + PASS/FAIL |
-| `backend/src/routes/concurrency.js` + `frontend/src/pages/pdt/ConcurrencyDemo.jsx` | Demo qua web (cộng điểm) |
+| [`docs/concurrency/script_demo_sql.md`](script_demo_sql.md) | ⭐ **Toàn bộ script SQL demo** (PHẦN A: 4 lỗi concurrency · PHẦN B: deadlock · PHẦN C: thao tác thật trên web) |
+| `backend/scripts/apply-sql.js` | Áp file SQL (SP/DDL) lên DB — hỗ trợ `DELIMITER` |
+| `backend/scripts/audit-no-raw-query.mjs` | Kiểm chứng tầng web: không raw query + **mọi giao tác nằm trong DB** |
+
+| `frontend/src/pages/sv/DangKyHocPhan.jsx` + `HuyDangKy.jsx` | **Giao diện THẬT** để demo trước lớp: 2 trình duyệt cùng bấm *Đăng ký* / *Hủy* (kịch bản: `kich_ban_demo_thao_tac_that.md`). ⚠️ **Ứng dụng không có màn hình demo** |
 
 ## 8. GHI CHÚ VỀ DỮ LIỆU
 

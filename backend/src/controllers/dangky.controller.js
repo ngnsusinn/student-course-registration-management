@@ -24,6 +24,14 @@ export const HUY_ERROR_MESSAGES = {
   500: 'Lỗi hệ thống khi xử lý hủy đăng ký.',
 };
 
+// Thông báo cho đăng ký NHIỀU học phần (SP_DangKyNhieuHocPhan).
+// 1213/1205 là lỗi KHÓA do HQTCSDL trả về — giao diện hiển thị thông báo để người dùng thử lại.
+export const DK_NHIEU_MESSAGES = {
+  ...DK_ERROR_MESSAGES,
+  1213: 'Xung đột khóa (deadlock 1213): giao dịch đăng ký của bạn bị hệ quản trị CSDL hủy để giải phóng deadlock. Vui lòng bấm đăng ký lại.',
+  1205: 'Chờ khóa quá lâu (timeout 1205): hệ thống đang bận vì một giao dịch khác giữ khóa. Vui lòng thử lại.',
+};
+
 // GET /api/dangky/hocky-hientai
 export async function hocKyHienTai(req, res) {
   const hk = await dangkyModel.hocKyHienTai();
@@ -59,6 +67,38 @@ export async function dangKy(req, res) {
 
   const lhp = await dangkyModel.layLHP(MaLHP);
   res.json({ ketQua: 0, message: DK_ERROR_MESSAGES[0], lopHocPhan: lhp });
+}
+
+// POST /api/dangky/nhieu — { DanhSachLHP: [] } → SP_DangKyNhieuHocPhan
+// Đăng ký NHIỀU học phần trong 1 giao dịch (CON TRO khóa lần lượt từng dòng sĩ số).
+// Đây là tính năng THẬT trên trang "Đăng ký lớp học phần": sinh viên tick chọn nhiều
+// lớp rồi bấm "Đăng ký N lớp đã chọn" — hệ thống gửi 1 yêu cầu duy nhất.
+// Thủ tục luôn khóa theo MaLHP tăng dần (thứ tự nhất quán) nên không thể deadlock;
+// nếu gặp sự cố khóa của HQTCSDL vẫn trả mã 1213/1205 để giao diện thông báo.
+export async function dangKyNhieu(req, res) {
+  const maSV = req.user.MaSV;
+  const { DanhSachLHP, MaxTinChi = 24, GhiChu = null } = req.body || {};
+
+  const ds = (Array.isArray(DanhSachLHP) ? DanhSachLHP : String(DanhSachLHP || '').split(','))
+    .map((x) => String(x || '').trim()).filter(Boolean);
+  if (!ds.length) return res.status(400).json({ error: 'Thiếu danh sách lớp học phần.' });
+  if (ds.length > 6) return res.status(400).json({ error: 'Mỗi lần đăng ký tối đa 6 lớp.' });
+
+  let ketQua = 500; let dong = null;
+  try {
+    ({ ketQua, dong } = await dangkyModel.dangKyNhieu(maSV, ds.join(','), MaxTinChi, GhiChu));
+  } catch {
+    ketQua = 500;
+  }
+
+  if (ketQua !== 0) {
+    return res.status(409).json({
+      ketQua,
+      error: DK_NHIEU_MESSAGES[ketQua] || 'Đăng ký nhiều học phần thất bại.',
+      chiTiet: dong,
+    });
+  }
+  res.json({ ketQua: 0, message: DK_NHIEU_MESSAGES[0], chiTiet: dong });
 }
 
 // POST /api/dangky/huy — { MaLHP } → SP_HuyDangKy
