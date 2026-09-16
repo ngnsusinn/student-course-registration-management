@@ -64,6 +64,7 @@ function splitStatements(sql) {
 // chưa tạo backend/.env — tránh lỗi kết nhầm localhost.
 const conn = await mysql.createConnection({
   host: DB_CONFIG.host,
+  port: DB_CONFIG.port,
   user: DB_CONFIG.user,
   password: DB_CONFIG.password,
   database: DB_CONFIG.database,

@@ -10,6 +10,7 @@ import { toast } from 'react-toastify';
 import api, { errMessage } from '../api/client';
 import { loggedIn } from '../store/authSlice';
 import { SCHOOL } from '../components/PortalLayout';
+import UthLogo from '../components/UthLogo';
 
 // ============================================================
 // Login 1 buoc: Tai khoan + Mat khau -> JWT (POST /auth/login)
@@ -52,7 +53,7 @@ export default function Login() {
     }}>
       {/* Header logo */}
       <Container maxWidth="lg" sx={{ py: 2.5, display: 'flex', alignItems: 'center', gap: 2, color: '#fff' }}>
-        <Box component="img" src={SCHOOL.logo} alt="Logo UTH" sx={{ height: 60, bgcolor: '#fff', borderRadius: 1.5, p: 0.5 }} />
+        <UthLogo size={58} tone="light" />
         <Box>
           <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 800, fontSize: 16, textTransform: 'uppercase' }}>
             Trường Đại học Giao thông vận tải TP. Hồ Chí Minh

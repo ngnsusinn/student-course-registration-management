@@ -15,9 +15,10 @@ import { menuFor, CRUMB_LABELS } from '../config/menu';
 import { tenVietTat } from '../utils/format';
 import { TEAL, TEAL_DEEP, TEAL_DARKER } from '../theme';
 import ChangePasswordDialog from './ChangePasswordDialog';
+import UthLogo from './UthLogo';
 
 // ============================================================
-// PortalLayout — topbar + header trắng (logo trường) + thanh
+// PortalLayout — topbar + header trắng (logo chữ UTH) + thanh
 // menu teal + breadcrumb + footer 3 cột. Nhận diện như portal.
 // ============================================================
 export const SCHOOL = {
@@ -25,7 +26,6 @@ export const SCHOOL = {
   short: 'ĐH GTVT HCM',
   portal: 'Portal UTH',
   system: 'Cổng thông tin Đào tạo theo hệ thống tín chỉ',
-  logo: '/images/logo_full.png',
   email: 'phongdaotao@uth.edu.vn',
   hours: 'Thứ 2 – Thứ 6: 07:30 – 16:30',
 };
@@ -76,7 +76,7 @@ export default function PortalLayout({ children }) {
       <Box sx={{ bgcolor: TEAL_DEEP, color: '#d8efef', fontSize: 12.5 }}>
         <Container maxWidth="lg" sx={{ py: 0.5, display: 'flex', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Stack direction="row" spacing={1} alignItems="center" fontWeight={600}>
-            <Box component="img" src={SCHOOL.logo} alt="logo" sx={{ height: 18 }} />
+            <UthLogo size={16} tone="light" rule={false} />
             <Box component="span" sx={{ color: '#fff', fontWeight: 800, letterSpacing: .3 }}>{SCHOOL.portal}</Box>
             <Box component="span" sx={{ opacity: .75 }}>· {SCHOOL.short} · {SCHOOL.system}</Box>
           </Stack>
@@ -91,7 +91,7 @@ export default function PortalLayout({ children }) {
       <Box sx={{ bgcolor: 'background.paper', borderBottom: '1px solid #e5e7eb' }}>
         <Container maxWidth="lg" sx={{ py: 1.2, display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2, flexWrap: 'wrap' }}>
           <Stack direction="row" spacing={1.75} alignItems="center" sx={{ minWidth: 0 }}>
-            <Box component="img" src={SCHOOL.logo} alt="Logo UTH" sx={{ height: { xs: 44, md: 54 } }} />
+            <UthLogo size={{ xs: 32, md: 42 }} sx={{ pr: 0.5 }} />
             <Box sx={{ minWidth: 0 }}>
               <Typography sx={{ fontFamily: 'Montserrat', fontWeight: 800, fontSize: { xs: 12.5, md: 15 }, color: TEAL_DARKER, textTransform: 'uppercase', lineHeight: 1.25 }}>
                 {SCHOOL.name}
@@ -158,7 +158,7 @@ export default function PortalLayout({ children }) {
         <Container maxWidth="lg" sx={{ py: 3, display: 'grid', gridTemplateColumns: { xs: '1fr', md: '1.4fr 1fr 1fr' }, gap: 4 }}>
           <Box>
             <Stack direction="row" spacing={1.5} alignItems="center" sx={{ mb: 1 }}>
-              <Box component="img" src={SCHOOL.logo} alt="logo" sx={{ height: 40, bgcolor: '#fff', borderRadius: 1.5, p: 0.4 }} />
+              <UthLogo size={30} tone="light" sx={{ mr: 0.5 }} />
               <Box>
                 <Typography sx={{ color: '#fff', fontFamily: 'Montserrat', fontWeight: 700, fontSize: 13, textTransform: 'uppercase' }}>
                   {SCHOOL.name}

@@ -26,10 +26,13 @@ import MoLopHocPhan from './pages/pdt/MoLopHocPhan';
 import DiemCanhBao from './pages/pdt/DiemCanhBao';
 import QuanLyHocPhi from './pages/pdt/QuanLyHocPhi';
 import TaiKhoan from './pages/pdt/TaiKhoan';
+// — CÔNG CỤ DEMO: trang “Chuẩn bị Demo” (1-click prepare / fix) —
+import PrepareDemo from './pages/prepare/PrepareDemo';
 
 const SV = ['SV'];
 const GV = ['GV'];
 const PDT = ['PĐT'];
+const MOI_VAI_TRO = ['SV', 'GV', 'PĐT'];
 
 function Home() {
   const user = useSelector(selectUser);
@@ -58,6 +61,7 @@ export default function App() {
       <Route path="/quan-ly/diem-canh-bao" element={<ProtectedRoute roles={PDT}><PortalLayout><DiemCanhBao /></PortalLayout></ProtectedRoute>} />
       <Route path="/quan-ly/hoc-phi" element={<ProtectedRoute roles={PDT}><PortalLayout><QuanLyHocPhi /></PortalLayout></ProtectedRoute>} />
       <Route path="/quan-ly/tai-khoan" element={<ProtectedRoute roles={PDT}><PortalLayout><TaiKhoan /></PortalLayout></ProtectedRoute>} />
+      <Route path="/chuan-bi-demo" element={<ProtectedRoute roles={MOI_VAI_TRO}><PortalLayout><PrepareDemo /></PortalLayout></ProtectedRoute>} />
       <Route path="*" element={<Navigate to="/" replace />} />
     </Routes>
   );

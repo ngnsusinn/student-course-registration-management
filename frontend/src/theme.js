@@ -8,6 +8,7 @@ export const TEAL_DARK = '#008588';
 export const TEAL_DARKER = '#006266';
 export const TEAL_DEEP = '#004d50';
 export const GREEN = '#008950';
+export const GOLD = '#c9a227';
 export const BG = '#f5fafa';
 
 const theme = createTheme({

@@ -13,6 +13,7 @@ import ketquaRoutes from './ketqua.js';
 import hocphiRoutes from './hocphi.js';
 import giangvienRoutes from './giangvien.js';
 import adminRoutes from './admin.js';
+import prepareRoutes from './prepare.js';   // ⚠️ CÔNG CỤ DEMO: 1-click prepare / fix
 
 const router = Router();
 
@@ -26,5 +27,10 @@ router.use('/ketqua', ketquaRoutes);
 router.use('/hocphi', hocphiRoutes);
 router.use('/giangvien', giangvienRoutes);
 router.use('/admin', adminRoutes);
+
+// ⚠️ CÔNG CỤ DEMO — trang “Chuẩn bị Demo”: 1 click chuẩn bị (triển khai bản
+//     có lỗi + dọn dữ liệu) và 1 click fix (khôi phục bản thật).
+//     Bỏ dòng này nếu không cần công cụ demo.
+router.use('/prepare', prepareRoutes);
 
 export default router;

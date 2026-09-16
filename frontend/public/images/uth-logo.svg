@@ -1,0 +1,7 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 64 64" width="64" height="64" role="img" aria-label="UTH">
+  <rect width="64" height="64" rx="12" fill="#006266" />
+  <text x="32" y="41" text-anchor="middle"
+        font-family="Georgia, 'Times New Roman', 'Playfair Display', serif"
+        font-size="30" font-weight="700" fill="#ffffff" letter-spacing="0.5">UTH</text>
+  <rect x="14" y="47" width="36" height="3.5" rx="1.75" fill="#c9a227" />
+</svg>

@@ -119,6 +119,7 @@ function splitStatements(sql) {
 async function main() {
   const conn = await mysql.createConnection({
     host: process.env.DB_HOST || 'free02.123host.vn',
+    port: Number(process.env.DB_PORT || 3306),
     user: process.env.DB_USER || 'roacqgfa_dbms',
     password: process.env.DB_PASSWORD || 'roacqgfa_dbms1',
     database: process.env.DB_NAME || 'roacqgfa_dbms',
