@@ -160,8 +160,8 @@ student-course-registration-management/
 │
 └── frontend/                      # 🖥️ VIEW của MVC — React 18 SPA (Vite + MUI)
     ├── vite.config.js             #   Dev proxy /api → :3000
-    ├── index.html                 #   Google Fonts (Montserrat/Roboto) + favicon
-    ├── public/images/             #   Logo trường, nền đăng nhập (asset thật UTH)
+    ├── index.html                 #   Google Fonts (Montserrat/Playfair/Roboto) + favicon chữ UTH
+    ├── public/images/             #   Favicon chữ UTH (SVG) + nền đăng nhập
     └── src/
         ├── main.jsx               #   Provider + Router + ThemeProvider + Toast
         ├── App.jsx                #   19 route + ProtectedRoute theo vai trò
@@ -171,7 +171,7 @@ student-course-registration-management/
         ├── config/menu.jsx        #   Menu + breadcrumb 3 vai trò
         ├── utils/format.js        #   Tiền VND, thứ, trạng thái, mã lỗi SP
         ├── components/            #   PortalLayout, ProtectedRoute, SectionCard,
-        │                          #   StatusBadges, ConfirmDialog, ChangePasswordDialog
+        │                          #   StatusBadges, ConfirmDialog, ChangePasswordDialog, UthLogo
         └── pages/
             ├── Login.jsx          #   Đăng nhập 1 bước (tài khoản + mật khẩu)
             ├── Dashboard.jsx      #   Theo vai trò (SV/GV/PĐT) + trigger sinh nhật
@@ -397,7 +397,7 @@ Composite index cho kiểm tra trùng lịch `(MaPhong, Thu, TietBatDau)`, `(MaG
 
 > 🎨 **Cùng công nghệ với portal.ut.edu.vn**: React 18 + Vite + Material UI (MUI 5) + Redux Toolkit +
 > React Router v6 + axios + react-toastify. Nhận diện thương hiệu **Portal UTH — Trường ĐH Giao thông vận tải TP. HCM**
-> (logo, teal `#008689`, font Montserrat/Roboto) — topbar + header trắng + thanh menu teal + breadcrumb +
+> (logo chữ **UTH** — component `UthLogo`, teal `#008689`, font Montserrat/Playfair/Roboto) — topbar + header trắng + thanh menu teal + breadcrumb +
 > footer 3 cột, dựng trong `components/PortalLayout.jsx` cho toàn bộ 19 màn hình.
 >
 > 🔎 **Thuật ngữ & bố cục được đối chiếu từ chính JS bundle công khai của portal thật** (trích ~1.000 chuỗi

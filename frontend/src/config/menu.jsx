@@ -1,4 +1,4 @@
-import HomeIcon from '@mui/icons-material/Home';
+﻿import HomeIcon from '@mui/icons-material/Home';
 import RateReviewIcon from '@mui/icons-material/RateReview';
 import EventNoteIcon from '@mui/icons-material/EventNote';
 import ChecklistIcon from '@mui/icons-material/Checklist';
@@ -15,6 +15,7 @@ import AddBoxIcon from '@mui/icons-material/AddBox';
 import TrendingUpIcon from '@mui/icons-material/TrendingUp';
 import KeyIcon from '@mui/icons-material/Key';
 import PersonIcon from '@mui/icons-material/Person';
+import BuildCircleIcon from '@mui/icons-material/BuildCircle';
 
 // ============================================================
 // Menu theo vai tro — duong dan React Router
@@ -29,12 +30,14 @@ export const MENUS = {
     { to: '/huy-dang-ky', label: 'Hủy đăng ký HP', icon: BlockIcon, roles: ['SV'] },
     { to: '/bang-diem', label: 'Kết quả học tập', icon: SchoolIcon, roles: ['SV'] },
     { to: '/hoc-phi', label: 'Học phí', icon: PaymentsIcon, roles: ['SV'] },
+    { to: '/chuan-bi-demo', label: 'Chuẩn bị Demo', icon: BuildCircleIcon, roles: ['SV'] },
   ],
   GV: [
     { to: '/', label: 'Trang chủ', icon: HomeIcon, roles: ['GV'] },
     { to: '/lop-cua-toi', label: 'Lớp học phần của tôi', icon: TeacherIcon, roles: ['GV'] },
     { to: '/nhap-diem', label: 'Nhập điểm', icon: EditNoteIcon, roles: ['GV'] },
     { to: '/thoi-khoa-bieu-gv', label: 'Lịch dạy trong tuần', icon: EventNoteIcon, roles: ['GV'] },
+    { to: '/chuan-bi-demo', label: 'Chuẩn bị Demo', icon: BuildCircleIcon, roles: ['GV'] },
   ],
   'PĐT': [
     { to: '/', label: 'Trang chủ', icon: HomeIcon, roles: ['PĐT'] },
@@ -45,6 +48,7 @@ export const MENUS = {
     { to: '/quan-ly/diem-canh-bao', label: 'Điểm & Cảnh báo học vụ', icon: TrendingUpIcon, roles: ['PĐT'] },
     { to: '/quan-ly/hoc-phi', label: 'Quản lý học phí', icon: PaymentsIcon, roles: ['PĐT'] },
     { to: '/quan-ly/tai-khoan', label: 'Tài khoản & Phân quyền', icon: KeyIcon, roles: ['PĐT'] },
+    { to: '/chuan-bi-demo', label: 'Chuẩn bị Demo', icon: BuildCircleIcon, roles: ['PĐT'] },
   ],
 };
 
@@ -70,4 +74,5 @@ export const CRUMB_LABELS = {
   '/quan-ly/diem-canh-bao': 'Điểm & Cảnh báo học vụ',
   '/quan-ly/hoc-phi': 'Quản lý học phí',
   '/quan-ly/tai-khoan': 'Tài khoản & Phân quyền',
+  '/chuan-bi-demo': 'Chuẩn bị Demo (1-click prepare / fix)',
 };
