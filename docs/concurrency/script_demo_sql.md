@@ -129,6 +129,12 @@ COMMIT;
 ```
 > **MONG ĐỢI:** cùng 1 giao tác, đọc 15 rồi 16.
 
+> 💡 **Đây là bản duy nhất chạy được trên phpMyAdmin** (cả giao tác nằm trong MỘT ô query, không gõ từng câu),
+> **với điều kiện 2 cửa sổ nằm ở 2 TRÌNH DUYỆT khác nhau** — 2 tab cùng trình duyệt dùng chung PHP session nên
+> request này phải chờ request kia (khoá session) và cửa sổ 2 không chen vào được trong lúc `DO SLEEP`.
+> Bản dán sẵn + biến thể dùng `SP_Demo_DocHaiLan` (1 câu/cửa sổ):
+> `demo/sql_config/nrr__tab2phien__sql.sql` · `demo/02_NON_REPEATABLE_READ.md` PHẦN A2.
+
 ```sql
 CALL SP_ChuanBi_Demo_4Anomaly('LHP514');
 ```

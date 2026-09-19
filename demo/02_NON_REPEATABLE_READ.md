@@ -1,6 +1,9 @@
 # 2️⃣ LỖI KHÔNG ĐỌC LẠI ĐƯỢC DỮ LIỆU (NON-REPEATABLE READ)
 
 > **Chương 4, mục 4.3** · Có **2 cách demo**: **PHẦN A/B — SQL 2 tab** và **PHẦN C — trên WEB CHÍNH**
+>
+> ⚠️ **PHẦN A/B chỉ chạy trên client GIỮ KẾT NỐI** (Workbench / DBeaver / HeidiSQL / `mysql` CLI).
+> Trên **phpMyAdmin** phải dùng **PHẦN A2** — vì phpMyAdmin mở kết nối mới cho mỗi lần bấm “Go”.
 
 **Bản chất:** trong **cùng MỘT giao tác**, đọc cùng một dòng dữ liệu **hai lần** nhưng giữa hai lần đọc
 có giao tác khác **cập nhật + COMMIT** ⇒ hai lần đọc cho **hai kết quả khác nhau**.
@@ -68,6 +71,110 @@ SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;     -- trả về mặc
 
 **Hệ quả thực tế:** báo cáo trong 1 giao dịch in ra số liệu lệch nhau giữa các trang; việc "kiểm tra điều kiện
 rồi ghi" cũng mất tác dụng (đúng cơ chế của Lost Update).
+
+---
+
+# PHẦN A2 — ⚠️ BẢN CHẠY ĐƯỢC TRÊN **phpMyAdmin** (2 TRÌNH DUYỆT)
+
+> **PHẦN A/B ở trên KHÔNG chạy được trên phpMyAdmin.** Hai nguyên nhân — đều đã kiểm chứng:
+
+| Vấn đề | Hệ quả |
+|---|---|
+| phpMyAdmin mở **kết nối MySQL MỚI cho mỗi lần bấm “Go”** (không giữ kết nối giữa các lần gửi) | `START TRANSACTION` của lần gửi trước **đã bị mất** ⇒ lần đọc 2 nằm ở **giao tác khác** ⇒ demo vô hiệu. Đo thật: `REPEATABLE READ` cũng cho **15 → 16** |
+| 2 tab của **cùng một trình duyệt** dùng chung PHP session ⇒ request phải **chờ nhau** (khoá session) | cửa sổ 2 **không chen vào được** trong lúc cửa sổ 1 đang `DO SLEEP` ⇒ *“thao tác ở tab 1 bị ngắt”* |
+
+**Cách khắc phục — đúng 2 điều kiện:**
+
+1. **Gói trọn giao tác vào MỘT câu lệnh**: dùng thủ tục **`SP_Demo_DocHaiLan`**
+   (tự `START TRANSACTION` → đọc lần 1 → `DO SLEEP` → đọc lần 2 → `ROLLBACK`, và trả về **cả hai con số trong 1 dòng**).
+2. Mở **2 cửa sổ ở 2 TRÌNH DUYỆT KHÁC NHAU** (1 thường + 1 **Ẩn danh/InPrivate**) — mỗi cửa sổ chỉ 1 câu.
+
+### A2.1. Tái hiện lỗi (`READ COMMITTED`)
+
+```sql
+-- BƯỚC 0 — chạy ở cửa sổ nào cũng được
+CALL SP_ChuanBi_Demo_4Anomaly('LHP514');   -- → LHP514 = 15/16
+```
+
+**🪟 CỬA SỔ 1 (trình duyệt thứ nhất)** — chạy rồi **chuyển ngay** sang cửa sổ 2:
+
+```sql
+CALL SP_Demo_DocHaiLan('LHP514', 'READ COMMITTED', 8);
+```
+
+**🪟 CỬA SỔ 2 (trình duyệt thứ hai)** — chạy **trong 8 giây** đó:
+
+```sql
+UPDATE LOPHOCPHAN SET SiSoHienTai = SiSoHienTai + 1 WHERE MaLHP = 'LHP514';
+COMMIT;    -- ★ BẮT BUỘC: phải COMMIT thì lần đọc 2 mới thấy giá trị mới
+```
+
+**🪟 CỬA SỔ 1 trả về** 📸 — **cả hai con số nằm trong một dòng**, rất dễ chụp ảnh:
+
+```
+MaLHP  | MucCoLap       | SiSo_Lan1 | SiSo_Lan2 | KetLuan
+LHP514 | READ COMMITTED |    15     |    16     | ĐỔI giữa 2 lần đọc ⇒ TÁI HIỆN ĐƯỢC lỗi đọc
+```
+
+### A2.2. Đối chứng đã fix (`REPEATABLE READ`)
+
+Làm lại y hệt, **chỉ đổi tham số thứ hai**:
+
+```sql
+CALL SP_ChuanBi_Demo_4Anomaly('LHP514');
+
+-- 🪟 CỬA SỔ 1
+CALL SP_Demo_DocHaiLan('LHP514', 'REPEATABLE READ', 8);
+-- 🪟 CỬA SỔ 2 (trong 8 giây đó)
+UPDATE LOPHOCPHAN SET SiSoHienTai = SiSoHienTai + 1 WHERE MaLHP = 'LHP514';
+COMMIT;
+```
+
+⇒ `SiSo_Lan1 = 15 · SiSo_Lan2 = 15` — **`KHÔNG đổi ⇒ mức cô lập đã CHẶN`**,
+dù cửa sổ 2 **đã `UPDATE` và `COMMIT` thật**.
+
+### A2.3. (tuỳ chọn) Dirty Read ngay trên SQL
+
+```sql
+CALL SP_ChuanBi_Demo_4Anomaly('LHP514');
+
+-- 🪟 CỬA SỔ 1
+CALL SP_Demo_DocHaiLan('LHP514', 'READ UNCOMMITTED', 8);
+-- 🪟 CỬA SỔ 2 (trong 8 giây đó) — ghi nhưng TUYỆT ĐỐI CHƯA commit:
+--     START TRANSACTION;
+--     UPDATE LOPHOCPHAN SET SiSoHienTai = SiSoHienTai + 1 WHERE MaLHP = 'LHP514';
+--     ROLLBACK;
+```
+
+⇒ `SiSo_Lan2 = 16` ⇒ cửa sổ 1 **đã đọc dữ liệu CHƯA `COMMIT`** (đọc bẩn).
+Đổi tham số thành `'REPEATABLE READ'` ⇒ `SiSo_Lan2 = 15` ⇒ đã chặn. (Chi tiết: [`08_DIRTY_READ.md`](08_DIRTY_READ.md))
+
+### A2.4. Nếu phpMyAdmin bật nhiều câu lệnh trong một ô query
+
+Dán **trọn khối** sau vào **MỘT ô** rồi bấm Go (cửa sổ 2 chạy xen vào trong 8 giây):
+
+```sql
+SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+START TRANSACTION;
+SELECT SiSoHienTai AS Lan1 FROM LOPHOCPHAN WHERE MaLHP = 'LHP514';
+DO SLEEP(8);
+SELECT SiSoHienTai AS Lan2 FROM LOPHOCPHAN WHERE MaLHP = 'LHP514';
+ROLLBACK;
+SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+```
+
+*(Nếu phpMyAdmin báo lỗi cú pháp ở khối này ⇒ nó đang tắt multi-statement ⇒ dùng A2.1/A2.2.)*
+
+📄 **Bản dán sẵn đầy đủ cả 3 cách:** [`sql_config/nrr__tab2phien__sql.sql`](sql_config/nrr__tab2phien__sql.sql)
+
+**KẾT QUẢ ĐO THẬT (kiểm chứng trên MariaDB 11.8.9 của hệ thống):**
+
+| Cách làm | ❌ `READ COMMITTED` | ✅ `REPEATABLE READ` |
+|---|---|---|
+| Client giữ kết nối (Workbench/DBeaver/CLI) — gõ từng câu | **15 → 16** (tái hiện) | **15 → 15** (chặn) |
+| **`SP_Demo_DocHaiLan`** — 1 câu/cửa sổ (**dùng cho phpMyAdmin**) | **15 → 16** | **15 → 15** |
+| Một ô nhiều câu lệnh + `DO SLEEP(8)` | **15 → 16** | **15 → 15** |
+| phpMyAdmin gõ từng câu, 2 tab **cùng trình duyệt** | ❌ mất giao tác / bị khoá session | ❌ **15 → 16** ⇒ demo vô hiệu |
 
 ---
 
@@ -142,6 +249,7 @@ COMMIT;    -- → TAB 2 được chạy tiếp
 
 - [ ] Lần đọc 1 = **15** và lần đọc 2 = **16** trong cùng giao tác (PHẦN A) — có cả câu `SET … READ COMMITTED`
 - [ ] Lần đọc 1 = **15** và lần đọc 2 = **15** (PHẦN B.1) — có cả câu `SET … REPEATABLE READ`
+- [ ] **(phpMyAdmin)** ảnh bảng kết quả `SP_Demo_DocHaiLan`: `SiSo_Lan1 = 15 · SiSo_Lan2 = 16` (A2.1) và `15 · 15` (A2.2)
 - [ ] TAB 2 hiện trạng thái **treo / chờ khóa** ở B.2
 - [ ] (tùy chọn) `SELECT @@session.transaction_isolation;` phải là `REPEATABLE-READ` ở cuối buổi
 

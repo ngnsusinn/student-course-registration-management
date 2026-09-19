@@ -1,6 +1,12 @@
 # 3️⃣ LỖI ĐỌC BÓNG MA (PHANTOM READ)
 
 > **Chương 4, mục 4.4** · Có **2 cách demo**: **PHẦN A/B — SQL 2 tab** và **PHẦN C — trên WEB CHÍNH**
+>
+> ⚠️ **PHẦN A/B chỉ chạy trên client GIỮ KẾT NỐI** (Workbench / DBeaver / HeidiSQL / `mysql` CLI).
+> Trên **phpMyAdmin**, dùng **`SP_Demo_DocHaiLan`** (xem
+> [`02_NON_REPEATABLE_READ.md`](02_NON_REPEATABLE_READ.md) **PHẦN A2** và
+> [`sql_config/nrr__tab2phien__sql.sql`](sql_config/nrr__tab2phien__sql.sql)) — cửa sổ 2 thay `UPDATE` bằng
+> `INSERT INTO DANGKYHOCPHAN …` rồi xem cột `SoDong_Lan1 → SoDong_Lan2`.
 
 **Bản chất:** một giao tác đọc **một TẬP bản ghi** theo điều kiện; giao tác khác **THÊM / XÓA** bản ghi làm
 **thay đổi tập kết quả** giữa hai lần đọc. Khác Non-repeatable Read (dòng cũ **bị đổi giá trị**), ở Phantom

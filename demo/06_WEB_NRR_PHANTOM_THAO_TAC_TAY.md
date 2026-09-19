@@ -37,6 +37,7 @@ Cả hai con số của 2 lần đọc được trả về trong `ChiTiet` và *
 |---|---|---|
 | ❌ **TÁI HIỆN** | [`sql_config/lab__dangky_nhieu__chua_fix.sql`](sql_config/lab__dangky_nhieu__chua_fix.sql) | `SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;` |
 | ✅ **KHẮC PHỤC** | [`sql_config/lab__dangky_nhieu__da_fix.sql`](sql_config/lab__dangky_nhieu__da_fix.sql) | `SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;` |
+| 🔧 **BẮT BUỘC KÈM THEO** | `mysql/procedures/SP_DangKyHocPhan.sql` | Nút “Đăng ký” của trình duyệt B phải là **bản THẬT** (không `DO SLEEP`) để B commit **kịp** trong cửa sổ 8 giây |
 
 > Hai file **giống hệt nhau**, chỉ khác **đúng một dòng** mức cô lập — nên so sánh hoàn toàn công bằng.
 > Bản chính thức của hệ thống (`mysql/procedures/SP_DangKyNhieuHocPhan.sql`) **không có bước đọc lại**
@@ -57,9 +58,35 @@ node scripts/apply-sql.js ../mysql/procedures/SP_DangKyNhieuHocPhan.sql
 
 ---
 
-## 🧰 CHUẨN BỊ (làm 1 lần, ~2 phút)
+## 🧰 CHUẨN BỊ
 
-1. Xoá đăng ký thử của các tài khoản demo trên 3 lớp demo (chạy trong trình biên soạn DB):
+### Cách 1 — 1 CLICK trên web (khuyến nghị)
+
+1. Mở **http://localhost:3000/chuan-bi-demo** → đăng nhập `admin` / `admin@123`.
+2. Ô **“Chuẩn bị cho kịch bản”** → chọn **`② Non-repeatable Read`** (hoặc **`③ Phantom Read`** — hai kịch bản
+   dùng chung một cấu hình, chỉ khác thao tác của người demo).
+3. Bấm **⚙ CHUẨN BỊ DEMO**. Trang tự dựng lại dữ liệu học kỳ + nạp đúng 2 thủ tục, rồi in hướng dẫn từng bước.
+4. Sau khi demo xong: quay lại trang → **✔ FIX**.
+
+> ⚠️ **TUYỆT ĐỐI KHÔNG chuẩn bị kịch bản này bằng lựa chọn “Lost Update”.**
+> Bản *Lost Update* đặt `DO SLEEP(8)` **sau `INSERT`, trước `COMMIT`** trong `SP_DangKyHocPhan`
+> (nút “Đăng ký” của trình duyệt B) ⇒ B **commit muộn ~8 giây**, tức **muộn hơn “lần đọc 2” của A**
+> ⇒ A đọc 2 lần **giống nhau** ⇒ **không hủy oan** ⇒ màn demo **mất tác dụng**.
+> Đã đo thực tế: chuẩn bị gộp ⇒ A `ketQua = 0`; chuẩn bị riêng (bản thật, không `DO SLEEP`) ⇒ A `ketQua = 104`.
+
+### Cách 2 — dòng lệnh
+
+```bash
+cd backend
+
+# 1) SP_DangKyHocPhan PHẢI là BẢN THẬT (không DO SLEEP) — nếu đang là bản Lost Update thì nạp lại:
+node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql
+
+# 2) Bản lab đọc 2 lần cho SP_DangKyNhieuHocPhan (nút "Đăng ký N lớp đã chọn"):
+node scripts/apply-sql.js ../demo/sql_config/lab__dangky_nhieu__chua_fix.sql
+```
+
+3. Xoá đăng ký thử của các tài khoản demo trên 3 lớp demo (chạy trong trình biên soạn DB):
 
 ```sql
 DELETE FROM DANGKYHOCPHAN WHERE MaSV IN ('SV001','SV003','SV004')
@@ -73,11 +100,7 @@ SELECT MaLHP, SiSoHienTai, SiSoToiDa FROM LOPHOCPHAN WHERE MaLHP IN ('LHP505','L
 -- MONG ĐỢI: cả 3 lớp đều còn rất nhiều chỗ (LHP507/LHP508 trong, LHP505 ~1-2 SV)
 ```
 
-2. Nạp **bản chưa fix**:
-   ```bash
-   cd backend && node scripts/apply-sql.js ../demo/sql_config/lab__dangky_nhieu__chua_fix.sql
-   ```
-3. Mở web: **http://localhost:3000** (backend phải đang chạy).
+4. Mở web: **http://localhost:3000** (backend phải đang chạy).
 
 **Tài khoản dùng cho demo** (mật khẩu tất cả là `matkhau@123`):
 
@@ -197,9 +220,12 @@ chỉ có trình duyệt A là bị hủy oan.
 
 ## 🧹 DỌN DẸP (làm sau khi demo xong)
 
+Trên trang **Chuẩn bị Demo** bấm **✔ FIX** (khôi phục cả 2 thủ tục + dựng lại dữ liệu), hoặc bằng dòng lệnh:
+
 ```bash
 cd backend
 node scripts/apply-sql.js ../mysql/procedures/SP_DangKyNhieuHocPhan.sql   # BẮT BUỘC
+node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql        # (đang là bản thật — nạp lại cho chắc)
 ```
 
 ```sql

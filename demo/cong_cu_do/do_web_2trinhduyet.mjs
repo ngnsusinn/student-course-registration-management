@@ -28,6 +28,7 @@ const c = await mysql.createConnection({
   user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
   charset: 'utf8mb4', connectTimeout: 30000,
 });
+await c.query("SET time_zone = '+07:00'");
 const q = async (s) => (await c.query(s))[0];
 
 const goi = async (duong, opt) => {

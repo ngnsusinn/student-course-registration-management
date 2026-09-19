@@ -1,4 +1,4 @@
-﻿# 🎬 DEMO 4 LỖI ĐIỀU KHIỂN CẠNH TRANH — ĐÓNG GÓI SẴN ĐỂ TRÌNH DIỄN
+# 🎬 DEMO 4 LỖI ĐIỀU KHIỂN CẠNH TRANH — ĐÓNG GÓI SẴN ĐỂ TRÌNH DIỄN
 
 > **Chương 4** của báo cáo · Module **Đăng ký học phần** · HQTCSDL **MariaDB 11.8.9** (InnoDB)
 > Toàn bộ số liệu trong thư mục này là **số ĐO THẬT** trên CSDL của hệ thống (xem [`05_KET_QUA_DO_THUC_TE.md`](05_KET_QUA_DO_THUC_TE.md)).
@@ -8,8 +8,11 @@
 ## ⚡ CÁCH NHANH NHẤT — 2 NÚT 1-CLICK (khuyến nghị)
 
 Mở **http://localhost:3000/chuan-bi-demo** (menu **⚙ Chuẩn bị Demo**) → bấm **⚙ CHUẨN BỊ DEMO** là xong
-mọi setting (triển khai các thủ tục cố ý có lỗi + dọn dữ liệu). Demo xong bấm **✔ FIX** để trả hệ thống
-về bản chính thức. Trang tự hiển thị **đang ở bản nào** nên không sợ quên.
+mọi setting: nút này **♻ dựng lại TOÀN BỘ dữ liệu đăng ký của học kỳ hiện tại** về trạng thái xuất phát
+(xoá mọi dấu vết của lần demo trước ở **mọi lớp**, mở lại đợt đăng ký nếu bị đóng, tính lại sĩ số, trả
+mật khẩu demo…) **rồi** mới triển khai các thủ tục cố ý có lỗi — nên bấm xong là **dùng được ngay**.
+Demo xong bấm **✔ FIX** để trả hệ thống về bản chính thức (cũng dựng lại dữ liệu). Trang tự hiển thị
+**đang ở bản nào** + chip **✔ SẴN SÀNG SỬ DỤNG** nên không sợ quên.
 👉 Chi tiết: [`07_CHUAN_BI_DEMO_1CLICK.md`](07_CHUAN_BI_DEMO_1CLICK.md)
 
 ---
@@ -45,11 +48,17 @@ demo/
 ├── 04_DEADLOCK.md                   ← kịch bản demo lỗi 4 (SQL + WEB)
 ├── 05_KET_QUA_DO_THUC_TE.md         ← ⭐ bảng số liệu đo thật của cả 4 lỗi
 ├── 06_WEB_NRR_PHANTOM_THAO_TAC_TAY.md  ← ⭐ GUIDE THAO TÁC TAY trên web: Non-repeatable Read & Phantom Read
-├── 07_CHUAN_BI_DEMO_1CLICK.md       ← ⭐ Trang “Chuẩn bị Demo”: 2 nút 1-click (prepare / fix)
+├── 07_CHUAN_BI_DEMO_1CLICK.md       ← ⭐ Trang “Chuẩn bị Demo”: 2 nút 1-click, MỖI DEMO 1 LỰA CHỌN RIÊNG
+├── 08_DIRTY_READ.md                 ← ⭐ kịch bản demo lỗi 5 (SQL + WEB): đọc dữ liệu CHƯA COMMIT
 ├── sql_config/                      ← ⭐ CONFIG SQL: bản CỐ Ý CÓ LỖI & bản ĐÃ FIX
 │   ├── prepare__sp.sql              (SP_Prepare_Demo + SP_Prepare_TrangThai — phục vụ trang 1-click)
 │   ├── lost_update__chua_fix.sql    (SP_DangKyHocPhan  – thiếu FOR UPDATE)  → tái hiện
 │   ├── lost_update__da_fix.sql      (SP_DangKyHocPhan  – có FOR UPDATE)     → fix
+│   ├── lost_update__tab2phien__call_sp.sql (kịch bản 2 TAB chạy sẵn — chỉ CALL thủ tục, không gõ tay transaction)
+│   ├── nrr__tab2phien__sql.sql      (kịch bản 2 cửa sổ bằng SQL — bản CHẠY ĐƯỢC TRÊN phpMyAdmin)
+│   ├── lab__dirty_read__writer__chua_fix.sql (SP_DangKyHocPhan – INSERT → SLEEP 8s → ROLLBACK)      → phiên GHI
+│   ├── lab__dirty_read__reader__chua_fix.sql (SP_DangKyNhieuHocPhan – đọc 2 lần @ READ UNCOMMITTED) → ĐỌC BẨN
+│   ├── lab__dirty_read__reader__da_fix.sql   (y hệt nhưng @ REPEATABLE READ)                        → đối chứng
 │   ├── deadlock__chua_fix.sql       (SP_DangKyNhieuHocPhan – khóa theo thứ tự tick chọn) → tái hiện
 │   ├── deadlock__da_fix.sql         (SP_DangKyNhieuHocPhan – khóa theo MaLHP tăng dần)   → fix
 │   ├── lab__dangky_nhieu__chua_fix.sql (SP_DangKyNhieuHocPhan đọc 2 lần @ READ COMMITTED) → tái hiện NRR/Phantom
@@ -93,16 +102,17 @@ Mục 2 & 3 demo bằng thao tác tay trên web - xem `06_WEB_NRR_PHANTOM_THAO_T
 
 | Bước | Nội dung | File |
 |---|---|---|
-| 1 | **Bấm ⚙ CHUẨN BỊ DEMO** (hoặc chạy `00_moi_truong_va_chuan_bi.sql` nếu thích làm tay) | `07_CHUAN_BI_DEMO_1CLICK.md` |
+| 1 | **Bấm ⚙ CHUẨN BỊ DEMO** với **đúng kịch bản sắp diễn** — nút tự **♻ refresh toàn bộ dữ liệu học kỳ hiện tại** rồi mới bày thế cờ cho kịch bản (hoặc chạy `00_moi_truong_va_chuan_bi.sql` nếu thích làm tay).<br>⚠️ **Đổi kịch bản ⇒ phải bấm lại** (xem `07_CHUAN_BI_DEMO_1CLICK.md`) | `07_CHUAN_BI_DEMO_1CLICK.md` |
 | 2 | **Lost Update** — SQL: hai phiên cùng giành suất cuối ⇒ lớp nhận **17/16** | `01_LOST_UPDATE.md` PHẦN A |
 | 3 | **Lost Update** — chứng minh đã fix: `FOR UPDATE` ⇒ phiên sau nhận **105** | `01_LOST_UPDATE.md` PHẦN B |
 | 4 | **Lost Update** — WEB: 2 trình duyệt, cả hai **toast xanh** (lỗi) → khôi phục bản fix ⇒ **1 xanh + 1 đỏ 105** | `01_LOST_UPDATE.md` PHẦN C |
 | 5 | **Non-repeatable Read** — `READ COMMITTED`: đọc 2 lần ra **15 rồi 16** → `REPEATABLE READ`: **15 rồi 15** | `02_NON_REPEATABLE_READ.md` |
 | 6 | **Phantom Read** — `READ COMMITTED`: COUNT **15 rồi 16** → `REPEATABLE READ`: **15 rồi 15** | `03_PHANTOM_READ.md` |
 | 7 | **NRR & Phantom trên WEB (thao tác tay)** - 2 trình duyệt: A bị **hủy oan** khi 2 lần đọc lệch (sĩ số 0→1 / số lớp 3→4) → nạp bản đã fix: A **thành công** | `06_WEB_NRR_PHANTOM_THAO_TAC_TAY.md` |
-| 8 | **Deadlock** — SQL: khóa ngược thứ tự ⇒ một phiên **1213** → khóa theo thứ tự nhất quán ⇒ **0 và 0** | `04_DEADLOCK.md` PHẦN A |
-| 9 | **Deadlock** — WEB: 2 SV tick lớp **ngược thứ tự** ⇒ một SV **toast đỏ 1213** → khôi phục bản fix ⇒ hết | `04_DEADLOCK.md` PHẦN B |
-| 10 | **Bấm ✔ FIX** trên trang Chuẩn bị Demo | `07_CHUAN_BI_DEMO_1CLICK.md` |
+| 8 | **Dirty Read** — WEB/SQL: A đọc được sĩ số mà B **CHƯA COMMIT** (`0→1`) → B `ROLLBACK` ⇒ con số đó là **RÁC**; `REPEATABLE READ` thì **0→0** | `08_DIRTY_READ.md` |
+| 9 | **Deadlock** — SQL: khóa ngược thứ tự ⇒ một phiên **1213** → khóa theo thứ tự nhất quán ⇒ **0 và 0** | `04_DEADLOCK.md` PHẦN A |
+| 10 | **Deadlock** — WEB: 2 SV tick lớp **ngược thứ tự** ⇒ một SV **toast đỏ 1213** → khôi phục bản fix ⇒ hết | `04_DEADLOCK.md` PHẦN B |
+| 11 | **Bấm ✔ FIX** trên trang Chuẩn bị Demo | `07_CHUAN_BI_DEMO_1CLICK.md` |
 
 ---
 
@@ -114,8 +124,9 @@ Mục 2 & 3 demo bằng thao tác tay trên web - xem `06_WEB_NRR_PHANTOM_THAO_T
 | 2 | **Non-repeatable Read** | `READ COMMITTED`: đọc lần 1 = **15**, lần 2 = **16** | `REPEATABLE READ`: **15 → 15** · thêm `FOR UPDATE`: phiên ghi bị chặn **1,76s** |
 | 3 | **Phantom Read** | `READ COMMITTED`: `COUNT` **15 → 16** | `REPEATABLE READ`: **15 → 15** · khóa phạm vi `FOR UPDATE`: INSERT bị chặn **2,63s** |
 | 4 | **Deadlock** | SQL: `@kq1 = 0`, `@kq2 = 1213` · WEB: một SV **1213** (toast đỏ) | SQL: `0` và `0` · WEB: **0** và `102` — **không còn 1213** |
+| 5 | **Dirty Read** | WEB: A đọc **`sĩ số 0→1` · `số dòng 0→1`** trong khi B **CHƯA COMMIT** (`ketQua = 104`); sau khi B `ROLLBACK`: `LHP507 = 0/40 · ĐK = 0` ⇒ con số A đọc là **RÁC** | WEB: **`sĩ số 0→0` · `số dòng 0→0`** (`ketQua = 0`) — dữ liệu chưa commit không lọt vào giao tác |
 
-### Riêng 2 lỗi đọc — đo TRÊN WEB bằng 2 trình duyệt (xem `06_WEB_NRR_PHANTOM_THAO_TAC_TAY.md`)
+### Riêng các lỗi ĐỌC — đo TRÊN WEB bằng 2 trình duyệt (xem `06_…` và `08_…`)
 
 | Đối tượng đọc | ❌ `READ COMMITTED` | ✅ `REPEATABLE READ` |
 |---|---|---|
@@ -123,6 +134,12 @@ Mục 2 & 3 demo bằng thao tác tay trên web - xem `06_WEB_NRR_PHANTOM_THAO_T
 | **MỘT DÒNG — điểm tổng kết** | **`5.4 → 9.0`** ⚠️ | `5.4 → 5.4` ✅ |
 | MỘT TẬP — số lớp của SV trong kỳ | `3 → 4` ⚠️ **A bị hủy oan** | `3 → 3` ✅ A thành công |
 | MỘT TẬP — số ĐK toàn học kỳ (báo cáo) | `232 → 233` ⚠️ | `232 → 232` ✅ |
+
+**Riêng Dirty Read** (dữ liệu **CHƯA COMMIT**) — xem `08_DIRTY_READ.md`:
+
+| Đối tượng đọc | ❌ `READ UNCOMMITTED` | ✅ `REPEATABLE READ` |
+|---|---|---|
+| MỘT DÒNG — sĩ số `LHP507` + MỘT TẬP — số dòng `DANGKYHOCPHAN` | `sĩ số 0→1` · `số dòng 0→1` ⚠️ **đọc phải dữ liệu RÁC** | `sĩ số 0→0` · `số dòng 0→0` ✅ |
 
 > Chi tiết đầy đủ (câu lệnh, thời gian, số liệu từng pha): [`05_KET_QUA_DO_THUC_TE.md`](05_KET_QUA_DO_THUC_TE.md)
 
@@ -138,8 +155,11 @@ Mục 2 & 3 demo bằng thao tác tay trên web - xem `06_WEB_NRR_PHANTOM_THAO_T
 | Non-repeatable Read | `SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;` | `SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;` (mặc định) — hoặc khóa đọc `FOR UPDATE` |
 | Phantom Read | `SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;` | `REPEATABLE READ` (MVCC snapshot) — hoặc khóa **phạm vi** `SELECT … FOR UPDATE` |
 | Deadlock | Khóa theo **thứ tự tùy ý** (thứ tự người dùng tick chọn) | Khóa theo **thứ tự nhất quán** (sắp `MaLHP` tăng dần) + `innodb_lock_wait_timeout` + retry `1213` |
+| Dirty Read | `SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;` ở **phiên đọc** (+ phiên ghi `INSERT` nhưng **KHÔNG** `COMMIT`, sau đó `ROLLBACK`) | `SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;` (mặc định) — chỉ đọc dữ liệu **đã commit** |
 
 ### Triển khai / khôi phục bằng dòng lệnh
+
+> 💡 **Nhanh hơn:** trang **⚙ Chuẩn bị Demo** làm hết các bước dưới đây bằng 1 click — mỗi demo một lựa chọn riêng.
 
 ```bash
 cd backend
@@ -147,6 +167,15 @@ cd backend
 # ── TÁI HIỆN LỖI ─────────────────────────────────────────────
 node scripts/apply-sql.js ../demo/sql_config/lost_update__chua_fix.sql   # Lost Update (web)
 node scripts/apply-sql.js ../demo/sql_config/deadlock__chua_fix.sql      # Deadlock    (web)
+
+# NRR / Phantom (web) — ⚠️ PHẢI nạp kèm SP_DangKyHocPhan BẢN THẬT (không DO SLEEP),
+#   nếu không trình duyệt B sẽ commit muộn hơn "lần đọc 2" của A ⇒ không tái hiện được:
+node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql
+node scripts/apply-sql.js ../demo/sql_config/lab__dangky_nhieu__chua_fix.sql
+
+# Dirty Read (web) — phiên GHI (INSERT → SLEEP → ROLLBACK) + phiên ĐỌC BẨN:
+node scripts/apply-sql.js ../demo/sql_config/lab__dirty_read__writer__chua_fix.sql
+node scripts/apply-sql.js ../demo/sql_config/lab__dirty_read__reader__chua_fix.sql
 
 # ── KHẮC PHỤC (BẮT BUỘC chạy lại sau khi demo) ───────────────
 node scripts/apply-sql.js ../demo/sql_config/lost_update__da_fix.sql     # = SP_DangKyHocPhan thật
@@ -181,7 +210,9 @@ Công cụ chỉ **ĐỌC và IN số liệu** — mọi thao tác tay vẫn là
 
 ## ✅ CHECKLIST TRƯỚC KHI TRÌNH DIỄN
 
-- [ ] Đã bấm **⚙ CHUẨN BỊ DEMO** ở http://localhost:3000/chuan-bi-demo → 2 thẻ trạng thái = 🟡 SẴN SÀNG DEMO
+- [ ] Đã bấm **⚙ CHUẨN BỊ DEMO** ở http://localhost:3000/chuan-bi-demo **với đúng kịch bản sắp diễn** →
+      chip **“Kịch bản đang sẵn sàng”** = kịch bản đó, 2 thẻ trạng thái = 🟡 SẴN SÀNG DEMO
+      và khối “Dữ liệu học kỳ hiện tại” = **✔ SẴN SÀNG SỬ DỤNG** (lệch sĩ số 0 · dấu vết demo 0)
 - [ ] Đã mở sẵn **2 tab kết nối CSDL**
 - [ ] Backend đang chạy ở `http://localhost:3000`
 - [ ] Đã mở sẵn 2 cửa sổ cho mục 2 & 3 (1 thường + 1 **ẩn danh**), tài khoản `sv003` / `sv004` / `sv001`

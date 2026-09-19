@@ -9,6 +9,9 @@ export const DB_CONFIG = {
   password: process.env.DB_PASSWORD || 'roacqgfa_dbms1',
   database: process.env.DB_NAME || 'roacqgfa_dbms',
   charset: 'utf8mb4_unicode_ci',
+  // ★ Múi giờ UTC+7 (Vietnam) — được SET qua SQL trong db.js
+  //   (mysql2 không hỗ trợ timezone option cho session timezone).
+  //   Xem: db.js → SET time_zone = '+07:00' trước mỗi SP call.
   waitForConnections: true,
   connectionLimit: 10,
   queueLimit: 0,

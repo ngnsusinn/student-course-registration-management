@@ -190,4 +190,94 @@ proc_dangky_nangcao: BEGIN
 END$$
 DELIMITER ;
 
-SELECT '[OK] Da tao 3 SP demo: SP_DangKyHocPhan_ChuaFix, SP_ChuanBi_Demo_4Anomaly, SP_DangKyHocPhan_NangCao' AS KetLuan;
+-- ==========================================================
+-- 4) SP_Demo_DocHaiLan — ĐỌC HAI LẦN TRONG MỘT GIAO TÁC
+--    (dùng cho kịch bản Non-repeatable Read / Phantom Read / Dirty Read
+--     khi demo bằng SQL, ĐẶC BIỆT là trên **phpMyAdmin**)
+--
+--  ★ VÌ SAO CẦN THỦ TỤC NÀY?
+--    phpMyAdmin KHÔNG giữ kết nối MySQL giữa 2 lần gửi câu lệnh: mỗi lần bấm
+--    "Go" là một request HTTP mới ⇒ kết nối mới ⇒ `START TRANSACTION` ở lần
+--    gửi trước ĐÃ BỊ MẤT. Vì vậy cách "gõ từng câu rồi chuyển tab" (đúng với
+--    Workbench/DBeaver/mysql CLI) KHÔNG chạy được trên phpMyAdmin.
+--    ⇒ Gói TRỌN 2 lần đọc + khoảng chờ vào MỘT câu `CALL` duy nhất: cả giao
+--      tác nằm trong 1 request, còn phiên GHI thì mở ở TRÌNH DUYỆT KHÁC
+--      (tab cùng trình duyệt dùng chung PHP session ⇒ bị khoá session).
+--
+--  Cach dung (2 cửa sổ ở 2 TRÌNH DUYỆT khác nhau):
+--    [CỬA SỔ 1]  CALL SP_Demo_DocHaiLan('LHP514', 'READ COMMITTED', 8);
+--    [CỬA SỔ 2]  (chạy trong 8 giây đó)
+--                UPDATE LOPHOCPHAN SET SiSoHienTai = SiSoHienTai + 1 WHERE MaLHP='LHP514';
+--                COMMIT;
+--    ⇒ CỬA SỔ 1 trả về: Lan1 = 15, Lan2 = 16  ⇒ TÁI HIỆN ĐƯỢC Non-repeatable Read
+--      Đổi tham số 2 thành 'REPEATABLE READ' ⇒ Lan1 = 15, Lan2 = 15 ⇒ ĐÃ CHẶN
+--      Đổi thành 'READ UNCOMMITTED' (phiên 2 chỉ UPDATE, KHÔNG COMMIT) ⇒ ĐỌC BẨN
+--
+--   pMucCoLap: 'READ UNCOMMITTED' | 'READ COMMITTED' | 'REPEATABLE READ' | 'SERIALIZABLE'
+--   pDoTreGiay: số giây giữa 2 lần đọc (0 = đọc liền, không cần cửa sổ)
+-- ==========================================================
+DROP PROCEDURE IF EXISTS SP_Demo_DocHaiLan;
+
+DELIMITER $$
+CREATE PROCEDURE SP_Demo_DocHaiLan (
+    IN pMaLHP     VARCHAR(15),
+    IN pMucCoLap  VARCHAR(20),
+    IN pDoTreGiay INT
+)
+BEGIN
+    DECLARE vMuc   VARCHAR(20);
+    DECLARE vSiSo1 INT DEFAULT 0;
+    DECLARE vSiSo2 INT DEFAULT 0;
+    DECLARE vDem1  INT DEFAULT 0;
+    DECLARE vDem2  INT DEFAULT 0;
+
+    SET vMuc = UPPER(TRIM(IFNULL(pMucCoLap, 'READ COMMITTED')));
+    IF vMuc NOT IN ('READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE') THEN
+        SET vMuc = 'READ COMMITTED';
+    END IF;
+    IF pDoTreGiay IS NULL OR pDoTreGiay < 0 THEN SET pDoTreGiay = 8; END IF;
+
+    IF NOT EXISTS (SELECT 1 FROM LOPHOCPHAN WHERE MaLHP = pMaLHP) THEN
+        SELECT pMaLHP AS MaLHP, vMuc AS MucCoLap,
+               'Không tìm thấy lớp học phần này.' AS KetLuan;
+    ELSE
+        -- (Dùng IF + câu lệnh cố định: KHÔNG cần dynamic SQL)
+        IF vMuc = 'READ UNCOMMITTED' THEN
+            SET SESSION TRANSACTION ISOLATION LEVEL READ UNCOMMITTED;
+        ELSEIF vMuc = 'REPEATABLE READ' THEN
+            SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+        ELSEIF vMuc = 'SERIALIZABLE' THEN
+            SET SESSION TRANSACTION ISOLATION LEVEL SERIALIZABLE;
+        ELSE
+            SET SESSION TRANSACTION ISOLATION LEVEL READ COMMITTED;
+        END IF;
+
+        START TRANSACTION;
+
+        SELECT SiSoHienTai INTO vSiSo1 FROM LOPHOCPHAN WHERE MaLHP = pMaLHP;
+        SELECT COUNT(*)     INTO vDem1
+        FROM DANGKYHOCPHAN WHERE MaLHP = pMaLHP AND TrangThaiDangKy = 'DA_DANG_KY';
+
+        -- ⏸ cửa sổ để phiên thứ hai ghi (và commit / hoặc chưa commit)
+        DO SLEEP(pDoTreGiay);
+
+        SELECT SiSoHienTai INTO vSiSo2 FROM LOPHOCPHAN WHERE MaLHP = pMaLHP;
+        SELECT COUNT(*)     INTO vDem2
+        FROM DANGKYHOCPHAN WHERE MaLHP = pMaLHP AND TrangThaiDangKy = 'DA_DANG_KY';
+
+        ROLLBACK;   -- demo chỉ ĐỌC, không ghi gì
+
+        -- ★ Trả mức cô lập về mặc định (quan trọng khi dùng connection pool)
+        SET SESSION TRANSACTION ISOLATION LEVEL REPEATABLE READ;
+
+        SELECT pMaLHP AS MaLHP, vMuc AS MucCoLap, pDoTreGiay AS DoTreGiay,
+               vSiSo1 AS SiSo_Lan1, vSiSo2 AS SiSo_Lan2,
+               vDem1  AS SoDong_Lan1, vDem2 AS SoDong_Lan2,
+               IF(vSiSo2 <> vSiSo1 OR vDem2 <> vDem1,
+                  'ĐỔI giữa 2 lần đọc ⇒ TÁI HIỆN ĐƯỢC lỗi đọc',
+                  'KHÔNG đổi ⇒ mức cô lập đã CHẶN') AS KetLuan;
+    END IF;
+END$$
+DELIMITER ;
+
+SELECT '[OK] Da tao 4 SP demo: SP_DangKyHocPhan_ChuaFix, SP_ChuanBi_Demo_4Anomaly, SP_DangKyHocPhan_NangCao, SP_Demo_DocHaiLan' AS KetLuan;

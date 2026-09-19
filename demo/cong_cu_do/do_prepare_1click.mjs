@@ -23,6 +23,7 @@ const c = await mysql.createConnection({
   user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
   charset: 'utf8mb4', connectTimeout: 30000,
 });
+await c.query("SET time_zone = '+07:00'");
 const q = async (s) => (await c.query(s))[0];
 
 const goi = async (duong, opt) => {
@@ -38,12 +39,30 @@ const H = { 'Content-Type': 'application/json', Authorization: 'Bearer ' + token
 const tt = async () => (await goi('/api/prepare/trang-thai', { headers: H })).body;
 const inTT = (nhan, t) => {
   const d = t.danhGia || {};
+  const hk = t.hocKy || {};
   console.log(`\n── ${nhan} ──────────────────────────────────────────`);
   console.log(`   SP_DangKyHocPhan       : ${d.lostUpdate?.cheDo}  — ${d.lostUpdate?.nhan}`);
   console.log(`   SP_DangKyNhieuHocPhan  : ${d.nhieuHocPhan?.cheDo}  — ${d.nhieuHocPhan?.nhan}`);
   console.log(`   Lớp demo: ` + (t.lopDemo || []).map((l) => `${l.MaLHP}=${l.SiSoHienTai}/${l.SiSoToiDa}`).join(' · '));
+  console.log(`   Dữ liệu ${hk.MaHocKy || '?'}       : ${hk.SoDangKy} đăng ký · lệch sĩ số ${hk.SoLopLechSiSo} lớp · `
+    + `dấu vết demo còn lại ${hk.SoDauVetDemo} · dòng không hiệu lực ${hk.SoDongKhongHieuLuc}`);
+  console.log(`   Đợt đăng ký            : ${hk.TrangThaiDot}${hk.DangMoDangKy ? ' (còn hạn)' : ' (HẾT HẠN/ĐÃ ĐÓNG)'}`
+    + `  ⇒  ${hk.SanSang ? '✔ SẴN SÀNG SỬ DỤNG' : '✖ CHƯA SẴN SÀNG'}`);
 };
 
+// Đếm "dấu vết" còn sót trong DB (kiểm chứng độc lập với API)
+const demRac = async () => {
+  const [r] = await q(`SELECT
+    (SELECT COUNT(*) FROM DANGKYHOCPHAN d JOIN LOPHOCPHAN l ON l.MaLHP=d.MaLHP
+      WHERE l.MaHocKy='HK1-2025') AS SoDangKy,
+    (SELECT COUNT(*) FROM LOPHOCPHAN l WHERE l.SiSoHienTai <> (SELECT COUNT(*) FROM DANGKYHOCPHAN d
+      WHERE d.MaLHP=l.MaLHP AND d.TrangThaiDangKy='DA_DANG_KY')) AS SoLopLech,
+    (SELECT COUNT(*) FROM DANGKYHOCPHAN d JOIN LOPHOCPHAN l ON l.MaLHP=d.MaLHP
+      WHERE l.MaHocKy='HK1-2025' AND d.TrangThaiDangKy='DA_DANG_KY'
+        AND d.MaSV IN ('SV001','SV003','SV004','SV030','SV041','SV060','SV999')
+        AND d.MaLHP IN ('LHP505','LHP506','LHP507','LHP508','LHP514')) AS SoDauVetDemo`);
+  return r;
+};
 console.log('='.repeat(78));
 console.log('KIỂM CHỨNG 2 NÚT 1-CLICK — trang /chuan-bi-demo');
 console.log('='.repeat(78));
@@ -68,6 +87,8 @@ const [r2] = await q(`SELECT ROUTINE_NAME,
   WHERE ROUTINE_SCHEMA=DATABASE() AND ROUTINE_NAME='SP_DangKyNhieuHocPhan'`);
 console.log(`\n   KIỂM TRA DB: SP_DangKyHocPhan FOR UPDATE = ${r1.CoForUpdate} (mong đợi 0 = bản lỗi)`);
 console.log(`               SP_DangKyNhieuHocPhan đọc-2-lần = ${r2.DocHaiLan} (mong đợi 1) · khóa-theo-thứ-tự-tick = ${r2.KhoaTheoThuTuChon} (mong đợi 0)`);
+const d1 = await demRac();
+console.log(`   KIỂM TRA DB (dữ liệu): ${d1.SoDangKy} đăng ký HK1-2025 · lệch sĩ số ${d1.SoLopLech} lớp · dấu vết demo ${d1.SoDauVetDemo} (mong đợi 231 · 0 · 0)`);
 
 // 2) CLICK “FIX”
 console.log('\n\n▶ CLICK 2: [✔ FIX] — khôi phục bản thật');
@@ -86,6 +107,8 @@ const [r4] = await q(`SELECT ROUTINE_NAME,
   WHERE ROUTINE_SCHEMA=DATABASE() AND ROUTINE_NAME='SP_DangKyNhieuHocPhan'`);
 console.log(`\n   KIỂM TRA DB: SP_DangKyHocPhan FOR UPDATE = ${r3.CoForUpdate} (mong đợi 1) · DO SLEEP = ${r3.CoSleep} (mong đợi 0)`);
 console.log(`               SP_DangKyNhieuHocPhan đọc-2-lần = ${r4.DocHaiLan} (mong đợi 0) · khóa-theo-thứ-tự-tick = ${r4.KhoaTheoThuTuChon} (mong đợi 0)`);
+const d2 = await demRac();
+console.log(`   KIỂM TRA DB (dữ liệu): ${d2.SoDangKy} đăng ký HK1-2025 · lệch sĩ số ${d2.SoLopLech} lớp · dấu vết demo ${d2.SoDauVetDemo} (mong đợi 231 · 0 · 0)`);
 
 // 3) Kịch bản DEADLOCK
 console.log('\n\n▶ CLICK 3: [⚙ CHUẨN BỊ DEMO] — kịch bản DEADLOCK');
@@ -98,6 +121,8 @@ const [r5] = await q(`SELECT ROUTINE_DEFINITION LIKE '%LPAD(vThuTu%' AS KhoaTheo
 console.log(`\n   KIỂM TRA DB: khóa-theo-thứ-tự-tick = ${r5.KhoaTheoThuTuChon} (mong đợi 1) · đọc-2-lần = ${r5.DocHaiLan} (mong đợi 0)`);
 const [sv030] = await q(`SELECT TrangThaiDangKy FROM DANGKYHOCPHAN WHERE MaSV='SV030' AND MaLHP='LHP514'`);
 console.log(`   Dòng DA_HUY của SV030 ở LHP514: ${sv030 ? sv030.TrangThaiDangKy : '(không có)'} (mong đợi DA_HUY)`);
+const d3 = await demRac();
+console.log(`   KIỂM TRA DB (dữ liệu): ${d3.SoDangKy} đăng ký HK1-2025 · lệch sĩ số ${d3.SoLopLech} lớp · dấu vết demo ${d3.SoDauVetDemo} (mong đợi 232 · 0 · 0)`);
 
 // 4) FIX lần cuối để trả hệ thống về bản thật
 console.log('\n\n▶ CLICK CUỐI: [✔ FIX]');
@@ -108,7 +133,7 @@ inTT('TRẠNG THÁI CUỐI', fx2.body);
 console.log('\n' + '='.repeat(78));
 console.log('KẾT LUẬN');
 console.log('='.repeat(78));
-console.log(`   Nút CHUẨN BỊ (DEMO)    : ${cb.body.thanhCong ? '✔ OK' : '✖ LỖI'} — 3 bước (2 SP + dữ liệu)`);
+console.log(`   Nút CHUẨN BỊ (DEMO)    : ${cb.body.thanhCong ? '✔ OK' : '✖ LỖI'} — 4 dòng nhật ký (2 SP + ♻ refresh dữ liệu + tổng kết)`);
 console.log(`   Nút CHUẨN BỊ (DEADLOCK): ${dl.body.thanhCong ? '✔ OK' : '✖ LỖI'}`);
 console.log(`   Nút FIX                : ${fx.body.thanhCong && fx2.body.thanhCong ? '✔ OK (2 lần)' : '✖ LỖI'}`);
 await c.end();

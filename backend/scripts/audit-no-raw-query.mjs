@@ -92,6 +92,7 @@ try {
     host: DB_CONFIG.host, user: DB_CONFIG.user,
     password: DB_CONFIG.password, database: DB_CONFIG.database,
   });
+  await c.query("SET time_zone = '+07:00'");
   const [rows] = await c.query('SHOW PROCEDURE STATUS WHERE Db = DATABASE()');
   const dbSPs = new Set(rows.map((r) => r.Name.toUpperCase()));
   await c.end();

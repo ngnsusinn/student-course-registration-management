@@ -56,6 +56,8 @@
 --      ... demo xong thi chay lai procedures/SP_DangKyNhieuHocPhan.sql de khoi phuc.
 -- ==========================================================
 
+SET time_zone = '+07:00';   -- GMT+7 (Vietnam) — đảm bảo CURRENT_TIMESTAMP / NOW() lưu theo múi giờ địa phương
+
 USE roacqgfa_dbms;
 
 SELECT COUNT(*) AS SoBang FROM INFORMATION_SCHEMA.TABLES

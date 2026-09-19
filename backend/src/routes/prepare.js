@@ -11,10 +11,11 @@ const router = Router();
 // GET /api/prepare/trang-thai — đang ở bản nào?
 router.get('/trang-thai', authenticate, prepareController.trangThai);
 
-// POST /api/prepare/chuan-bi — 1 CLICK: triển khai bản có lỗi + dọn dữ liệu
+// POST /api/prepare/chuan-bi — 1 CLICK: dựng lại toàn bộ dữ liệu học kỳ hiện tại
+//                              + triển khai bản có lỗi
 router.post('/chuan-bi', authenticate, prepareController.chuanBi);
 
-// POST /api/prepare/fix — 1 CLICK: khôi phục bản thật + dọn dữ liệu
+// POST /api/prepare/fix — 1 CLICK: khôi phục bản thật + dựng lại dữ liệu học kỳ hiện tại
 router.post('/fix', authenticate, prepareController.fix);
 
 export default router;
