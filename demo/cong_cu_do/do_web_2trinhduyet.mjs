@@ -8,6 +8,7 @@
 //
 //   Chạy:  node demo/cong_cu_do/do_web_2trinhduyet.mjs nrr
 //          node demo/cong_cu_do/do_web_2trinhduyet.mjs phantom
+//          node demo/cong_cu_do/do_web_2trinhduyet.mjs dirty     (Dirty Read — 08_DIRTY_READ.md)
 //   (backend phải đang chạy ở http://localhost:3000)
 // ============================================================================
 import { createRequire } from 'node:module';
@@ -49,7 +50,8 @@ const SP = async () => ((await q(`SELECT ROUTINE_DEFINITION AS d FROM informatio
   WHERE ROUTINE_SCHEMA=DATABASE() AND ROUTINE_NAME='SP_DangKyNhieuHocPhan'`))[0] || {}).d || '';
 const d = await SP();
 const coDocHaiLan = /vSiSo1/.test(d);
-const mucCoLap = /ISOLATION LEVEL READ COMMITTED/.test(d) ? 'READ COMMITTED (❌ đã TẮT phòng chống)'
+const mucCoLap = /ISOLATION LEVEL READ UNCOMMITTED/.test(d) ? 'READ UNCOMMITTED (❌ ĐỌC BẨN)'
+               : /ISOLATION LEVEL READ COMMITTED/.test(d) ? 'READ COMMITTED (❌ đã TẮT phòng chống)'
                : 'REPEATABLE READ (✅ giữ mặc định)';
 
 console.log('='.repeat(78));
@@ -80,7 +82,7 @@ if (che === 'nrr') {
   console.log('[Trình duyệt B] sv004: bấm “Đăng ký” ở dòng LHP507 ...');
   const rB = await dangKyMot(tB, 'LHP507');
   A = await pA; B = rB;
-} else {
+} else if (che === 'phantom') {
   // ── Phantom Read: CÙNG một sinh viên ở 2 cửa sổ (1 thường + 1 ẩn danh) ──
   nhan = 'Phantom Read — đếm MỘT TẬP BẢN GHI (số lớp của SV trong học kỳ)';
   const tA = await token('sv001');   // Trình duyệt A  (cửa sổ thường)
@@ -91,6 +93,20 @@ if (che === 'nrr') {
   console.log('[Trình duyệt B] sv001 (cửa sổ ẩn danh): bấm “Đăng ký” ở dòng LHP505 (lớp KHÁC) ...');
   const rB = await dangKyMot(tB, 'LHP505');
   A = await pA; B = rB;
+} else if (che === 'dirty') {
+  // ── Dirty Read: A = PHIÊN ĐỌC (sv003) · B = PHIÊN GHI chưa commit rồi ROLLBACK (sv004) ──
+  nhan = 'Dirty Read — đọc dữ liệu CHƯA COMMIT (sĩ số lớp LHP507)';
+  const tA = await token('sv003');   // Trình duyệt A — PHIÊN ĐỌC (SP_DangKyNhieuHocPhan)
+  const tB = await token('sv004');   // Trình duyệt B — PHIÊN GHI  (SP_DangKyHocPhan)
+  console.log('\n[Trình duyệt A] sv003 (PHIÊN ĐỌC): tick LHP507 rồi bấm “Đăng ký 1 lớp đã chọn” ...');
+  const pA = dangKyNhieu(tA, ['LHP507']);
+  await new Promise((r) => setTimeout(r, 1500));
+  console.log('[Trình duyệt B] sv004 (PHIÊN GHI): bấm “Đăng ký” ở dòng LHP507 — INSERT nhưng CHƯA commit (giữ 8s rồi ROLLBACK) ...');
+  const rB = await dangKyMot(tB, 'LHP507');
+  A = await pA; B = rB;
+} else {
+  console.log(`\nChế độ không hợp lệ: ${che}. Dùng: nrr | phantom | dirty`);
+  process.exit(1);
 }
 
 console.log('\n─── KẾT QUẢ TRÊN GIAO DIỆN ───');
@@ -108,6 +124,21 @@ console.log(`\n   ⇒ ${A.body.ketQua === 104
 console.table(await q(`SELECT dk.MaSV, dk.MaLHP, dk.TrangThaiDangKy, dk.GhiChu
   FROM DANGKYHOCPHAN dk WHERE dk.MaLHP IN ('LHP505','LHP507','LHP508') AND dk.MaSV IN ('SV001','SV003','SV004')
   ORDER BY dk.MaSV, dk.MaLHP`));
+
+// ── Dirty Read: bằng chứng "con số A đọc là RÁC" (phiên GHI đã ROLLBACK) ──
+if (che === 'dirty') {
+  const sau = await q(`SELECT lhp.SiSoHienTai, lhp.SiSoToiDa,
+    (SELECT COUNT(*) FROM DANGKYHOCPHAN d WHERE d.MaLHP='LHP507' AND d.TrangThaiDangKy='DA_DANG_KY') AS SoDK
+    FROM LOPHOCPHAN lhp WHERE lhp.MaLHP='LHP507'`);
+  const docBan = /ĐỌC BẨN/.test(A.body.chiTiet?.ChiTiet || '') && !/KHÔNG ĐỌC BẨN/.test(A.body.chiTiet?.ChiTiet || '');
+  console.log(`\n   KIỂM TRA CUỐI (ngay sau khi phiên GHI ROLLBACK): LHP507 = ${sau[0].SiSoHienTai}/${sau[0].SiSoToiDa}`
+    + ` · số dòng đăng ký hiệu lực = ${sau[0].SoDK}`);
+  console.log(docBan
+    ? '   ⇒ ✔ sĩ số về 0 và KHÔNG có dòng đăng ký nào ⇒ con số mà A đọc CHƯA TỪNG tồn tại (DIRTY READ)'
+    : (sau[0].SiSoHienTai === 0 && sau[0].SoDK === 0
+        ? '   ⇒ ✔ ĐỐI CHỨNG: A KHÔNG hề thấy dữ liệu chưa commit (sĩ số 0→0) — REPEATABLE READ đã chặn'
+        : '   ✖ vẫn còn dữ liệu — kiểm tra lại phiên GHI (phải ROLLBACK)'));
+}
 
 // Dọn dẹp
 for (const lhp of LOP_DEMO) {

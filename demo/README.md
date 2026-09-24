@@ -51,6 +51,7 @@ demo/
 ├── 07_CHUAN_BI_DEMO_1CLICK.md       ← ⭐ Trang “Chuẩn bị Demo”: 2 nút 1-click, MỖI DEMO 1 LỰA CHỌN RIÊNG
 ├── 08_DIRTY_READ.md                 ← ⭐ kịch bản demo lỗi 5 (SQL + WEB): đọc dữ liệu CHƯA COMMIT
 ├── sql_config/                      ← ⭐ CONFIG SQL: bản CỐ Ý CÓ LỖI & bản ĐÃ FIX
+│   ├── mariadb__tat_snapshot_isolation.sql  ⚠️ BẮT BUỘC TRÊN MARIADB 11.x — tắt `innodb_snapshot_isolation`
 │   ├── prepare__sp.sql              (SP_Prepare_Demo + SP_Prepare_TrangThai — phục vụ trang 1-click)
 │   ├── lost_update__chua_fix.sql    (SP_DangKyHocPhan  – thiếu FOR UPDATE)  → tái hiện
 │   ├── lost_update__da_fix.sql      (SP_DangKyHocPhan  – có FOR UPDATE)     → fix
@@ -86,6 +87,20 @@ demo/
 
 **2. Kiểm tra môi trường + chuẩn bị dữ liệu:** mở [`00_moi_truong_va_chuan_bi.sql`](00_moi_truong_va_chuan_bi.sql) và chạy toàn bộ.
 
+**2b. ⚠️ TẮT `innodb_snapshot_isolation` (bắt buộc trên MariaDB 11.x — làm 1 lần):**
+
+```bash
+cd backend
+node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql
+node scripts/verify-db.js     # phải thấy: innodb_snapshot_isolation = OFF ✅
+```
+
+> Vì sao: MariaDB 11.x bật mặc định `innodb_snapshot_isolation = ON` ⇒ ở `REPEATABLE READ`, nó **tự chặn**
+> việc ghi đè dòng đã bị giao tác khác sửa bằng lỗi **1020** (`ER_CHECKREAD`). Khi đó kịch bản **Lost Update**
+> không tái hiện được mà tab thứ hai báo *“Lỗi hệ thống khi xử lý đăng ký.”* MySQL 8.0 không có cơ chế này.
+> Sau khi chạy phải **khởi động lại backend** (connection trong pool giữ giá trị cũ).
+> Chi tiết: [`01_LOST_UPDATE.md`](01_LOST_UPDATE.md) mục “⚠️ BẮT BUỘC TRƯỚC KHI DEMO”.
+
 **3. Mở 2 cửa sổ/kết nối** tới CSDL trên (mỗi tab = 1 phiên riêng) — quy ước gọi là **[TAB 1]** và **[TAB 2]**.
 
 **4. Web (cho phần demo trên trình duyệt):**
@@ -93,6 +108,16 @@ demo/
 cd backend && npm run dev          # backend ở http://localhost:3000
 # (tùy chọn) cd frontend && npm run dev   # Vite ở http://localhost:5173
 ```
+
+> ⚠️ **Muốn dùng địa chỉ `http://localhost:3000/...` như trong tài liệu thì phải BUILD frontend một lần:**
+> ```bash
+> cd frontend && npm run build      # sinh ra frontend/dist → Express (backend) phục vụ SPA ở cổng 3000
+> ```
+> `frontend/dist` **không được commit** (nằm trong `.gitignore`), nên máy mới clone về sẽ **404** ở
+> `:3000/chuan-bi-demo` cho tới khi build. Chưa build thì dùng thẳng **http://localhost:5173/chuan-bi-demo**
+> (Vite dev đã proxy `/api` sang `:3000`). **Sau khi build xong phải khởi động lại backend** (backend chỉ
+> kiểm tra `frontend/dist` lúc khởi động).
+
 Tài khoản: `sv030` / `matkhau@123` · `sv041` / `matkhau@123`
 Mục 2 & 3 demo bằng thao tác tay trên web - xem `06_WEB_NRR_PHANTOM_THAO_TAC_TAY.md`
 
@@ -202,6 +227,15 @@ node demo/cong_cu_do/do_thuc_te.mjs
 # Đo 2 lỗi qua đúng API mà web gọi (backend phải đang chạy)
 node demo/cong_cu_do/do_thuc_te_web.mjs lost-update
 node demo/cong_cu_do/do_thuc_te_web.mjs deadlock
+
+# Mô phỏng đúng thao tác 2 trình duyệt cho các lỗi ĐỌC
+#   (nạp bản lab tương ứng trước — hoặc để nút ⚙ CHUẨN BỊ DEMO làm hộ)
+node demo/cong_cu_do/do_web_2trinhduyet.mjs nrr
+node demo/cong_cu_do/do_web_2trinhduyet.mjs phantom
+node demo/cong_cu_do/do_web_2trinhduyet.mjs dirty
+
+# Kiểm chứng trang “Chuẩn bị Demo”: cả 5 kịch bản + nút FIX (tự trả về bản chính thức)
+node demo/cong_cu_do/do_prepare_1click.mjs
 ```
 
 Công cụ chỉ **ĐỌC và IN số liệu** — mọi thao tác tay vẫn làm theo các file `01_…` → `04_…`.
@@ -218,4 +252,6 @@ Công cụ chỉ **ĐỌC và IN số liệu** — mọi thao tác tay vẫn là
 - [ ] Đã mở sẵn 2 cửa sổ cho mục 2 & 3 (1 thường + 1 **ẩn danh**), tài khoản `sv003` / `sv004` / `sv001`
 - [ ] Đã mở sẵn **2 trình duyệt** (1 thường + 1 **ẩn danh**) — 2 tab cùng cửa sổ sẽ dùng chung phiên đăng nhập
 - [ ] Đã chạy `node scripts/verify-db.js` → `SP_DangKyHocPhan: ✅ ĐÃ FIX`
+- [ ] Đã chạy `node scripts/verify-db.js` → **`innodb_snapshot_isolation = OFF ✅`** (nếu thấy `ON`: chạy
+      `node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql` rồi **khởi động lại backend**)
 - [ ] Sau buổi demo: bấm **✔ FIX** trên trang Chuẩn bị Demo → 2 thẻ trạng thái = 🟢 BẢN CHÍNH THỨC

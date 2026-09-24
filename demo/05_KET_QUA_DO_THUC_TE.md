@@ -1,4 +1,4 @@
-﻿# 📊 KẾT QUẢ ĐO THỰC TẾ — 4 LỖI ĐIỀU KHIỂN CẠNH TRANH
+# 📊 KẾT QUẢ ĐO THỰC TẾ — 4 LỖI ĐIỀU KHIỂN CẠNH TRANH
 
 > Toàn bộ số liệu dưới đây là **kết quả chạy thật**, không phải mô phỏng.
 > Sinh ra bởi: `demo/cong_cu_do/do_thuc_te.mjs` (17 pha ở mức SQL) và
@@ -13,8 +13,18 @@
 | Mức cô lập mặc định | **REPEATABLE-READ** (session và global) |
 | `innodb_deadlock_detect` | **1** (ON — cơ chế mặc định) |
 | `innodb_lock_wait_timeout` | **50** giây |
+| `innodb_snapshot_isolation` | **OFF** — ⚠️ **bắt buộc** để tái hiện Lost Update (xem ghi chú dưới bảng) |
 | Kết nối đo | `0.tcp.ap.ngrok.io:21868` / database `roacqgfa_dbms` |
 | Số phiên | 2 kết nối thật, mỗi phiên một connection riêng |
+
+> ⚠️ **`innodb_snapshot_isolation` — bắt buộc phải OFF khi đo phần Lost Update.**
+> MariaDB 11.x bật mặc định **ON**; khi đó ở `REPEATABLE READ`, MariaDB **tự chặn** việc ghi đè một dòng
+> đã bị giao tác khác sửa bằng lỗi **1020 (`ER_CHECKREAD`)**, nên phiên B **không** Lost Update mà nhận
+> `pKetQua = 500` ⇒ web hiện *“Lỗi hệ thống khi xử lý đăng ký.”* (dữ liệu vẫn `1/1 · COUNT = 1`).
+> MySQL 8.0 không có cơ chế này. Cách tắt + kiểm tra:
+> `node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql` → `node scripts/verify-db.js`
+> → **khởi động lại backend** (connection trong pool giữ giá trị cũ).
+> Chi tiết: [`01_LOST_UPDATE.md`](01_LOST_UPDATE.md) mục “⚠️ BẮT BUỘC TRƯỚC KHI DEMO”.
 
 **Dữ liệu demo:** `LHP514` = môn *Kết cấu cao tầng* (MH045) = **15/16** · `LHP506` = môn *Tiếng Anh chuyên ngành CNTT* (MH017) = **0/1** — cả hai **còn đúng 1 chỗ**.
 
@@ -327,12 +337,17 @@ node demo/cong_cu_do/do_thuc_te.mjs
 node demo/cong_cu_do/do_thuc_te_web.mjs lost-update
 node demo/cong_cu_do/do_thuc_te_web.mjs deadlock
 
-# 3) Mô phỏng đúng thao tác 2 trình duyệt cho Non-repeatable Read / Phantom Read
-#    (nhớ nạp bản lab tương ứng trước: lab__dangky_nhieu__chua_fix.sql / __da_fix.sql)
+# 3) Mô phỏng đúng thao tác 2 trình duyệt cho Non-repeatable Read / Phantom Read / Dirty Read
+#    (nhớ nạp bản lab tương ứng trước: lab__dangky_nhieu__chua_fix.sql / __da_fix.sql,
+#     lab__dirty_read__reader__chua_fix.sql / __da_fix.sql)
 node demo/cong_cu_do/do_web_2trinhduyet.mjs nrr
 node demo/cong_cu_do/do_web_2trinhduyet.mjs phantom
+node demo/cong_cu_do/do_web_2trinhduyet.mjs dirty
 
-# 4) Kết quả thô được ghi tự động vào
+# 4) Kiểm chứng trang “Chuẩn bị Demo” (/chuan-bi-demo): cả 5 kịch bản + nút FIX
+node demo/cong_cu_do/do_prepare_1click.mjs
+
+# 5) Kết quả thô được ghi tự động vào
 #    demo/cong_cu_do/ket_qua_do_raw.md
 ```
 

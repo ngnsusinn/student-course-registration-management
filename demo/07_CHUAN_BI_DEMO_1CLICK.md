@@ -7,10 +7,18 @@
 
 | | |
 |---|---|
-| **URL** | **http://localhost:3000/chuan-bi-demo** *(hoặc http://localhost:5173/chuan-bi-demo)* |
+| **URL** | **http://localhost:3000/chuan-bi-demo** *(hoặc http://localhost:5173/chuan-bi-demo)*<br>⚠️ `:3000` chỉ phục vụ SPA khi đã build `frontend/dist` (`cd frontend && npm run build`, rồi **khởi động lại backend**); chưa build thì mở thẳng `:5173`. |
 | **Menu** | **⚙ Chuẩn bị Demo** — hiện cho **cả 3 vai trò** SV · GV · PĐT |
 | **Đăng nhập** | Bất kỳ tài khoản (khuyến nghị `admin` / `admin@123`) |
 | **API** | `GET /api/prepare/trang-thai` · `POST /api/prepare/chuan-bi` · `POST /api/prepare/fix` |
+
+> ⚠️ **ĐIỀU KIỆN TIÊN QUYẾT CỦA MÁY CHỦ (MariaDB 11.x):** phải để
+> **`innodb_snapshot_isolation = OFF`**, nếu không kịch bản **① Lost Update** sẽ không tái hiện được mà
+> tab thứ hai báo *“Lỗi hệ thống khi xử lý đăng ký.”* (lỗi **1020** `ER_CHECKREAD` — MariaDB tự chặn việc
+> ghi đè). Kiểm tra bằng `cd backend && node scripts/verify-db.js`; nếu đang **ON** thì chạy
+> `node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql` rồi
+> **khởi động lại backend** (connection trong pool giữ giá trị cũ — nút 1-click **không** thay thế được
+> bước này). Chi tiết: [`01_LOST_UPDATE.md`](01_LOST_UPDATE.md) mục “⚠️ BẮT BUỘC TRƯỚC KHI DEMO”.
 
 ---
 
@@ -146,6 +154,8 @@ Mỗi lần bấm, trang ghi **4 dòng nhật ký**:
 
 > ✅ Vì mọi thứ đi qua **stored procedure** và **file SQL có sẵn**, không cần khởi động lại backend —
 > bấm là có hiệu lực **ngay**.
+> *(Ngoại lệ duy nhất: tham số máy chủ `innodb_snapshot_isolation` — xem khối ⚠️ đầu trang. Nó chỉ áp cho
+> kết nối **mới**, nên phải khởi động lại backend một lần sau khi đổi.)*
 
 ---
 
@@ -167,6 +177,11 @@ Mỗi lần bấm, trang ghi **4 dòng nhật ký**:
 ---
 
 ## 📊 KẾT QUẢ ĐO THẬT (chạy `demo/cong_cu_do/do_prepare_1click.mjs`)
+
+> Công cụ này bấm **lần lượt cả 5 kịch bản + nút FIX** qua đúng API của trang, rồi tự kiểm tra:
+> chữ ký 2 thủ tục trong `information_schema`, chip “Kịch bản đang sẵn sàng”, và dữ liệu
+> (số đăng ký · số lớp lệch sĩ số · số dấu vết demo). Kết quả cuối: **TẤT CẢ ✔** và hệ thống
+> trở về bản chính thức.
 
 | Lần bấm | `SP_DangKyHocPhan` | `SP_DangKyNhieuHocPhan` | Dữ liệu HK1-2025 | Nhật ký |
 |---|---|---|---|---|

@@ -196,6 +196,16 @@ Mô phỏng đúng 2 cú bấm qua **API của web** (A bấm trước, B bấm 
 Trong cả hai lần, **phiên GHI đều không để lại dữ liệu** (đã `ROLLBACK`) — nên chỉ có phiên ĐỌC là
 khác nhau, đúng bản chất lỗi.
 
+**Đo lại bằng công cụ (mô phỏng đúng 2 cú bấm của 2 trình duyệt qua API web):**
+
+```bash
+# Chuẩn bị kịch bản ④ Dirty Read (nút 1-click hoặc lệnh dưới), rồi:
+node demo/cong_cu_do/do_web_2trinhduyet.mjs dirty
+#   → chưa fix: A nhận 104 + dòng "ĐỌC BẨN — sĩ số 0→1 · số dòng 0→1"
+#   → đã fix  : A nhận 0   + dòng "KHÔNG ĐỌC BẨN — sĩ số 0→0 · số dòng 0→0"
+#   công cụ tự in luôn bằng chứng: LHP507 = 0/40 · số dòng đăng ký hiệu lực = 0
+```
+
 ---
 
 ## 📸 CHECKLIST ẢNH

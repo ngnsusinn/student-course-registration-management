@@ -121,6 +121,9 @@
 
 # PHẦN II — LỖI 1: LOST UPDATE (Slide 6–9)
 
+> 🎤 **Lời dẫn chi tiết để nói khi demo (bản cầm tay, có Q&A dự phòng):**
+> [`loi_dan_demo_lost_update.md`](loi_dan_demo_lost_update.md) — khớp với kịch bản **web LHP506 (0/1)** hiện hành.
+
 ## Slide 06 — Lost Update: lỗi là gì & vì sao MySQL không tự chặn
 
 **Trên slide:**

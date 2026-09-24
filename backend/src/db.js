@@ -65,13 +65,18 @@ export async function spMulti(sql, params = []) {
 export async function spOut(sqlOut, params = []) {
   const conn = await pool.getConnection();
   try {
-    await conn.query(TIMEZONE_SQL);           // ← đảm bảo múi giờ UTC+7
+    await conn.query(TIMEZONE_SQL);
     const stmts = sqlOut.split(';').map((s) => s.trim()).filter(Boolean)
       .filter((s) => !/^select\s+@KetQua/i.test(s));
     const remaining = [...params];
     for (const stmt of stmts) {
       const n = (stmt.match(/\?/g) || []).length;
-      await conn.query(stmt, remaining.splice(0, n));
+      try {
+        await conn.query(stmt, remaining.splice(0, n));
+      } catch (e) {
+        console.log('[spOut] ERROR on stmt:', stmt.slice(0, 80), '→', e.message, '| code:', e.code, '| errno:', e.errno, '| sqlMessage:', e.sqlMessage?.slice(0, 100));
+        throw e;
+      }
     }
     const [sel] = await conn.query('SELECT @KetQua AS KetQua');
     return sel && sel.length ? Number(sel[0].KetQua) : undefined;

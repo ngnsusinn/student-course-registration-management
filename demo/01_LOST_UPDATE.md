@@ -32,6 +32,58 @@ FOR UPDATE;                                     -- ★ tương đương UPDLOCK 
 
 ---
 
+## ⚠️ BẮT BUỘC TRƯỚC KHI DEMO — TẮT `innodb_snapshot_isolation` TRÊN MARIADB 11.x
+
+> 🩺 **Triệu chứng nếu quên bước này:** tab thứ hai **KHÔNG** tái hiện Lost Update mà hiện toast đỏ
+> **“Lỗi hệ thống khi xử lý đăng ký.”** (`pKetQua = 500`), dữ liệu cuối vẫn đúng `1/1 · COUNT = 1`
+> ⇒ màn demo hỏng.
+
+**Vì sao?** Máy chủ của nhóm là **MariaDB 11.8** (không phải MySQL 8). Từ nhánh 11.x, MariaDB bật mặc
+định `innodb_snapshot_isolation = ON`: ở mức `REPEATABLE READ`, nếu một giao tác **đã đọc** một dòng rồi
+dòng đó bị giao tác khác sửa & commit, MariaDB **không cho ghi đè** mà ném lỗi
+
+```
+ERROR 1020 (ER_CHECKREAD): Record has changed since last read in table '...'; try restarting transaction
+```
+
+Bản `SP_DangKyHocPhan` chưa fix đọc sĩ số bằng `SELECT` thường rồi `INSERT` (trigger cập nhật
+`LOPHOCPHAN`) ⇒ phiên B dính đúng lỗi 1020. Thủ tục bắt vào `EXIT HANDLER` ⇒ trả **500** ⇒ web hiện
+“Lỗi hệ thống khi xử lý đăng ký.”. Nói cách khác: **MariaDB 11.8 đã tự chặn Lost Update** — nhưng bằng
+một lỗi hệ thống, nên không dùng để trình diễn được.
+
+MySQL 8.0 **không có** cơ chế này, nên mọi số liệu trong tài liệu (đo ở `REPEATABLE READ`) đúng với
+ngữ nghĩa MySQL.
+
+**Cách xử lý (làm 1 lần cho máy chủ, trước buổi demo):**
+
+```bash
+cd backend
+node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql
+node scripts/verify-db.js      # phải thấy: innodb_snapshot_isolation = OFF ✅
+```
+
+> ⚠️ **Sau đó phải KHỞI ĐỘNG LẠI backend**: `SET GLOBAL` chỉ áp cho **kết nối mới**, còn các connection
+> đang nằm trong pool giữ giá trị cũ ⇒ không restart thì tab thứ hai vẫn lỗi.
+
+**Bền vững qua restart** (nên làm trên VPS): thêm vào `/etc/mysql/mariadb.conf.d/99-demo-anomaly.cnf`
+
+```ini
+[mysqld]
+innodb_snapshot_isolation = OFF
+```
+
+rồi `sudo systemctl restart mariadb`.
+
+**Đối chứng đo thật (2 tài khoản, lệch nhau 1 giây, qua đúng API mà web gọi):**
+
+| | `innodb_snapshot_isolation = ON` (mặc định MariaDB 11.x) | `= OFF` (ngữ nghĩa MySQL 8) |
+|---|---|---|
+| Phiên A (sv030) | HTTP 200 · `ketQua = 0` | HTTP 200 · `ketQua = 0` |
+| Phiên B (sv041) | ❌ HTTP 400 · `ketQua = 500` “Lỗi hệ thống khi xử lý đăng ký.” (lỗi 1020) | ✅ HTTP 200 · `ketQua = 0` (toast xanh) |
+| Sĩ số sau cùng | `1/1 · COUNT = 1` — **không tái hiện được** | `1/1 · COUNT = 2` — **VƯỢT SĨ SỐ, tái hiện được lỗi** |
+
+---
+
 # PHẦN A — DEMO BẰNG SQL (2 TAB) · **gọi thủ tục** trên LHP506
 
 > 🎯 **Cách chính: mỗi tab chỉ 1 câu `CALL SP_DangKyHocPhan(...)`** — giao tác, 5 bước kiểm tra và
@@ -285,6 +337,8 @@ FROM LOPHOCPHAN WHERE MaLHP='LHP506';
 
 # PHẦN C — DEMO BẰNG THAO TÁC WEB (2 TRÌNH DUYỆT)
 
+> 🎤 **Lời dẫn khi trình bày (nói gì, lúc nào, trả lời ra sao):** [`../docs/concurrency/loi_dan_demo_lost_update.md`](../docs/concurrency/loi_dan_demo_lost_update.md)
+
 ### C.0. Nguyên tắc bắt buộc
 
 1. **2 phiên đăng nhập riêng:** 1 cửa sổ **thường** (sv030) + 1 cửa sổ **Ẩn danh/InPrivate** (sv041).
@@ -422,3 +476,13 @@ node scripts/verify-db.js
    và đúng **đường đi thật của ứng dụng** (web cũng gọi chính SP này qua `backend/src/models/dangky.model.js`).
    Bản `_ChuaFix`/bản demo tự mở cửa sổ tranh chấp bằng `DO SLEEP(8)` ở cuối giao tác, nên chỉ cần chạy TAB 2
    trong vòng ~8 giây — vẫn thấy đúng cảnh **TAB 2 treo chờ khóa** để chụp ảnh.
+5. **“Vậy Lost Update chỗ nào? Sao bộ đếm vẫn `1/1`?”** — câu hỏi hay gặp khi phản biện. Trả lời theo 3 tầng:
+   **(1)** cái bị mất là **điều kiện sĩ số đã kiểm tra** (mẫu *read → check → write*): B đọc cùng bản đọc cũ của A
+   nên kết luận *“còn chỗ”* của A **mất hiệu lực**; **(2)** ở mức **bộ đếm**, phép `+1` của phiên B **cũng bị mất**
+   — trigger dùng `LEAST(SiSoToiDa, SiSoHienTai + 1)` và bảng có `CONSTRAINT CK_LOPHOCPHAN_SiSo
+   CHECK (SiSoHienTai <= SiSoToiDa)` (`mysql/ddl/00_hocphan_giangvien_ddl.sql`) nên câu `+1` thứ hai
+   **không đổi dòng nào** (đo được: `Rows matched: 1 · Rows changed: 0`); hai lớp chặn này khiến lỗi
+   **hỏng âm thầm**, phải `COUNT(*)` mới lộ; **(3)** muốn thấy *“mất một phép `+1`”* bằng con số thì làm trên
+   lớp **còn nhiều chỗ** (LHP508 = 0/35): hai phiên cùng đọc `0` rồi cùng ghi `1` ⇒ bộ đếm chỉ `1/35`
+   (đáng lẽ `2/35`) — còn đọc bằng `SELECT … FOR UPDATE` thì phiên B chờ **1,5s**, đọc lại `1`, ghi `2` ⇒
+   **không mất gì**. Chi tiết + lời nói mẫu: [`../docs/concurrency/loi_dan_demo_lost_update.md`](../docs/concurrency/loi_dan_demo_lost_update.md) mục **3B**.

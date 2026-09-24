@@ -1,0 +1,17 @@
+Error: connect ETIMEDOUT
+    at PoolConnection._handleTimeoutError (C:\Users\ngnsusinn\Documents\GitHub\student-course-registration-management\backend\node_modules\mysql2\lib\base\connection.js:249:17)
+    at listOnTimeout (node:internal/timers:685:17)
+    at process.processTimers (node:internal/timers:618:7) {
+  errorno: 'ETIMEDOUT',
+  code: 'ETIMEDOUT',
+  syscall: 'connect',
+  fatal: true
+}
+Error: getaddrinfo ENOTFOUND 0.tcp.ap.ngrok.io
+    at GetAddrInfoReqWrap.onlookupall [as oncomplete] (node:dns:123:26) {
+  errno: -3008,
+  code: 'ENOTFOUND',
+  syscall: 'getaddrinfo',
+  hostname: '0.tcp.ap.ngrok.io',
+  fatal: true
+}

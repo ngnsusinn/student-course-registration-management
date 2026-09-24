@@ -8,7 +8,7 @@
 --   Bản ĐÃ FIX để khôi phục:    demo/sql_config/lost_update__da_fix.sql
 --
 -- Muc dich: ghi đè thủ tục THẬT `SP_DangKyHocPhan` bằng "bản ban đầu chưa
---           fix lỗi" — GIỐNG HỆT bản chính thức, CHỈ KHÁC ĐÚNG 1 CHỖ:
+--           fix lỗi" — GIỐNG HẾT bản chính thức, CHỈ KHÁC ĐÚNG 1 CHỖ:
 --           bước kiểm tra sĩ số đọc bằng SELECT thường
 --           (KHÔNG có FOR UPDATE) => hai phiên cùng đọc "còn 1 chỗ",
 --           cùng ghi => LOST UPDATE, lớp nhận quá sĩ số.
@@ -16,7 +16,7 @@
 -- Vi sao phải có DO SLEEP?  Bản chất lỗi KHÔNG nằm ở SLEEP. SLEEP chỉ để
 --   MỞ RỘNG CỬA SỔ TRANH CHẤP, vì thao tác tay trên web (2 người bấm nút)
 --   không thể đồng thời trong vài chục mili-giây như khi chạy script.
---   => 2 sinh viên chỉ cần bấm "Đăng ký" cách nhau ~2 giây là tái hiện được.
+--   => 2 sinh viên chỉ cần bấm "Đăng ký" cách nhau ~1 giây là tái hiện được.
 --   (Trên trình biên soạn DB thì KHÔNG cần SLEEP: tự ngồi chờ cũng được,
 --    xem demo/01_LOST_UPDATE.md PHẦN A.)
 --
@@ -25,7 +25,7 @@
 --
 -- Cach ap dung (máy đang chạy web):
 --     cd backend
---     node scripts/apply-sql.js ../mysql/transactions/demo_lostupdate_chuafix.sql
+--     node scripts/apply-sql.js ../demo/sql_config/lost_update__chua_fix.sql
 --
 -- ★ KHÔI PHỤC BẢN ĐÃ FIX (bắt buộc sau khi demo xong):
 --     node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql
@@ -55,10 +55,10 @@ proc_dangky_chuafix: BEGIN
     DECLARE vTongTinChiDa INT;
     DECLARE vNotFound     INT DEFAULT 0;
     DECLARE vDoTreGiay    INT DEFAULT 8;   -- ⏸ 8 giây: mở rộng cửa sổ cho người thao tác tay
-
-    DECLARE CONTINUE HANDLER FOR NOT FOUND SET vNotFound = 1;
     DECLARE EXIT HANDLER FOR SQLEXCEPTION
     BEGIN
+        GET DIAGNOSTICS CONDITION 1 @errno = MYSQL_ERRNO, @msg = MESSAGE_TEXT;
+        SELECT CONCAT('LỖI TRONG SP: ', @errno, ' - ', @msg) AS THONG_TIN_LOI;
         ROLLBACK;
         SET pKetQua = 500;
     END;

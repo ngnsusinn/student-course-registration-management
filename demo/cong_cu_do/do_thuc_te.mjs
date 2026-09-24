@@ -42,7 +42,7 @@ const ghi = (muc, noiDung, soLieu) => {
 };
 
 const mk = async () => {
-  const conn = mysql.createConnection({ ...CFG, multipleStatements: false });
+  const conn = await mysql.createConnection({ ...CFG, multipleStatements: false });
   await conn.query("SET time_zone = '+07:00'");
   return conn;
 };
