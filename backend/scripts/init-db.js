@@ -129,6 +129,7 @@ async function main() {
   });
 
   await conn.query("SET NAMES utf8mb4 COLLATE utf8mb4_unicode_ci");
+  await conn.query("SET time_zone = '+07:00'");   // ← đảm bảo múi giờ UTC+7
   console.log('[init-db] Ket noi MySQL thanh cong.');
 
   for (const rel of FILES) {

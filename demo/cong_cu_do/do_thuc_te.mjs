@@ -41,7 +41,11 @@ const ghi = (muc, noiDung, soLieu) => {
   KQ.push({ muc, noiDung, soLieu });
 };
 
-const mk = () => mysql.createConnection({ ...CFG, multipleStatements: false });
+const mk = async () => {
+  const conn = await mysql.createConnection({ ...CFG, multipleStatements: false });
+  await conn.query("SET time_zone = '+07:00'");
+  return conn;
+};
 const q = async (c, s) => (await c.query(s))[0];
 const ngu = (ms) => new Promise((r) => setTimeout(r, ms));
 const giay = (ms) => (ms / 1000).toFixed(2) + 's';

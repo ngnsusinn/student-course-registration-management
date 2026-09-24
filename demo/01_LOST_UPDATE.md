@@ -15,6 +15,7 @@ Trong hệ thống: hai sinh viên cùng giành **suất cuối cùng** của m�
 |---|---|
 | ❌ **TÁI HIỆN** | Bước kiểm tra sĩ số đọc bằng **`SELECT` thường (KHÔNG khóa)** — file [`sql_config/lost_update__chua_fix.sql`](sql_config/lost_update__chua_fix.sql) |
 | ✅ **KHẮC PHỤC** | Đọc sĩ số bằng **`SELECT … FOR UPDATE`** (X-lock giữ tới `COMMIT`) + **retry khi gặp `1213`** — file [`sql_config/lost_update__da_fix.sql`](sql_config/lost_update__da_fix.sql) |
+| ▶️ **KỊCH BẢN 2 TAB CHẠY SẴN** | Gọi thủ tục bằng `CALL` (không gõ tay transaction) — file [`sql_config/lost_update__tab2phien__call_sp.sql`](sql_config/lost_update__tab2phien__call_sp.sql) |
 
 **Đoạn khác biệt duy nhất giữa hai bản (bước 6 của thủ tục):**
 
@@ -31,23 +32,153 @@ FOR UPDATE;                                     -- ★ tương đương UPDLOCK 
 
 ---
 
-# PHẦN A — DEMO BẰNG SQL (2 TAB) · LHP514
+## ⚠️ BẮT BUỘC TRƯỚC KHI DEMO — TẮT `innodb_snapshot_isolation` TRÊN MARIADB 11.x
 
-> **LHP514** = môn *Kết cấu cao tầng* (MH045), HK1-2025 — đang **15/16, còn đúng 1 chỗ**.
-> 💡 **Thao tác tay không cần `DO SLEEP`**: mỗi câu lệnh gửi riêng, giao tác **vẫn đang mở** giữa hai câu,
-> nên cứ để nguyên đó rồi chuyển tab. Thứ tự thực thi do **bạn** quyết định.
+> 🩺 **Triệu chứng nếu quên bước này:** tab thứ hai **KHÔNG** tái hiện Lost Update mà hiện toast đỏ
+> **“Lỗi hệ thống khi xử lý đăng ký.”** (`pKetQua = 500`), dữ liệu cuối vẫn đúng `1/1 · COUNT = 1`
+> ⇒ màn demo hỏng.
+
+**Vì sao?** Máy chủ của nhóm là **MariaDB 11.8** (không phải MySQL 8). Từ nhánh 11.x, MariaDB bật mặc
+định `innodb_snapshot_isolation = ON`: ở mức `REPEATABLE READ`, nếu một giao tác **đã đọc** một dòng rồi
+dòng đó bị giao tác khác sửa & commit, MariaDB **không cho ghi đè** mà ném lỗi
+
+```
+ERROR 1020 (ER_CHECKREAD): Record has changed since last read in table '...'; try restarting transaction
+```
+
+Bản `SP_DangKyHocPhan` chưa fix đọc sĩ số bằng `SELECT` thường rồi `INSERT` (trigger cập nhật
+`LOPHOCPHAN`) ⇒ phiên B dính đúng lỗi 1020. Thủ tục bắt vào `EXIT HANDLER` ⇒ trả **500** ⇒ web hiện
+“Lỗi hệ thống khi xử lý đăng ký.”. Nói cách khác: **MariaDB 11.8 đã tự chặn Lost Update** — nhưng bằng
+một lỗi hệ thống, nên không dùng để trình diễn được.
+
+MySQL 8.0 **không có** cơ chế này, nên mọi số liệu trong tài liệu (đo ở `REPEATABLE READ`) đúng với
+ngữ nghĩa MySQL.
+
+**Cách xử lý (làm 1 lần cho máy chủ, trước buổi demo):**
+
+```bash
+cd backend
+node scripts/apply-sql.js ../demo/sql_config/mariadb__tat_snapshot_isolation.sql
+node scripts/verify-db.js      # phải thấy: innodb_snapshot_isolation = OFF ✅
+```
+
+> ⚠️ **Sau đó phải KHỞI ĐỘNG LẠI backend**: `SET GLOBAL` chỉ áp cho **kết nối mới**, còn các connection
+> đang nằm trong pool giữ giá trị cũ ⇒ không restart thì tab thứ hai vẫn lỗi.
+
+**Bền vững qua restart** (nên làm trên VPS): thêm vào `/etc/mysql/mariadb.conf.d/99-demo-anomaly.cnf`
+
+```ini
+[mysqld]
+innodb_snapshot_isolation = OFF
+```
+
+rồi `sudo systemctl restart mariadb`.
+
+**Đối chứng đo thật (2 tài khoản, lệch nhau 1 giây, qua đúng API mà web gọi):**
+
+| | `innodb_snapshot_isolation = ON` (mặc định MariaDB 11.x) | `= OFF` (ngữ nghĩa MySQL 8) |
+|---|---|---|
+| Phiên A (sv030) | HTTP 200 · `ketQua = 0` | HTTP 200 · `ketQua = 0` |
+| Phiên B (sv041) | ❌ HTTP 400 · `ketQua = 500` “Lỗi hệ thống khi xử lý đăng ký.” (lỗi 1020) | ✅ HTTP 200 · `ketQua = 0` (toast xanh) |
+| Sĩ số sau cùng | `1/1 · COUNT = 1` — **không tái hiện được** | `1/1 · COUNT = 2` — **VƯỢT SĨ SỐ, tái hiện được lỗi** |
+
+---
+
+# PHẦN A — DEMO BẰNG SQL (2 TAB) · **gọi thủ tục** trên LHP506
+
+> 🎯 **Cách chính: mỗi tab chỉ 1 câu `CALL SP_DangKyHocPhan(...)`** — giao tác, 5 bước kiểm tra và
+> `INSERT` đều nằm **bên trong thủ tục**, nên đây đúng là đường đi thật của ứng dụng (web cũng gọi SP này).
+>
+> **LHP506** = môn *Tiếng Anh chuyên ngành CNTT* (MH017), HK1-2025 — đang **0/1, còn đúng 1 chỗ**,
+> **không có môn tiên quyết** nên SV030/SV041 đi được tới bước kiểm tra sĩ số.
+> ⏱ Bản demo đang nạp có `DO SLEEP(8)` **sau `INSERT`, trước `COMMIT`** ⇒ chạy TAB 2 trong vòng ~8 giây
+> sau TAB 1 là tái hiện được (không phải tự bấm `COMMIT` như cách gõ tay).
+>
+> 🧩 Muốn đúng con số **17/16** của báo cáo (LHP514 = *Kết cấu cao tầng*, 15/16) thì xem **A.3** —
+> bản đó vẫn phải gõ tay vì thủ tục sẽ chặn ở bước tiên quyết (mã 102).
 
 ### A.0. Chuẩn bị (TAB 1)
 
 ```sql
-CALL SP_ChuanBi_Demo_4Anomaly('LHP514');
+CALL SP_ChuanBi_Demo_4Anomaly('LHP506');
 
 SELECT MaLHP, SiSoHienTai, SiSoToiDa, (SiSoToiDa - SiSoHienTai) AS ConTrong
-FROM LOPHOCPHAN WHERE MaLHP = 'LHP514';
--- MONG ĐỢI: LHP514 | 15 | 16 | 1
+FROM LOPHOCPHAN WHERE MaLHP = 'LHP506';
+-- MONG ĐỢI: LHP506 | 0 | 1 | 1
 ```
 
-### A.1. Tái hiện lỗi
+### A.1. Tái hiện lỗi — **gọi THỦ TỤC** (không gõ tay `START TRANSACTION`/`INSERT`)
+
+> ✅ **Dùng lớp LHP506 cho phần này** (0/1 — còn đúng 1 chỗ, **không có môn tiên quyết**).
+> Vì sao không dùng LHP514: `SP_DangKyHocPhan` kiểm tra **môn tiên quyết TRƯỚC** bước sĩ số —
+> LHP514 (MH045) yêu cầu đạt MH033, SV030/SV041 đều **chưa đạt** ⇒ cả hai nhận **102**, không bao giờ
+> tới được bước sĩ số. (Xem thêm PHẦN B.2.)
+>
+> 🎯 **Cả giao tác nằm BÊN TRONG thủ tục**: `START TRANSACTION` → 5 bước kiểm tra → `INSERT` → `COMMIT`.
+> Người demo chỉ còn **1 câu `CALL`** cho mỗi tab — đúng đường đi thật của ứng dụng.
+> ⏱ Cửa sổ tranh chấp do chính SP mở ra: bản demo đặt `DO SLEEP(8)` **sau `INSERT`, trước `COMMIT`**
+> (xem [`sql_config/lost_update__chua_fix.sql`](sql_config/lost_update__chua_fix.sql)) ⇒ **chạy TAB 2 trong vòng ~8 giây**
+> sau khi bấm chạy TAB 1. Câu lệnh đầy đủ: [`sql_config/lost_update__tab2phien__call_sp.sql`](sql_config/lost_update__tab2phien__call_sp.sql)
+
+**🪟 [TAB 1] — phiên của SV030** (chạy TRƯỚC, rồi chuyển ngay sang TAB 2)
+
+```sql
+CALL SP_DangKyHocPhan('SV030', 'LHP506', 24, 'Phien A - chua fix', @kqA);
+SELECT @kqA AS KetQua_Tab1;      -- → 0 : đăng ký thành công, đã lấy suất cuối
+```
+
+**🪟 [TAB 2] — phiên của SV041** (chạy SAU, vẫn trong lúc TAB 1 đang ngủ)
+
+```sql
+CALL SP_DangKyHocPhan('SV041', 'LHP506', 24, 'Phien B - chua fix', @kqB);
+-- → ⏳ TREO: "Executing query..." — ĐANG CHỜ KHÓA dòng sĩ số của TAB 1
+--   📸 CHỤP ẢNH NGAY LÚC NÀY
+SELECT @kqB AS KetQua_Tab2;      -- → 0 : ❌ CŨNG thành công  =  LỖI (bản chưa fix)
+```
+
+> 💡 Hai tab **bắt buộc là 2 kết nối riêng** (2 Query tab của Workbench / 2 cửa sổ client).
+> Dùng chung một kết nối thì câu thứ hai chỉ được gửi sau khi câu thứ nhất chạy xong ⇒ không bao giờ tái hiện được.
+
+### A.2. Câu kiểm tra — bằng chứng vượt sĩ số 📸
+
+```sql
+SELECT COUNT(*) AS SoDK_ThucTe,
+       (SELECT SiSoHienTai FROM LOPHOCPHAN WHERE MaLHP='LHP506') AS BoDem_SiSo,
+       (SELECT SiSoToiDa  FROM LOPHOCPHAN WHERE MaLHP='LHP506') AS SiSoToiDa
+FROM DANGKYHOCPHAN
+WHERE MaLHP='LHP506' AND TrangThaiDangKy='DA_DANG_KY';
+```
+
+**KẾT QUẢ ĐO THẬT (2 phiên `CALL`, lệch nhau 1 giây — đo trên máy đang chạy web):**
+
+| Phiên | Thời điểm xong | `pKetQua` |
+|---|---|---|
+| TAB 1 — SV030 | ~16,4 s | **0** (thành công) |
+| TAB 2 — SV041 | ~16,4 s | **0** (thành công — đã chờ khóa 15,4 s) |
+
+| SoDK_ThucTe | BoDem_SiSo | SiSoToiDa |
+|---|---|---|
+| **2** | 1 | 1 |
+
+```
+✗ 2 lượt đăng ký thật > 1 chỗ  →  VƯỢT SĨ SỐ
+✗ Bộ đếm SiSoHienTai kẹt ở 1 vì trigger dùng LEAST(SiSoToiDa, SiSo+1)
+  → lỗi hỏng ÂM THẦM: nhìn cột sĩ số vẫn "hợp lệ", phải COUNT(*) mới lộ ra
+✗ Điều kiện sĩ số mà phiên A kiểm tra đã bị phiên B làm MẤT HIỆU LỰC
+```
+
+### A.3. (tuỳ chọn) Bản gõ tay — bằng chứng **17/16** trên LHP514
+
+> Chỉ dùng khi cần đúng con số **17 | 16 | 16** của báo cáo (LHP514 = *Kết cấu cao tầng*, 15/16).
+> Cách này **gõ tay từng câu** thay vì gọi SP — vì SP sẽ chặn ở bước tiên quyết (mã 102).
+> Thao tác tay không cần `DO SLEEP`: mỗi câu gửi riêng, giao tác **vẫn đang mở** giữa hai câu.
+
+```sql
+-- TAB 1: chuẩn bị
+CALL SP_ChuanBi_Demo_4Anomaly('LHP514');
+SELECT MaLHP, SiSoHienTai, SiSoToiDa, (SiSoToiDa - SiSoHienTai) AS ConTrong
+FROM LOPHOCPHAN WHERE MaLHP = 'LHP514';          -- MONG ĐỢI: 15 | 16 | 1
+```
 
 **🪟 [TAB 1] — phiên của SV030**
 
@@ -91,7 +222,7 @@ COMMIT;    -- → TAB 2 tự chạy tiếp ngay
 COMMIT;
 ```
 
-### A.2. Câu kiểm tra — bằng chứng vượt sĩ số 📸
+**KẾT QUẢ ĐO THẬT (bản gõ tay trên LHP514):**
 
 ```sql
 SELECT COUNT(*) AS SoDK_ThucTe,
@@ -101,22 +232,24 @@ FROM DANGKYHOCPHAN
 WHERE MaLHP='LHP514' AND TrangThaiDangKy='DA_DANG_KY';
 ```
 
-**KẾT QUẢ ĐO THẬT:**
-
 | SoDK_ThucTe | BoDem_SiSo | SiSoToiDa |
 |---|---|---|
 | **17** | 16 | 16 |
 
-```
-✗ 17 lượt đăng ký thật > 16 chỗ  →  VƯỢT SĨ SỐ
-✗ Bộ đếm SiSoHienTai kẹt ở 16 vì trigger dùng LEAST(SiSoToiDa, SiSo+1)
-  → lỗi hỏng ÂM THẦM: nhìn cột sĩ số vẫn "hợp lệ", phải COUNT(*) mới lộ ra
-✗ Điều kiện sĩ số mà phiên A kiểm tra đã bị phiên B làm MẤT HIỆU LỰC
-```
-
 ---
 
 # PHẦN B — CHỨNG MINH ĐÃ FIX (2 TAB)
+
+> ▶️ **Chuẩn bị trước khi làm phần này:** khôi phục bản thủ tục thật (có `FOR UPDATE`) rồi dọn dữ liệu LHP506:
+> ```bash
+> cd backend
+> node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql
+> node scripts/verify-db.js        # phải thấy "✅ ĐÃ FIX (có FOR UPDATE)"
+> ```
+> ```sql
+> CALL SP_ChuanBi_Demo_4Anomaly('LHP506');   -- về 0/1
+> ```
+> **Hai câu `CALL` giống hệt PHẦN A** — chỉ khác bản thủ tục đang nạp ⇒ đối chứng rất rõ khi trình bày.
 
 ### B.1. Cơ chế `SELECT … FOR UPDATE` trên **chính LHP514**
 
@@ -180,6 +313,10 @@ CALL SP_DangKyHocPhan('SV041', 'LHP506', 24, 'Phien B - da fix', @kqB);
 SELECT @kqB AS KetQua_CuaSo2;      -- MONG ĐỢI: 105 (Lớp đã đầy sĩ số)
 ```
 
+> 💡 Bản **đã fix** không phụ thuộc thời điểm: chạy TAB 2 **sau** khi TAB 1 xong thì nó đọc thẳng `1/1`
+> ⇒ **105**; còn chạy TAB 2 **trong lúc** TAB 1 đang xử lý thì nó **chờ khóa** rồi mới đọc ⇒ vẫn **105**.
+> Đó chính là điều bản **chưa fix** ở PHẦN A không làm được (chờ khóa xong vẫn đọc snapshot cũ ⇒ **0**).
+
 ```sql
 -- Kiểm tra
 SELECT MaLHP, SiSoHienTai, SiSoToiDa,
@@ -191,11 +328,16 @@ FROM LOPHOCPHAN WHERE MaLHP='LHP506';
 
 **KẾT QUẢ ĐO THẬT:** `@kqA = 0` · `@kqB = 105` · sĩ số **1/1**, `COUNT = 1` — một suất chỉ cấp cho đúng một sinh viên.
 
-> 📸 **Hình 3** nên là ảnh ghép: **nửa trên** = 2 tab PHẦN A (`17 | 16 | 16`), **nửa dưới** = 2 tab PHẦN B (`0` và `105`).
+> 📸 **Hình 3** nên là ảnh ghép: **nửa trên** = 2 tab **PHẦN A** — cùng gọi `CALL SP_DangKyHocPhan`, cả hai
+> trả **`0`** và bảng kiểm tra **`2 | 1 | 1`**; **nửa dưới** = 2 tab **PHẦN B** — cùng câu `CALL` đó nhưng
+> trên bản thủ tục **đã fix**, cho **`0`** và **`105`** với bảng kiểm tra **`1 | 1 | 1`**.
+> (Nếu làm thêm **A.3** bằng cách gõ tay trên LHP514 thì chèn thêm ảnh bảng **`17 | 16 | 16`**.)
 
 ---
 
 # PHẦN C — DEMO BẰNG THAO TÁC WEB (2 TRÌNH DUYỆT)
+
+> 🎤 **Lời dẫn khi trình bày (nói gì, lúc nào, trả lời ra sao):** [`../docs/concurrency/loi_dan_demo_lost_update.md`](../docs/concurrency/loi_dan_demo_lost_update.md)
 
 ### C.0. Nguyên tắc bắt buộc
 
@@ -205,6 +347,9 @@ FROM LOPHOCPHAN WHERE MaLHP='LHP506';
    và bị **disable**. Việc B ra quyết định dựa trên dữ liệu **cũ** chính là bản chất của Lost Update.
 
 ### C.1. Triển khai "bản thủ tục chưa fix"
+
+> 💡 **1 CLICK:** mở **http://localhost:3000/chuan-bi-demo** → chọn kịch bản **`① Lost Update`** →
+> bấm **⚙ CHUẨN BỊ DEMO** (trang tự nạp thủ tục + dựng lại dữ liệu). Hoặc làm bằng dòng lệnh như dưới.
 
 ```bash
 cd backend
@@ -287,10 +432,11 @@ LHP506 sau cùng: SiSo = 1/1 · COUNT(*) hiệu lực = 1   ⇒ KHÔNG vượt s
 
 ## 📸 CHECKLIST ẢNH
 
-- [ ] TAB 2 **đang treo / chờ khóa** trong khi TAB 1 chưa COMMIT
-- [ ] Bảng kiểm tra **`17 | 16 | 16`**  (PHẦN A)
+- [ ] TAB 2 **đang treo / chờ khóa** trong khi TAB 1 chưa xong (đúng lúc này thì `SELECT @kqB` chưa trả về)
+- [ ] Bảng kiểm tra **`2 | 1 | 1`** + 2 tab đều `@kq = 0`  (PHẦN A — bản chưa fix)
+- [ ] (nếu làm A.3) Bảng kiểm tra **`17 | 16 | 16`** trên LHP514
 - [ ] `SELECT … FOR UPDATE` của TAB 2 trả về **`16, 16`** sau khi chờ  (PHẦN B.1)
-- [ ] 2 tab với **`@kqA = 0`** và **`@kqB = 105`**  (PHẦN B.2)
+- [ ] 2 tab với **`@kqA = 0`** và **`@kqB = 105`**  (PHẦN B.2 — bản đã fix)
 - [ ] (cộng điểm) 2 trình duyệt **cùng toast xanh thành công**  (PHẦN C.3)
 - [ ] (cộng điểm) Bảng DB **`2 | 1 | 1`**  (PHẦN C.4)
 - [ ] (cộng điểm) Đối chứng sau khi khôi phục: **1 xanh + 1 đỏ 105**  (PHẦN C.5)
@@ -306,7 +452,7 @@ CALL SP_ChuanBi_Demo_4Anomaly('LHP506');   -- → 0/1
 
 ```bash
 cd backend
-node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql   # BẮT BUỘC nếu đã làm PHẦN C
+node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql   # BẮT BUỘC sau PHẦN A / PHẦN C
 node scripts/verify-db.js
 ```
 
@@ -323,5 +469,20 @@ node scripts/verify-db.js
    B đi tiếp ⇒ **Lost Update, không deadlock**.
 2. **SLEEP không phải nguyên nhân lỗi** — nó chỉ **mở rộng cửa sổ tranh chấp** để người thao tác tay
    kịp tái hiện. Bản chất lỗi nằm ở việc **thiếu `FOR UPDATE`**.
-3. **Vì sao phải chọn đúng lớp:** LHP514 dùng cho kịch bản SQL (đúng số 17/16 như báo cáo), LHP506 dùng cho
-   kịch bản web vì **không có môn tiên quyết** nên đi được tới bước kiểm tra sĩ số.
+3. **Vì sao phải chọn đúng lớp:** LHP514 dùng cho kịch bản gõ tay (đúng số 17/16 như báo cáo), LHP506 dùng cho
+   kịch bản **gọi thủ tục** và kịch bản web vì **không có môn tiên quyết** nên đi được tới bước kiểm tra sĩ số.
+4. **Vì sao kịch bản 2 tab nên `CALL` thủ tục thay vì gõ tay `START TRANSACTION` … `INSERT` … `COMMIT`:**
+   giao tác nằm **trọn trong thủ tục** nên người demo không thể quên `COMMIT`/`ROLLBACK`, không gõ sai tên cột,
+   và đúng **đường đi thật của ứng dụng** (web cũng gọi chính SP này qua `backend/src/models/dangky.model.js`).
+   Bản `_ChuaFix`/bản demo tự mở cửa sổ tranh chấp bằng `DO SLEEP(8)` ở cuối giao tác, nên chỉ cần chạy TAB 2
+   trong vòng ~8 giây — vẫn thấy đúng cảnh **TAB 2 treo chờ khóa** để chụp ảnh.
+5. **“Vậy Lost Update chỗ nào? Sao bộ đếm vẫn `1/1`?”** — câu hỏi hay gặp khi phản biện. Trả lời theo 3 tầng:
+   **(1)** cái bị mất là **điều kiện sĩ số đã kiểm tra** (mẫu *read → check → write*): B đọc cùng bản đọc cũ của A
+   nên kết luận *“còn chỗ”* của A **mất hiệu lực**; **(2)** ở mức **bộ đếm**, phép `+1` của phiên B **cũng bị mất**
+   — trigger dùng `LEAST(SiSoToiDa, SiSoHienTai + 1)` và bảng có `CONSTRAINT CK_LOPHOCPHAN_SiSo
+   CHECK (SiSoHienTai <= SiSoToiDa)` (`mysql/ddl/00_hocphan_giangvien_ddl.sql`) nên câu `+1` thứ hai
+   **không đổi dòng nào** (đo được: `Rows matched: 1 · Rows changed: 0`); hai lớp chặn này khiến lỗi
+   **hỏng âm thầm**, phải `COUNT(*)` mới lộ; **(3)** muốn thấy *“mất một phép `+1`”* bằng con số thì làm trên
+   lớp **còn nhiều chỗ** (LHP508 = 0/35): hai phiên cùng đọc `0` rồi cùng ghi `1` ⇒ bộ đếm chỉ `1/35`
+   (đáng lẽ `2/35`) — còn đọc bằng `SELECT … FOR UPDATE` thì phiên B chờ **1,5s**, đọc lại `1`, ghi `2` ⇒
+   **không mất gì**. Chi tiết + lời nói mẫu: [`../docs/concurrency/loi_dan_demo_lost_update.md`](../docs/concurrency/loi_dan_demo_lost_update.md) mục **3B**.

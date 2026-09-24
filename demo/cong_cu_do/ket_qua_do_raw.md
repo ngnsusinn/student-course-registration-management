@@ -1,7 +1,7 @@
 # KẾT QUẢ ĐO THỰC TẾ (raw — do công cụ `do_thuc_te.mjs` sinh ra)
 
 - HQTCSDL: 11.8.9-MariaDB-ubu2404 · isolation mặc định = REPEATABLE-READ · deadlock_detect = 1 · lock_wait_timeout = 50s
-- Kết nối: 0.tcp.ap.ngrok.io:21868 / roacqgfa_dbms
+- Kết nối: 0.tcp.ap.ngrok.io:19034 / roacqgfa_dbms
 
 ## M1.1 · CHƯA FIX — 2 phiên cùng đọc "còn 1 chỗ" rồi cùng ghi (LHP514)
 
@@ -9,23 +9,23 @@
    Xuất phát: LHP514 = 15/16 (COUNT=15)
    PHIÊN A đọc  : 15/16  →  INSERT SV030 (giữ khóa)
    PHIÊN B đọc  : 15/16  ← VẪN thấy "còn 1 chỗ" (snapshot cũ)
-   PHIÊN B INSERT: CHỜ KHÓA 2.12s rồi mới chạy được
+   PHIÊN B INSERT: CHỜ KHÓA 2.18s rồi mới chạy được
    KẾT QUẢ: sĩ số đếm thật = 17/16 · bộ đếm SiSoHienTai = 16
    ⇒ VƯỢT SĨ SỐ — TÁI HIỆN ĐƯỢC LỖI LOST UPDATE
 ```
 
-`soLieu`: `{"maLHP":"LHP514","soDK":17,"siSoToiDa":16,"boDem":16,"choKhoaMs":2124}`
+`soLieu`: `{"maLHP":"LHP514","soDK":17,"siSoToiDa":16,"boDem":16,"choKhoaMs":2182}`
 
 ## M1.2 · ĐÃ FIX — khoá dòng sĩ số bằng SELECT … FOR UPDATE (cùng LHP514)
 
 ```
    PHIÊN A: SELECT … FOR UPDATE → 15/16  (giữ X-lock) rồi INSERT SV030
-   PHIÊN B: SELECT … FOR UPDATE → CHỜ KHÓA 2.12s → sau khi A commit đọc được 16/16
+   PHIÊN B: SELECT … FOR UPDATE → CHỜ KHÓA 2.17s → sau khi A commit đọc được 16/16
    ⇒ điều kiện IF 16 >= 16 đúng ⇒ SP trả mã 105 "Lớp đã đầy sĩ số"
    KẾT QUẢ: 16/16 — KHÔNG vượt sĩ số
 ```
 
-`soLieu`: `{"choKhoaMs":2115,"docDuoc":"16/16","soDK":16,"siSoToiDa":16}`
+`soLieu`: `{"choKhoaMs":2167,"docDuoc":"16/16","soDK":16,"siSoToiDa":16}`
 
 ## M1.3 · ĐÃ FIX — qua thủ tục thật SP_DangKyHocPhan (LHP506 còn 1 chỗ)
 
@@ -66,11 +66,11 @@
 
 ```
    PHIÊN A: SELECT SiSoHienTai, SiSoToiDa … FOR UPDATE → 15/16 (giữ X-lock)
-   PHIÊN B: UPDATE SiSoHienTai + 1 → BỊ CHẶN 1.73s cho tới khi A COMMIT rồi mới chạy
+   PHIÊN B: UPDATE SiSoHienTai + 1 → BỊ CHẶN 1.79s cho tới khi A COMMIT rồi mới chạy
    ⇒ ghi của B không thể chen vào giữa 2 lần đọc của A
 ```
 
-`soLieu`: `{"choKhoaMs":1734,"sauCung":"16/16"}`
+`soLieu`: `{"choKhoaMs":1787,"sauCung":"16/16"}`
 
 ## M3.1 · CHƯA FIX — PHIÊN A hạ mức cô lập xuống READ COMMITTED
 
@@ -100,13 +100,13 @@
 
 ```
    PHIÊN A: SELECT COUNT(*) … FROM DANGKYHOCPHAN WHERE MaLHP='LHP514' … FOR UPDATE  → COUNT = 15
-   PHIÊN B: INSERT SV999 → BỊ CHẶN 2.63s (chờ tới khi A COMMIT)
+   PHIÊN B: INSERT SV999 → BỊ CHẶN 2.72s (chờ tới khi A COMMIT)
    PHIÊN A đếm lại (trong cùng giao tác) → 15  ← KHÔNG ĐỔI
    KẾT QUẢ cuối sau khi cả hai commit: COUNT = 16
    ⇒ phiên khác KHÔNG THỂ chèn vào phạm vi mà A đang đọc (next-key/gap lock)
 ```
 
-`soLieu`: `{"countA":15,"countA2":15,"insertChoMs":2626,"countCuoi":16}`
+`soLieu`: `{"countA":15,"countA2":15,"insertChoMs":2720,"countCuoi":16}`
 
 ## M4.1 · CHƯA FIX — 2 phiên khoá 2 lớp theo thứ tự NGƯỢC NHAU (khoá theo yêu cầu)
 
@@ -115,10 +115,10 @@
    PHIÊN B: CALL SP_Demo_KhoaTheoThuTu('SV041','LHP506,LHP514','THEO_YEU_CAU',3,@kq2)
    @kq1 = 0 · @kq2 = 1213
    ⇒ MỘT PHIÊN NHẬN 1213 (ER_LOCK_DEADLOCK) — InnoDB tự chọn nạn nhân & rollback
-   Thời điểm phát hiện: ~6.89s sau khi bắt đầu
+   Thời điểm phát hiện: ~7.17s sau khi bắt đầu
 ```
 
-`soLieu`: `{"kq1":0,"kq2":1213,"phatHienMs":6889}`
+`soLieu`: `{"kq1":0,"kq2":1213,"phatHienMs":7172}`
 
 ## M4.2 · ĐÃ FIX — khoá theo thứ tự NHẤT QUÁN (con trỏ sắp MaLHP TĂNG DẦN)
 

@@ -40,9 +40,10 @@ FROM information_schema.ROUTINES
 WHERE ROUTINE_SCHEMA = DATABASE()
   AND ROUTINE_NAME IN ('SP_ChuanBi_Demo_4Anomaly','SP_ChuanBi_Demo_Deadlock',
                        'SP_DangKyHocPhan','SP_DangKyHocPhan_ChuaFix','SP_DangKyHocPhan_NangCao',
-                       'SP_Demo_KhoaTheoThuTu','SP_Demo_PhienGiaoDich','SP_DangKyNhieuHocPhan')
+                       'SP_Demo_KhoaTheoThuTu','SP_Demo_PhienGiaoDich','SP_Demo_DocHaiLan',
+                       'SP_DangKyNhieuHocPhan')
 ORDER BY ROUTINE_NAME;
--- MONG ĐỢI: đủ 8 dòng. Nếu thiếu, nạp lại bằng:
+-- MONG ĐỢI: đủ 9 dòng. Nếu thiếu, nạp lại bằng:
 --   cd backend
 --   node scripts/apply-sql.js ../mysql/transactions/demo_4_anomaly.sql
 --   node scripts/apply-sql.js ../mysql/transactions/demo_deadlock.sql

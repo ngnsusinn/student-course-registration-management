@@ -1,12 +1,9 @@
 import mysql from 'mysql2/promise';
 import { DB_CONFIG } from './config.js';
 
+// ============================================================
 // Pool nội bộ — CỐ TÌNH KHÔNG export: tầng web không có cách nào lấy
 // connection thô, do đó không thể tự mở transaction hay chạy SQL tùy ý.
-const pool = mysql.createPool(DB_CONFIG);
-
-// ============================================================
-// Helper tầng WEB — CHỈ gọi qua VIEW / PROCEDURE / FUNCTION.
 //
 // ★ NGUYÊN TẮC:
 //   1. MỌI GIAO TÁC (START TRANSACTION / COMMIT / ROLLBACK) nằm trong
@@ -17,11 +14,30 @@ const pool = mysql.createPool(DB_CONFIG);
 //   Kiểm chứng tự động: `node scripts/audit-no-raw-query.mjs`.
 // ============================================================
 
+// Tất cả connection trong pool đều dùng múi giờ UTC+7 (Vietnam).
+// SET time_zone phải chạy trên MỖI connection vì mysql2 không hỗ trợ
+// timezone option trong createPool (chỉ ảnh hưởng đến serialization Date).
+const TIMEZONE_SQL = "SET time_zone = '+07:00'";
+
+const pool = mysql.createPool(DB_CONFIG);
+
+// Khởi tạo: SET time_zone cho 1 connection trong pool (để kiểm tra).
+// Các connection khác sẽ tự động SET khi được sử dụng qua sp/spMulti/spOut.
+try {
+  const conn = await pool.getConnection();
+  try { await conn.query(TIMEZONE_SQL); }
+  finally { conn.release(); }
+} catch { /* pool chưa sẵn sàng — sẽ SET ở lần dùng đầu tiên */ }
+
+// ============================================================
+// Helper tầng WEB — CHỈ gọi qua VIEW / PROCEDURE / FUNCTION.
+//
 // Gọi SP trả về MỘT result set -> mảng dòng.
 // CALL x() với mysql2: rows = [rs1, rs2, OkPacket...]; rs1 = mảng dòng.
 export async function sp(sql, params = []) {
   const conn = await pool.getConnection();
   try {
+    await conn.query(TIMEZONE_SQL);           // ← đảm bảo múi giờ UTC+7
     const [rows] = await conn.query(sql, params);
     return rows[0] ?? [];
   } finally {
@@ -33,6 +49,7 @@ export async function sp(sql, params = []) {
 export async function spMulti(sql, params = []) {
   const conn = await pool.getConnection();
   try {
+    await conn.query(TIMEZONE_SQL);           // ← đảm bảo múi giờ UTC+7
     const [rows] = await conn.query(sql, params);
     return rows.filter(Array.isArray);
   } finally {
@@ -48,12 +65,18 @@ export async function spMulti(sql, params = []) {
 export async function spOut(sqlOut, params = []) {
   const conn = await pool.getConnection();
   try {
+    await conn.query(TIMEZONE_SQL);
     const stmts = sqlOut.split(';').map((s) => s.trim()).filter(Boolean)
       .filter((s) => !/^select\s+@KetQua/i.test(s));
     const remaining = [...params];
     for (const stmt of stmts) {
       const n = (stmt.match(/\?/g) || []).length;
-      await conn.query(stmt, remaining.splice(0, n));
+      try {
+        await conn.query(stmt, remaining.splice(0, n));
+      } catch (e) {
+        console.log('[spOut] ERROR on stmt:', stmt.slice(0, 80), '→', e.message, '| code:', e.code, '| errno:', e.errno, '| sqlMessage:', e.sqlMessage?.slice(0, 100));
+        throw e;
+      }
     }
     const [sel] = await conn.query('SELECT @KetQua AS KetQua');
     return sel && sel.length ? Number(sel[0].KetQua) : undefined;
@@ -68,6 +91,7 @@ export async function spOut(sqlOut, params = []) {
 export async function spOutFull(sqlOut, params = []) {
   const conn = await pool.getConnection();
   try {
+    await conn.query(TIMEZONE_SQL);           // ← đảm bảo múi giờ UTC+7
     const stmts = sqlOut.split(';').map((s) => s.trim()).filter(Boolean)
       .filter((s) => !/^select\s+@KetQua/i.test(s));
     const remaining = [...params];

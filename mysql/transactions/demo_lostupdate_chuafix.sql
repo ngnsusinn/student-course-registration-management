@@ -24,6 +24,19 @@
 --     cd backend
 --     node scripts/apply-sql.js ../mysql/transactions/demo_lostupdate_chuafix.sql
 --
+-- ★ KỊCH BẢN 2 TAB — DÙNG PROCEDURE (không gõ tay START TRANSACTION/INSERT):
+--     File này ghi đè thủ tục, nên hai phiên chỉ cần gọi thủ tục:
+--         -- TAB 1
+--         CALL SP_DangKyHocPhan('SV030','LHP506',24,'Phien A - chua fix',@kqA);
+--         SELECT @kqA;    -- 0
+--         -- TAB 2 (chạy trong vòng ~8 giây, lúc TAB 1 đang DO SLEEP)
+--         CALL SP_DangKyHocPhan('SV041','LHP506',24,'Phien B - chua fix',@kqB);
+--         SELECT @kqB;    -- 0  ← CẢ HAI ĐỀU THÀNH CÔNG = LOST UPDATE
+--     Câu lệnh đầy đủ + kiểm tra hậu quả:
+--         demo/sql_config/lost_update__tab2phien__call_sp.sql
+--         demo/01_LOST_UPDATE.md  (PHẦN A)
+--     Dùng LHP506 vì SP kiểm tra MÔN TIÊN QUYẾT trước bước sĩ số (LHP514 -> mã 102).
+--
 -- ★ KHÔI PHỤC BẢN ĐÃ FIX (bắt buộc sau khi demo xong):
 --     node scripts/apply-sql.js ../mysql/procedures/SP_DangKyHocPhan.sql
 --

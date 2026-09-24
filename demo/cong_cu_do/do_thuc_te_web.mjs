@@ -23,12 +23,13 @@ require('dotenv').config({ path: path.join(BACKEND, '.env'), quiet: true });
 const CFG = {
   host: process.env.DB_HOST, port: Number(process.env.DB_PORT || 3306),
   user: process.env.DB_USER, password: process.env.DB_PASSWORD, database: process.env.DB_NAME,
-  charset: 'utf8mb4', dateStrings: true, connectTimeout: 30000,
+  charset: 'utf8mb4', timezone: '+07:00', dateStrings: true, connectTimeout: 30000,
 };
 const API = 'http://localhost:3000/api';
 const che = (process.argv[2] || 'lost-update').toLowerCase();
 
 const c = await mysql.createConnection({ ...CFG, multipleStatements: false });
+await c.query("SET time_zone = '+07:00'");
 const q = async (s) => (await c.query(s))[0];
 const ngu = (ms) => new Promise((r) => setTimeout(r, ms));
 

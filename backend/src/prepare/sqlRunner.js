@@ -20,9 +20,15 @@ const ROOT = path.resolve(__dirname, '..', '..', '..');   // thư mục gốc re
 
 // Whitelist: khoá = mã dùng ở API, giá trị = đường dẫn tương đối từ gốc repo
 export const DANH_SACH_CHO_PHEP = {
+  // — Mỗi kịch bản demo một bộ file riêng (xem prepare.controller.js → KICH_BAN) —
   'lost_update_chua_fix': 'demo/sql_config/lost_update__chua_fix.sql',
   'lab_nrr_phantom_chua_fix': 'demo/sql_config/lab__dangky_nhieu__chua_fix.sql',
   'deadlock_chua_fix': 'demo/sql_config/deadlock__chua_fix.sql',
+  // Dirty Read: phiên GHI (INSERT → SLEEP → ROLLBACK) + phiên ĐỌC (2 mức cô lập)
+  'lab_dirty_writer_chua_fix': 'demo/sql_config/lab__dirty_read__writer__chua_fix.sql',
+  'lab_dirty_reader_chua_fix': 'demo/sql_config/lab__dirty_read__reader__chua_fix.sql',
+  'lab_dirty_reader_da_fix': 'demo/sql_config/lab__dirty_read__reader__da_fix.sql',
+  // — Bản chính thức của hệ thống (nút FIX + các kịch bản cần 1 thủ tục "sạch") —
   'sp_dangky_that': 'mysql/procedures/SP_DangKyHocPhan.sql',
   'sp_dangky_nhieu_that': 'mysql/procedures/SP_DangKyNhieuHocPhan.sql',
 };
@@ -90,6 +96,7 @@ export async function apFileSql(ma) {
     password: DB_CONFIG.password, database: DB_CONFIG.database,
     charset: DB_CONFIG.charset, dateStrings: true, connectTimeout: 30000,
   });
+  await conn.query("SET time_zone = '+07:00'");  // ← đảm bảo múi giờ UTC+7
   const nhat_ky = [];
   try {
     for (const stmt of stmts) {

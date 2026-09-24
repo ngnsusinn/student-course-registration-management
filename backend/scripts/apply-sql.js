@@ -72,6 +72,7 @@ const conn = await mysql.createConnection({
   dateStrings: true,
   connectTimeout: 30000,
 });
+await conn.query("SET time_zone = '+07:00'");  // ← đảm bảo múi giờ UTC+7
 
 const sql = fs.readFileSync(SQL_FILE, 'utf8');
 const stmts = splitStatements(sql);
